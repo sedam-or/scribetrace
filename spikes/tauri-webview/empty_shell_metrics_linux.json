@@ -1,0 +1,28 @@
+{
+  "spike": "SPIKE-4A",
+  "description": "Empty Stage 1 Shell (Tauri v2)",
+  "platform": "Linux",
+  "arch": "x86_64",
+  "release_binary_mb": 9.75,
+  "release_binary_bytes": 10223416,
+  "installer_name": "scribetrace-spike-tauri-webview_0.1.0_amd64.deb",
+  "installer_mb": 2.47,
+  "installer_bytes": 2593684,
+  "cold_start_ms": 122,
+  "idle_rss_mb": 211.41,
+  "idle_samples_mb": [
+    211.408203125,
+    211.4130859375,
+    211.27734375,
+    211.412109375,
+    211.4130859375
+  ],
+  "measurement_method": "Linux PSS",
+  "tracked_pids_count": 3,
+  "budgets": {
+    "binary_or_installer_mb": 20.0,
+    "cold_start_ms": 2000,
+    "idle_rss_mb": 120.0
+  },
+  "verdict": "TIER_3_EVAL (idle > 180 MB WebKit helper tree)"
+}
