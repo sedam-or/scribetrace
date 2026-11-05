@@ -63,8 +63,10 @@ Before creating any commit, verify the following gates locally:
 
 ---
 
-## 3. Delegation & Single Committer Role
+## 3. Delegation & Committer Protocol
 
-- In multi-agent autonomous sessions, commits are managed exclusively by the DevOps agent upon task completion.
+- Multi-agent commit policy: Agents commit their own paths signed off (`git commit -s`), except PM whose paths DevOps commits.
+- CI stays green on all commits.
+- The project owner reviews changes per commit.
 - Never force-push (`git push --force`) to shared branches.
 - Never commit broken links, unformatted Rust/TS files, or unverified spikes.
