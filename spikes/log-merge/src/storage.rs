@@ -285,7 +285,13 @@ impl LogReader for FileLogStorage {
                                 continue;
                             }
                             match serde_json::from_str::<Event>(trimmed) {
-                                Ok(event) => raw_events.push(event),
+                                Ok(event) => {
+                                    if event.seq == 0 {
+                                        skipped_lines += 1;
+                                    } else {
+                                        raw_events.push(event);
+                                    }
+                                }
                                 Err(_) => skipped_lines += 1,
                             }
                         }

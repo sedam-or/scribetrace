@@ -3,15 +3,19 @@
 ## Purpose
 SPIKE-4 validates the feasibility and resource efficiency of the Stage 2 PDF viewer using pinned PDF.js within a lightweight desktop webview shell, verifying the lightness budget defined in [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) and [`docs/PROTOTYPE-PLAN.md`](../../docs/PROTOTYPE-PLAN.md).
 
+> **Important Honesty Distinction:** Measurements in Node.js reflect the **PDF.js JavaScript parse baseline only** (cold parse: 158 ms, idle RSS: 166.3 MB), not real WebKitGTK / WebView2 / WKWebView rendering. The actual webview gate is marked **NOT RUN** locally on headless machines and is measured via the multi-OS CI workflow.
+
 ## Quality Gate Thresholds
-| Metric | Budget Target | Hard Ceiling | Measured Result | Status |
+| Metric | Budget Target | Hard Ceiling | Node Baseline (Parse Only) | Webview Gate Status |
 |---|---|---|---|---|
-| **Cold First-Page Render** | `< 1.5 s` (1500 ms) | `2.0 s` (2000 ms) | **158 ms** | **PASS** |
-| **Idle RSS Memory** (after 10 page turns) | `< 250 MB` | `250 MB` | **166.3 MB** | **PASS** |
-| **Selected Text Check** | Ground-truth match | Exact substring | **Matches exactly** | **PASS** |
+| **Cold First-Page Render** | `< 1.5 s` (1500 ms) | `2.0 s` (2000 ms) | 158 ms (baseline) | **NOT RUN** (CI open) |
+| **Idle RSS Memory** (after 10 page turns) | `< 250 MB` | `250 MB` | 166.3 MB (baseline) | **NOT RUN** (CI open) |
+| **Selected Text Check** | Ground-truth match | Exact substring | Matched | **NOT RUN** (CI open) |
 | **Background Processes** | `0` | `0` | `0` | **PASS** |
 
 ## Structure
+- `Cargo.toml` & `src/main.rs`: Minimal Tauri v2 desktop application with native process RSS inspection (`/proc/self/statm`) and IPC benchmark reporting.
+- `tauri.conf.json`: Tauri v2 configuration bundle.
 - `scripts/generate_fixture.py`: Standalone script generating a valid 500-page, ~50 MB synthetic PDF fixture. Page 1 contains ground-truth selection text (`ScribeTrace Benchmark Page 1 - Ground Truth Selection Text`) with padding text across all 500 pages. Large fixtures are never committed to git (ignored by `.gitignore`).
 - `measure.py`: Measurement benchmark script that generates the fixture in a temporary file, boots the PDF.js runtime, renders Page 1, validates text extraction, navigates 10 pages, measures process RSS memory, and outputs structured JSON adhering to the QA schema.
 - `measure.sh`: Executable wrapper invoking `measure.py`.
@@ -20,15 +24,16 @@ SPIKE-4 validates the feasibility and resource efficiency of the Stage 2 PDF vie
 ## How to Run Locally
 
 ```bash
-# Ensure Node 22 + pnpm and Python 3 are available
+# 1. Build minimal Tauri v2 webview app
 cd spikes/tauri-webview
-pnpm install
+cargo build --release
 
-# Run the benchmark measurement
+# 2. Run PDF.js baseline benchmark
+pnpm install
 ./measure.sh
 ```
 
-Example JSON output:
+Example JSON output (Node.js baseline):
 ```json
 {
   "spike": "SPIKE-4",

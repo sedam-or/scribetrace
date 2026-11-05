@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Maximum allowed line size for an event record (1 MB) per ADR 0007 / SEC-8.
+/// Maximum allowed line size for an event record (1 MB) per ADR 0007 / SEC-12.
 pub const MAX_LINE_BYTES: usize = 1_048_576;
 
 /// Default author for local events.
@@ -27,7 +27,7 @@ fn default_author() -> String {
 }
 
 impl Event {
-    /// Constructs a valid new event.
+    /// Constructs a valid new event. Sequence numbers must be >= 1 per ADR 0007.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         v: u32,
@@ -59,23 +59,27 @@ impl Event {
 /// - Commutative: merge(A, B) == merge(B, A)
 /// - Idempotent: merge(merge(A, B), B) == merge(A, B)
 /// - Clock-independent: `ts` is display-only and does not affect domain ordering.
+/// - Full-record canonical tie-breaker: if two records share an ID with differing payloads,
+///   the full canonical serialization is compared to guarantee strict commutativity.
 pub fn merge_events(events: impl IntoIterator<Item = Event>) -> Vec<Event> {
     let mut by_id: HashMap<String, Event> = HashMap::new();
 
     for ev in events {
+        // Enforce sequence number >= 1
+        if ev.seq == 0 {
+            continue;
+        }
+
         by_id
             .entry(ev.id.clone())
             .and_modify(|existing| {
-                // Deterministic canonical tie-breaker if two conflicting records share an ID
-                let key_new = (&ev.device, ev.seq, &ev.ts, &ev.event_type);
-                let key_existing = (
-                    &existing.device,
-                    existing.seq,
-                    &existing.ts,
-                    &existing.event_type,
-                );
-                if key_new > key_existing {
-                    *existing = ev.clone();
+                // Canonical tie-breaker comparing full serialized JSON to cover payload and all fields
+                if let (Ok(json_new), Ok(json_existing)) =
+                    (serde_json::to_string(&ev), serde_json::to_string(existing))
+                {
+                    if json_new > json_existing {
+                        *existing = ev.clone();
+                    }
                 }
             })
             .or_insert(ev);

@@ -27,6 +27,7 @@ yarn-error.log*
 
 # Tauri bundle outputs
 src-tauri/target/
+**/gen/
 
 # OS and editor files
 .DS_Store

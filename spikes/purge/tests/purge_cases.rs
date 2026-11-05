@@ -58,8 +58,7 @@ fn test_wrong_clocks_both_ways() {
     let res_b = visible(&[event_uncovered], &[purge_future]);
     assert_eq!(res_b.hidden_count, 0);
     assert_eq!(res_b.visible.len(), 1);
-    assert_eq!(res_b.visible[0].event.seq, 10);
-    assert!(res_b.visible[0].is_uncovered_after_purge);
+    assert_eq!(res_b.visible[0].seq, 10);
 }
 
 #[test]
@@ -84,14 +83,12 @@ fn test_unseen_offline_event_and_second_purge() {
     covers_1.insert("devB".to_string(), 3);
     let purge_1 = Purge::new("p1", "devA", 1, "2026-11-05T12:10:00Z", covers_1);
 
-    // After Purge 1: seq 1, 2, 3 hidden; seq 4, 5 visible and flagged as uncovered
+    // After Purge 1: seq 1, 2, 3 hidden; seq 4, 5 remain visible
     let res_1 = visible(&events, std::slice::from_ref(&purge_1));
     assert_eq!(res_1.hidden_count, 3);
     assert_eq!(res_1.visible.len(), 2);
-    assert_eq!(res_1.visible[0].event.seq, 4);
-    assert!(res_1.visible[0].is_uncovered_after_purge);
-    assert_eq!(res_1.visible[1].event.seq, 5);
-    assert!(res_1.visible[1].is_uncovered_after_purge);
+    assert_eq!(res_1.visible[0].seq, 4);
+    assert_eq!(res_1.visible[1].seq, 5);
 
     // Later: Device A syncs with Device B, sees seq 5, and triggers second Purge: covers = {devB: 5}.
     let mut covers_2 = HashMap::new();
@@ -105,6 +102,29 @@ fn test_unseen_offline_event_and_second_purge() {
         0,
         "Second purge with higher coverage hides remaining events!"
     );
+}
+
+#[test]
+fn test_device_not_in_purge_never_hidden_even_if_seq_zero() {
+    // Verifies Architect item 2: device not present in covers is never hidden
+    let ev = Event::new(
+        1,
+        "ev-0",
+        "devUnrelated",
+        0,
+        "2026-11-05T10:00:00Z",
+        "Me",
+        "mark_create",
+        json!({}),
+    );
+    let mut covers = HashMap::new();
+    covers.insert("devOther".to_string(), 10);
+    let purge = Purge::new("p1", "devOther", 1, "2026-11-05T10:05:00Z", covers);
+
+    let res = visible(&[ev], &[purge]);
+    assert_eq!(res.hidden_count, 0);
+    assert_eq!(res.visible.len(), 1);
+    assert_eq!(res.visible[0].device, "devUnrelated");
 }
 
 #[test]
@@ -140,8 +160,8 @@ fn test_two_purges_in_any_order() {
     );
     assert_eq!(res_12.hidden_count, 8);
     assert_eq!(res_12.visible.len(), 2);
-    assert_eq!(res_12.visible[0].event.seq, 9);
-    assert_eq!(res_12.visible[1].event.seq, 10);
+    assert_eq!(res_12.visible[0].seq, 9);
+    assert_eq!(res_12.visible[1].seq, 10);
 }
 
 #[test]
@@ -182,7 +202,7 @@ fn test_new_history_after_purge_does_not_seal_paper() {
     let res = visible(&events, &[purge]);
     assert_eq!(res.hidden_count, 5);
     assert_eq!(res.visible.len(), 3);
-    assert_eq!(res.visible[0].event.seq, 6);
-    assert_eq!(res.visible[1].event.seq, 7);
-    assert_eq!(res.visible[2].event.seq, 8);
+    assert_eq!(res.visible[0].seq, 6);
+    assert_eq!(res.visible[1].seq, 7);
+    assert_eq!(res.visible[2].seq, 8);
 }

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "scribetrace-spike-tauri-webview",
+  "version": "0.1.0",
+  "identifier": "com.scribetrace.spike4",
+  "build": {
+    "frontendDist": "."
+  },
+  "bundle": {
+    "active": false,
+    "icon": []
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "ScribeTrace Spike 4 WebView",
+        "width": 1024,
+        "height": 768,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' 'unsafe-inline' data: blob:"
+    }
+  }
+}

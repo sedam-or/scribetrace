@@ -7,7 +7,7 @@ fn arb_event_pool() -> impl Strategy<Value = Vec<Event>> {
     prop::collection::vec(
         (
             0u8..5,       // device index (0..4)
-            1u64..100,    // sequence number
+            1u64..100,    // sequence number (seq >= 1)
             0u32..10_000, // fake timestamp
         ),
         1..40,
@@ -92,5 +92,20 @@ proptest! {
             &merged_ab,
             "merge(merge(A, B), B) must equal merge(A, B)"
         );
+    }
+
+    #[test]
+    fn prop_same_id_conflicting_payloads_commutativity(
+        id in "[a-z0-9-]{8}",
+        payload_a in prop::collection::vec(any::<u8>(), 1..20),
+        payload_b in prop::collection::vec(any::<u8>(), 1..20),
+    ) {
+        let ev1 = Event::new(1, id.clone(), "dev-1", 1, "2026-11-05T10:00:00Z", "Me", "mark_create", json!({"bytes": payload_a}));
+        let ev2 = Event::new(1, id, "dev-1", 1, "2026-11-05T10:00:00Z", "Me", "mark_create", json!({"bytes": payload_b}));
+
+        let ab = merge_events(vec![ev1.clone(), ev2.clone()]);
+        let ba = merge_events(vec![ev2, ev1]);
+
+        prop_assert_eq!(ab, ba, "Same-id conflicting payload merge must be strictly commutative!");
     }
 }

@@ -73,18 +73,10 @@ impl Purge {
     }
 }
 
-/// An event that remains visible to the user after purge evaluation.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VisibleEvent {
-    pub event: Event,
-    /// True if a purge occurred but this event was not covered (e.g. written offline).
-    pub is_uncovered_after_purge: bool,
-}
-
 /// Summary of visibility calculation per ADR 0007.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VisibilityResult {
-    pub visible: Vec<VisibleEvent>,
+    pub visible: Vec<Event>,
     pub hidden_count: usize,
     pub total_events: usize,
     pub effective_covers: HashMap<String, u64>,
@@ -93,9 +85,10 @@ pub struct VisibilityResult {
 /// Pure domain function: calculates visible events after applying all purge coverage rules.
 ///
 /// Rules (ADR 0007):
-/// 1. Events with `seq <= covers[device]` are hidden everywhere, regardless of wall clock `ts`.
-/// 2. Events not covered by any purge (written offline or fresh history) remain visible.
-/// 3. If a purge exists, uncovered events are flagged as `is_uncovered_after_purge`.
+/// 1. Events are hidden only if their device is present in `effective_covers` and `seq <= cover`.
+///    Devices not present in any purge are never hidden.
+/// 2. Wall clock `ts` is display-only and never affects visibility.
+/// 3. In accordance with amended ADR 0007, no per-event "uncovered" flag is stored or emitted.
 /// 4. Multiple purges combine cumulatively: effective coverage is the supremum (max) of all purges.
 /// 5. Deterministic and commutative: 10,000 random orderings of purges produce identical visibility.
 pub fn visible(events: &[Event], purges: &[Purge]) -> VisibilityResult {
@@ -110,30 +103,28 @@ pub fn visible(events: &[Event], purges: &[Purge]) -> VisibilityResult {
         }
     }
 
-    let has_purges = !purges.is_empty();
     let mut visible = Vec::new();
     let mut hidden_count = 0;
     let mut total_events = 0;
 
     for ev in events {
-        // Exclude purge tombstone events from mark stream
+        // Exclude purge tombstone events from active mark stream
         if ev.event_type == "purge" {
             continue;
         }
 
         total_events += 1;
-        let covered_seq = effective_covers.get(&ev.device).copied().unwrap_or(0);
 
-        if ev.seq <= covered_seq {
-            // Hidden per ADR 0007
-            hidden_count += 1;
-        } else {
-            // Visible
-            visible.push(VisibleEvent {
-                event: ev.clone(),
-                is_uncovered_after_purge: has_purges,
-            });
+        // Hide ONLY if the device is present in effective_covers and seq <= cover.
+        if let Some(&covered_seq) = effective_covers.get(&ev.device) {
+            if ev.seq <= covered_seq {
+                hidden_count += 1;
+                continue;
+            }
         }
+
+        // Visible event
+        visible.push(ev.clone());
     }
 
     VisibilityResult {
