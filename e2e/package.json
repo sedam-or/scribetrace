@@ -1,0 +1,13 @@
+{
+  "name": "scribetrace-e2e",
+  "version": "0.1.0",
+  "description": "ScribeTrace Linux End-to-End Real Window WebDriver Test Harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test_walking_skeleton.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
