@@ -1,16 +1,111 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::domain::{DeviceId, DeviceState, DomainError, Event, Mark, PaperId};
+
+/// Machine-readable error code contract shared across the IPC boundary with the frontend (Slice 4 / SEC-7, SEC-9).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceErrorCode {
+    /// Reference manager is not running on loopback or connection was refused.
+    Refused,
+    /// HTTP 403 Forbidden ("Local API is not enabled" in Zotero settings).
+    Forbidden,
+    /// Request exceeded the 5-second timeout budget.
+    Timeout,
+    /// Zotero-API-Version header missing or != "3".
+    Version,
+    /// Response payload exceeded the 15 MB body cap.
+    TooLarge,
+    /// Non-200 HTTP status, malformed JSON, off-list path, or redirect refused by broker.
+    BadAnswer,
+    /// Internal store or IO failure.
+    Internal,
+}
+
+impl SourceErrorCode {
+    /// Returns the snake_case string representation.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Refused => "refused",
+            Self::Forbidden => "forbidden",
+            Self::Timeout => "timeout",
+            Self::Version => "version",
+            Self::TooLarge => "too_large",
+            Self::BadAnswer => "bad_answer",
+            Self::Internal => "internal",
+        }
+    }
+}
 
 /// The reference manager could not be read.
 #[derive(Debug, thiserror::Error)]
 pub enum SourceError {
-    /// Zotero did not answer on the local port.
+    /// Zotero is not running or connection was refused on loopback.
+    #[error("cannot reach the reference manager: {0}")]
+    Refused(String),
+    /// Zotero did not answer on the local port (alias for Refused).
     #[error("cannot reach the reference manager: {0}")]
     Unreachable(String),
+    /// HTTP 403 Forbidden ("Local API is not enabled").
+    #[error("access forbidden: {0}")]
+    Forbidden(String),
+    /// Request timed out (>5 seconds).
+    #[error("request timed out: {0}")]
+    Timeout(String),
+    /// API version mismatch (expected "3").
+    #[error("unsupported API version: {0}")]
+    Version(String),
+    /// Response body exceeded 15 MB limit.
+    #[error("response too large: {0}")]
+    TooLarge(String),
     /// Zotero answered, but not in a way we accept.
     #[error("unexpected answer from the reference manager: {0}")]
     BadAnswer(String),
+    /// Internal broker or serialization failure.
+    #[error("internal error: {0}")]
+    Internal(String),
+}
+
+impl SourceError {
+    /// Returns the associated typed error code.
+    pub fn code(&self) -> SourceErrorCode {
+        match self {
+            Self::Refused(_) | Self::Unreachable(_) => SourceErrorCode::Refused,
+            Self::Forbidden(_) => SourceErrorCode::Forbidden,
+            Self::Timeout(_) => SourceErrorCode::Timeout,
+            Self::Version(_) => SourceErrorCode::Version,
+            Self::TooLarge(_) => SourceErrorCode::TooLarge,
+            Self::BadAnswer(_) => SourceErrorCode::BadAnswer,
+            Self::Internal(_) => SourceErrorCode::Internal,
+        }
+    }
+}
+
+/// Metadata of a paper discovered in Zotero, returned to the UI.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PaperItem {
+    /// Paper identifier in ScribeTrace format (`z_<zoteroKey>`).
+    pub id: String,
+    /// Title of the paper.
+    pub title: String,
+    /// Formatted author summary (e.g. "Vaswani et al.").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authors: Option<String>,
+    /// Publication year.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub year: Option<String>,
+    /// Total number of marks/annotations attached to this paper.
+    #[serde(rename = "marksCount")]
+    pub marks_count: usize,
+    /// Attachment key of the primary PDF enclosure in Zotero.
+    #[serde(
+        rename = "attachmentKey",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub attachment_key: Option<String>,
 }
 
 /// The history store failed.
@@ -42,6 +137,17 @@ pub enum AppError {
     /// See [`DomainError`].
     #[error(transparent)]
     Domain(#[from] DomainError),
+}
+
+impl AppError {
+    /// Returns the associated typed error code.
+    pub fn code(&self) -> SourceErrorCode {
+        match self {
+            Self::Source(s) => s.code(),
+            Self::Store(_) => SourceErrorCode::Internal,
+            Self::Domain(_) => SourceErrorCode::BadAnswer,
+        }
+    }
 }
 
 /// Statistics and events from reading paper history files (Slice 3, ADR 0007).
@@ -86,6 +192,8 @@ impl LogWriter for std::fs::File {
 
 /// Read side of the reference manager. Called only on a user click.
 pub trait ZoteroSource {
+    /// Discovers available papers from the local reference manager.
+    fn list_papers(&self) -> Result<Vec<PaperItem>, SourceError>;
     /// Marks attached to the PDF whose Zotero key is `attachment_key`.
     fn fetch_marks(&self, attachment_key: &str) -> Result<Vec<Mark>, SourceError>;
 }
@@ -131,4 +239,47 @@ pub trait Clock {
 pub trait IdGenerator {
     /// A fresh unique id.
     fn next_id(&self) -> String;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_app_error_and_source_error_codes() {
+        let errs = [
+            (SourceError::Refused("x".into()), SourceErrorCode::Refused),
+            (
+                SourceError::Unreachable("x".into()),
+                SourceErrorCode::Refused,
+            ),
+            (
+                SourceError::Forbidden("x".into()),
+                SourceErrorCode::Forbidden,
+            ),
+            (SourceError::Timeout("x".into()), SourceErrorCode::Timeout),
+            (SourceError::Version("x".into()), SourceErrorCode::Version),
+            (SourceError::TooLarge("x".into()), SourceErrorCode::TooLarge),
+            (
+                SourceError::BadAnswer("x".into()),
+                SourceErrorCode::BadAnswer,
+            ),
+            (SourceError::Internal("x".into()), SourceErrorCode::Internal),
+        ];
+
+        for (src_err, expected_code) in errs {
+            assert_eq!(src_err.code(), expected_code);
+            let app_err = AppError::from(src_err);
+            assert_eq!(app_err.code(), expected_code);
+        }
+
+        let store_err = AppError::from(StoreError::Encode("fail".into()));
+        assert_eq!(store_err.code(), SourceErrorCode::Internal);
+
+        let domain_err = AppError::from(DomainError::InvalidId {
+            what: "test",
+            max: 10,
+        });
+        assert_eq!(domain_err.code(), SourceErrorCode::BadAnswer);
+    }
 }

@@ -3,6 +3,7 @@ fn main() {
     let manifest = tauri_build::AppManifest::new().commands(&[
         "choose_folder",
         "get_workspace",
+        "list_zotero_papers",
         "import_marks",
         "read_history",
     ]);

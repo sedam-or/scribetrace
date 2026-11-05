@@ -120,9 +120,9 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 * **Verification Method:** CI static audit parsing `tauri.conf.json`; assert shell capabilities are completely omitted from permissions.
 
 #### SEC-16: Strict Typed IPC Allowlist `[Enforced in Code]`
-* **EARS Pattern (Ubiquitous):** The system SHALL route all webview-to-core requests through an explicit, typed Tauri v2 IPC allowlist; any IPC message matching an unregistered command name or invalid payload schema SHALL be dropped and logged.
+* **EARS Pattern (Ubiquitous):** The system SHALL route all webview-to-core requests through an explicit, typed Tauri v2 IPC allowlist (`choose_folder`, `get_workspace`, `list_zotero_papers`, `import_marks`, `read_history`); any IPC message matching an unregistered command name or invalid payload schema SHALL be dropped and logged.
 * **Threat Mitigation:** `THREAT-3.1` (Unauthorized IPC dispatch)
-* **Verification Method:** Integration test invoking unregistered command (`window.__TAURI__.invoke('system_exec')`); assert promise rejection.
+* **Verification Method:** Integration test invoking unregistered command (`window.__TAURI__.invoke('system_exec')`); assert promise rejection; capability permissions assertion.
 
 #### SEC-17: Extended Path Jail Enforcement (Workspace, Granted Read Folders, and Export Destination) `[Enforced in Code]`
 * **EARS Pattern (Event-driven):** WHEN an IPC command requests file access by path or identifier THEN the Rust core SHALL verify using `dunce::canonicalize` that the target path resides strictly within: (1) the active workspace directory, (2) an explicit user-granted read-only folder, or (3) a user-selected export destination chosen via native OS dialog, and SHALL reject all paths outside these boundaries.
@@ -239,9 +239,14 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 ### 2.9 Principle 9: Companion Integration & Device Privacy Hardening
 
 #### SEC-33: Zotero Broker Request Hardening & SSRF Prevention `[Enforced in Code]`
-* **EARS Pattern (State-driven):** WHILE communicating with local Zotero the system SHALL route all requests exclusively through the Rust core Zotero broker (`crates/scribetrace-zotero/`) with hardcoded loopback address `127.0.0.1:23119`, SHALL NOT perform DNS lookups, SHALL disable HTTP redirects, SHALL restrict requests to GET operations on `/api/users/0/items*`, SHALL require valid `X-Zotero-Version` headers, and SHALL enforce a response body limit of $15\text{ MB}$ and $5.0\text{ s}$ timeout.
+* **EARS Pattern (State-driven):** WHILE communicating with local Zotero the system SHALL route all requests exclusively through the Rust core Zotero broker (`scribetrace_core::adapters::ZoteroHttp`) with hardcoded loopback address `127.0.0.1:23119`, SHALL NOT perform DNS lookups, SHALL disable HTTP redirects (`max_redirects(0)`), SHALL restrict requests strictly to GET operations on allowlisted endpoints (`/connector/ping`, `/api/users/0/items*`, `/api/users/0/items/<key>/children`), SHALL require valid `Zotero-API-Version: 3` header on `/api/` endpoints, and SHALL enforce a response body limit of $15\text{ MB}$ and $5.0\text{ s}$ timeout.
 * **Threat Mitigation:** `THREAT-8.4` (SSRF, host port scanning, rogue local service probing)
-* **Verification Method:** Unit & Integration test with mock HTTP server verifying non-allowlisted ports, paths, redirects, and oversized payloads are rejected.
+* **Verification Method:** Unit & Integration test (`tests/broker_refusal_test.rs`) verifying non-allowlisted ports, off-list paths, redirects, and oversized payloads are rejected with typed `SourceErrorCode`.
+
+#### SEC-39: Typed IPC Error Confinement `[Enforced in Code]`
+* **EARS Pattern (Event-driven):** WHEN an error occurs in any IPC command dispatch or reference manager communication THEN the system SHALL return a sanitized JSON error payload across the IPC gateway containing strictly the typed machine-readable error code (`{ "code": "<code>" }`), and SHALL NOT leak operating system file paths, raw network exception details, or untrusted reference manager response strings to the webview.
+* **Threat Mitigation:** `THREAT-7.1`, `THREAT-8.4` (Information disclosure & unescaped error string reflection in UI)
+* **Verification Method:** Integration test (`src-tauri/tests/ipc_slice1.rs`) verifying errors conform strictly to `{ "code": "<code>" }`.
 
 #### SEC-34: Anonymous Device Identification & Outer-Storage Isolation `[Enforced in Code]`
 * **EARS Pattern (Ubiquitous):** The system SHALL generate an anonymous random UUIDv4 for each installation's `device_id`, SHALL store this identifier in `device.json` exclusively within the host operating system's per-user application storage directory, and SHALL NOT write the device identifier into the shared workspace directory or derive it from hardware, hostname, or system usernames.
@@ -296,12 +301,13 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 | **SEC-30**| 10. Website / VPS | `[Process]` | `THREAT-8.1` | Maintainer VPS Hosting Config | Configuration audit (SSH key only, UFW, fail2ban active) |
 | **SEC-31**| 10. Website / VPS | `[Process]` | `THREAT-8.2` | Caddy / Nginx Reverse Proxy Config | DAST header audit (Mozilla Observatory A+ grade, HSTS preload) |
 | **SEC-32**| 9. Secure SDLC | `[Process]` | `THREAT-8.3` | `website/public/.well-known/security.txt` | Automated HTTP check validating RFC 9116 security.txt |
-| **SEC-33**| 1. Secure by Default | `[Enforced in Code]` | `THREAT-8.4` | `scribetrace-zotero` | Unit test verifying Zotero loopback path allowlist and limits |
+| **SEC-33**| 1. Secure by Default | `[Enforced in Code]` | `THREAT-8.4` | `scribetrace-core::adapters` | Unit & integration tests verifying Zotero loopback path allowlist and limits |
 | **SEC-34**| 7. User Privacy | `[Enforced in Code]` | `THREAT-2.6, 4.4` | `scribetrace-core::adapters` | Filesystem audit verifying `device.json` in OS app storage |
 | **SEC-35**| 7. User Privacy | `[Enforced in Code]` | `THREAT-4.4` | `scribetrace-core::domain` | Unit test verifying default author label is literal string `'Me'` |
 | **SEC-36**| 2. Least Privilege | `[Enforced in Code]` | `THREAT-3.3` | `scribetrace-core::adapters` | Integration test verifying marked subfolder overwrite rules |
 | **SEC-37**| 2. Least Privilege | `[Enforced in Code]` | `THREAT-3.2, 3.3` | `src-tauri/src/commands.rs` | Integration test with injected picker; allowlist negative tests |
 | **SEC-38**| 4. Boundary Validation | `[Enforced in Code]` | `THREAT-4.2` | `src-cli` | Folder snapshot unchanged; ESC/U+202E stripped; markup escaped |
+| **SEC-39**| 4. Boundary Validation | `[Enforced in Code]` | `THREAT-7.1, 8.4` | `src-tauri/src/commands.rs` | Integration test asserting IPC errors match `{ "code": "<code>" }` |
 
 ---
 

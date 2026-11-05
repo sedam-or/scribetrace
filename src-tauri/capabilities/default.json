@@ -6,6 +6,7 @@
   "permissions": [
     "allow-choose-folder",
     "allow-get-workspace",
+    "allow-list-zotero-papers",
     "allow-import-marks",
     "allow-read-history"
   ]

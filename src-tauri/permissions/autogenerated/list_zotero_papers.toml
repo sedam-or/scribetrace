@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-list-zotero-papers"
+description = "Enables the list_zotero_papers command without any pre-configured scope."
+commands.allow = ["list_zotero_papers"]
+
+[[permission]]
+identifier = "deny-list-zotero-papers"
+description = "Denies the list_zotero_papers command without any pre-configured scope."
+commands.deny = ["list_zotero_papers"]

@@ -3,7 +3,7 @@
 
 mod commands;
 
-pub use commands::{FolderPicker, RfdFolderPicker, Session, WorkspaceInfo};
+pub use commands::{CommandError, FolderPicker, RfdFolderPicker, Session, WorkspaceInfo};
 
 /// Zotero's local API port; the only network endpoint the app ever contacts, and only on click.
 pub const ZOTERO_PORT: u16 = 23119;
@@ -27,6 +27,7 @@ pub fn register_with_session<R: tauri::Runtime>(
         .invoke_handler(tauri::generate_handler![
             commands::choose_folder,
             commands::get_workspace,
+            commands::list_zotero_papers,
             commands::import_marks,
             commands::read_history
         ])

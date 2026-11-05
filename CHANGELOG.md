@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Single source of user-facing text (`src/strings/en.json`) and a Linux-first draft user guide (`docs/USER-GUIDE.md`).
 - Open history format spec, unstable v0 (`spec/FORMAT.md`), JSON Schema and good/bad sample lines (`spec/`), per ADR 0010.
 - `scribetrace-cli` with `check` (per-paper counts, bad lines by reason code, exit 1 if any) and `export` (Markdown, stdout only, untrusted text stripped and escaped); sample project in `spec/sample-project/`; `FsHistoryStore::list_papers`.
+- Slice 4: Real import and refresh from local Zotero (127.0.0.1:23119) with GET-only broker defenses (5s timeout, 15 MB limit, no redirects, allowlist path enforcement, Zotero-API-Version: 3 verification), shared SourceErrorCode contract across IPC, list_zotero_papers command, and hostile text protection (R-01, R-02, R-03, R-20).
 
 ### Changed
 - Decision log now records the pledge (no open core; no account or server), the second-agent review policy and the full-dev roles (decisions o, u, v).

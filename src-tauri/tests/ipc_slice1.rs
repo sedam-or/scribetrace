@@ -58,6 +58,25 @@ fn import_then_read_round_trips_through_ipc() {
             .map(|r| r.deserialize::<serde_json::Value>().unwrap())
     };
 
+    // SEC-16: Strict capabilities allowlist verification.
+    let cap_path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("capabilities/default.json");
+    let cap_data: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(cap_path).unwrap()).unwrap();
+    let permissions = cap_data["permissions"].as_array().unwrap();
+    let perm_strings: Vec<&str> = permissions.iter().map(|p| p.as_str().unwrap()).collect();
+    assert_eq!(
+        perm_strings,
+        vec![
+            "allow-choose-folder",
+            "allow-get-workspace",
+            "allow-list-zotero-papers",
+            "allow-import-marks",
+            "allow-read-history"
+        ],
+        "Capabilities allowlist must strictly match the 5 allowed commands"
+    );
+
     // SEC-16/18: Arbitrary filesystem access is denied.
     assert!(call(
         "plugin:fs|read_file",
@@ -85,12 +104,31 @@ fn import_then_read_round_trips_through_ipc() {
         "open_workspace must not exist on the IPC allowlist"
     );
 
-    // No folder chosen yet: import_marks fails with a typed error.
-    assert!(call(
-        "import_marks",
-        serde_json::json!({"paperId":"z_EFGH6789","attachmentKey":"EFGH6789"})
+    // No folder chosen yet: import_marks fails with a typed error contract { "code": "<code>" }.
+    let err_resp = tauri::test::get_ipc_response(
+        &webview,
+        request(
+            "import_marks",
+            serde_json::json!({"paperId":"z_EFGH6789","attachmentKey":"EFGH6789"}),
+        ),
     )
-    .is_err());
+    .unwrap_err();
+    assert_eq!(
+        err_resp["code"], "internal",
+        "IPC error must strictly conform to {{ \"code\": \"<code>\" }}"
+    );
+
+    // List papers via IPC command list_zotero_papers (SEC-16)
+    let papers_val = call("list_zotero_papers", serde_json::json!({})).unwrap();
+    let papers_arr = papers_val.as_array().unwrap();
+    assert_eq!(
+        papers_arr.len(),
+        3,
+        "Expected 3 papers from stand-in fixtures"
+    );
+    assert!(papers_arr
+        .iter()
+        .any(|p| p["id"] == "z_6WG6QNHB" && p["marksCount"] == 2));
 
     // Initially get_workspace returns null/None.
     let initial_ws = call("get_workspace", serde_json::json!({})).unwrap();
