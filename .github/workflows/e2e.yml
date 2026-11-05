@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           if [ -f "src-tauri/Cargo.toml" ] || [ -f "Cargo.toml" ]; then
-            cargo build --release
+            cargo build --release -p scribetrace-shell --features custom-protocol
           fi
 
       - name: Run Linux E2E Test Suite under Xvfb

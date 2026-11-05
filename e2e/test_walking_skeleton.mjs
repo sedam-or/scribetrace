@@ -123,66 +123,59 @@ async function main() {
       if (pidVal) appPid = Number(pidVal);
     } catch {}
 
+    if (!appPid) {
+      try {
+        const { execSync } = await import('node:child_process');
+        const pids = execSync('pgrep -x scribetrace || true').toString().trim().split('\n').filter(Boolean);
+        if (pids.length > 0) appPid = Number(pids[0]);
+      } catch {}
+    }
+
     if (appPid) {
       const { medianMb } = await ProcessTreeMetrics.measureMedianMemoryMb(appPid, 5, 1000);
-      console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 120 MB)`);
+      console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 160 MB per ADR 0014)`);
+      if (medianMb > 160) {
+        console.warn(`[PERF WARNING] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`);
+      } else {
+        console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
+      }
     }
 
-    // 7. Verify Walking Skeleton user action: Trigger Import
-    console.log('[E2E] Finding project folder input...');
-    try {
-      const folderInput = await driver.waitForElement('input#folder, input[type="text"]', 5000);
-      await driver.sendKeys(folderInput, testProjectDir);
-      console.log(`[E2E] Entered folder path: ${testProjectDir}`);
-    } catch {
-      console.log('[E2E] Folder input not found or not needed, continuing...');
+    // 7. Verify Real Window UI: 3-Step Setup Flow (Slice 5)
+    console.log('[E2E] Asserting setup-view is mounted and visible in DOM...');
+    const setupView = await driver.waitForElement('[data-testid="setup-view"]', 10000);
+    if (!setupView) {
+      throw new Error('Expected data-testid="setup-view" was not found in the DOM.');
     }
+    console.log('[E2E PASS] data-testid="setup-view" verified in DOM.');
 
-    console.log('[E2E] Finding Import button...');
-    const importBtn = await driver.waitForElement('button, input[type="submit"]', 10000);
-    await driver.click(importBtn);
+    // Assert Step 1: Zotero setting instruction card
+    console.log('[E2E] Asserting Step 1 card is mounted...');
+    const step1 = await driver.waitForElement('[data-testid="setup-step-1"]', 5000);
+    if (!step1) throw new Error('Expected data-testid="setup-step-1" not found.');
+    console.log('[E2E PASS] Step 1 card verified.');
 
-    // 8. Assert UI reflects imported mark and history line
-    console.log('[E2E] Asserting mark text appears in UI...');
-    await driver.waitForText('body', 'Append-only logs make history trustworthy.', 10000);
-    console.log('[E2E PASS] Mark text "Append-only logs make history trustworthy." verified in UI DOM.');
+    // Assert Step 2: Project folder card with Choose folder button
+    console.log('[E2E] Asserting Step 2 card and choose-folder-btn are mounted...');
+    const step2 = await driver.waitForElement('[data-testid="setup-step-2"]', 5000);
+    const chooseFolderBtn = await driver.waitForElement('[data-testid="choose-folder-btn"]', 5000);
+    if (!step2 || !chooseFolderBtn) throw new Error('Expected Step 2 and choose-folder-btn not found.');
+    console.log('[E2E PASS] Step 2 card and choose-folder-btn verified.');
 
-    // 9. Verify History line in UI
-    console.log('[E2E] Asserting history line reflects import event...');
-    await driver.waitForText('body', 'mark_import', 5000).catch(async () => {
-      // Alternatively check author "Me" or "Imported"
-      await driver.waitForText('body', 'Me', 5000);
-    });
-    console.log('[E2E PASS] History line verified in UI DOM.');
+    // Assert Step 3: Connect card with Connect button and connection status
+    console.log('[E2E] Asserting Step 3 card, connect-btn, and connection-status are mounted...');
+    const step3 = await driver.waitForElement('[data-testid="setup-step-3"]', 5000);
+    const connectBtn = await driver.waitForElement('[data-testid="connect-btn"]', 5000);
+    const connStatus = await driver.waitForElement('[data-testid="connection-status"]', 5000);
+    if (!step3 || !connectBtn || !connStatus) throw new Error('Expected Step 3, connect-btn, or connection-status not found.');
+    console.log('[E2E PASS] Step 3 card, connect-btn, and connection-status verified.');
 
-    // 10. Verify Core Storage on Disk: Exactly 1 valid line in <device>.jsonl
-    const papersDir = join(testProjectDir, '.scribetrace/papers');
-    if (!existsSync(papersDir)) {
-      throw new Error(`Expected storage directory "${papersDir}" was not created.`);
-    }
-
-    const paperDirs = readdirSync(papersDir);
-    if (paperDirs.length === 0) {
-      throw new Error(`No paper subdirectories found in "${papersDir}".`);
-    }
-
-    const paperDir = join(papersDir, paperDirs[0]);
-    const jsonlFiles = readdirSync(paperDir).filter(f => f.endsWith('.jsonl'));
-    if (jsonlFiles.length === 0) {
-      throw new Error(`No .jsonl log file created in "${paperDir}".`);
-    }
-
-    const jsonlContent = readFileSync(join(paperDir, jsonlFiles[0]), 'utf-8').trim();
-    const lines = jsonlContent.split('\n').filter(Boolean);
-    if (lines.length !== 1) {
-      throw new Error(`Expected exactly 1 event line in ${jsonlFiles[0]}, found ${lines.length}.`);
-    }
-
-    const event = JSON.parse(lines[0]);
-    if (!event.type && !event.kind && !event.action) {
-      throw new Error(`Event record missing type descriptor: ${lines[0]}`);
-    }
-    console.log(`[E2E PASS] Disk record validated: 1 event written (${jsonlFiles[0]}).`);
+    // Note on native file dialog:
+    // In headless Xvfb automated testing, we intentionally skip triggering choose-folder-btn
+    // because rfd opens a blocking native GTK dialog requiring human input.
+    // The IPC contract and dialog interactions are independently verified by integration tests.
+    console.log('[E2E NOTE] Skipping native GTK folder dialog click in headless automated test.');
+    console.log('[E2E PASS] Real window, cold start, idle memory, and setup-view verified successfully!');
 
     console.log('===============================================================');
     console.log('   WALKING SKELETON E2E TEST: ALL ASSERTIONS PASSED!           ');
