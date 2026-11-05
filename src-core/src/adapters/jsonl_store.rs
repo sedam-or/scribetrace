@@ -2,13 +2,146 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 
-use crate::application::{HistoryStore, StoreError};
-use crate::domain::{DeviceId, Event, PaperId};
+use crate::application::{HistoryStore, LogWriter, ReadReport, StoreError};
+use crate::domain::{
+    merge_events, sort_for_display, visible, DeviceId, Event, EventBody, PaperId, Purge,
+    MAX_LINE_BYTES,
+};
 
 /// Per-device JSONL files at `<workspace>/.scribetrace/papers/<paper-id>/<device-id>.jsonl`.
 #[derive(Debug, Clone)]
 pub struct FsHistoryStore {
     root: PathBuf,
+}
+
+enum LineRead {
+    Valid(Vec<u8>),
+    TooLarge,
+    Eof,
+}
+
+fn read_line_bounded<R: BufRead>(reader: &mut R, max_bytes: usize) -> std::io::Result<LineRead> {
+    let mut buf = Vec::new();
+    let mut too_large = false;
+
+    loop {
+        let available = reader.fill_buf()?;
+        if available.is_empty() {
+            if buf.is_empty() {
+                return Ok(LineRead::Eof);
+            }
+            return if too_large {
+                Ok(LineRead::TooLarge)
+            } else {
+                Ok(LineRead::Valid(buf))
+            };
+        }
+
+        let newline_pos = available.iter().position(|&b| b == b'\n');
+        let take_bytes = match newline_pos {
+            Some(pos) => pos + 1,
+            None => available.len(),
+        };
+
+        if !too_large {
+            let space_remaining = max_bytes.saturating_sub(buf.len());
+            if take_bytes <= space_remaining {
+                buf.extend_from_slice(&available[..take_bytes]);
+            } else {
+                too_large = true;
+                buf.clear();
+            }
+        }
+
+        reader.consume(take_bytes);
+
+        if newline_pos.is_some() {
+            return if too_large {
+                Ok(LineRead::TooLarge)
+            } else {
+                Ok(LineRead::Valid(buf))
+            };
+        }
+    }
+}
+
+/// Result of scanning one history file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileScan {
+    pub events: Vec<Event>,
+    pub skipped_lines: usize,
+    pub last_event: Option<Event>,
+    pub max_seq: u64,
+    pub ends_with_newline: bool,
+}
+
+fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(FileScan {
+                events: Vec::new(),
+                skipped_lines: 0,
+                last_event: None,
+                max_seq: 0,
+                ends_with_newline: true,
+            });
+        }
+        Err(e) => return Err(e.into()),
+    };
+
+    let mut reader = BufReader::new(file);
+    let mut events = Vec::new();
+    let mut skipped_lines = 0;
+    let mut last_event = None;
+    let mut max_seq = 0;
+    let mut ends_with_newline = true;
+
+    loop {
+        match read_line_bounded(&mut reader, MAX_LINE_BYTES)? {
+            LineRead::Eof => break,
+            LineRead::TooLarge => {
+                skipped_lines += 1;
+                ends_with_newline = true;
+            }
+            LineRead::Valid(mut bytes) => {
+                if bytes.is_empty() {
+                    continue;
+                }
+                ends_with_newline = bytes.ends_with(b"\n");
+                while bytes.ends_with(b"\n") || bytes.ends_with(b"\r") {
+                    bytes.pop();
+                }
+                if bytes.iter().all(|b| b.is_ascii_whitespace()) {
+                    continue;
+                }
+                match serde_json::from_slice::<Event>(&bytes) {
+                    Ok(ev) => {
+                        if ev.seq == 0 {
+                            skipped_lines += 1;
+                        } else {
+                            if ev.seq > max_seq {
+                                max_seq = ev.seq;
+                            }
+                            last_event = Some(ev.clone());
+                            events.push(ev);
+                        }
+                    }
+                    Err(_) => {
+                        skipped_lines += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(FileScan {
+        events,
+        skipped_lines,
+        last_event,
+        max_seq,
+        ends_with_newline,
+    })
 }
 
 impl FsHistoryStore {
@@ -19,72 +152,138 @@ impl FsHistoryStore {
         }
     }
 
-    fn paper_dir(&self, paper: &PaperId) -> PathBuf {
+    /// Returns the directory path for `paper`.
+    pub fn paper_dir(&self, paper: &PaperId) -> PathBuf {
         self.root.join(paper.as_str())
     }
 
-    fn device_file(&self, paper: &PaperId, device: &DeviceId) -> PathBuf {
+    /// Returns the file path for `paper` and `device`.
+    pub fn device_file(&self, paper: &PaperId, device: &DeviceId) -> PathBuf {
         self.paper_dir(paper)
             .join(format!("{}.jsonl", device.as_str()))
     }
-}
 
-fn read_events(path: &Path) -> Result<Vec<Event>, StoreError> {
-    let file = match File::open(path) {
-        Ok(f) => f,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(e.into()),
-    };
-    let mut events = Vec::new();
-    for line in BufReader::new(file).lines() {
-        let line = line?;
-        // Slice 1 skips lines it cannot parse; slice 3 counts and reports them.
-        if let Ok(event) = serde_json::from_str::<Event>(&line) {
-            events.push(event);
-        }
+    /// Inspects the device file for `paper` and `device`, returning the scan summary.
+    pub fn inspect_device_file(
+        &self,
+        paper: &PaperId,
+        device: &DeviceId,
+    ) -> Result<FileScan, StoreError> {
+        scan_file(&self.device_file(paper, device))
     }
-    Ok(events)
+
+    /// Appends an event using an injectable [`LogWriter`] implementation (Slice 2, R-10).
+    pub fn append_with_writer<W: LogWriter>(
+        &self,
+        paper: &PaperId,
+        event: &Event,
+        writer: &mut W,
+    ) -> Result<(), StoreError> {
+        fs::create_dir_all(self.paper_dir(paper))?;
+
+        let mut line =
+            serde_json::to_string(event).map_err(|e| StoreError::Encode(e.to_string()))?;
+        line.push('\n');
+
+        writer.write_all(line.as_bytes())?;
+        writer.sync_data()?;
+        Ok(())
+    }
 }
 
 impl HistoryStore for FsHistoryStore {
     fn next_seq(&self, paper: &PaperId, device: &DeviceId) -> Result<u64, StoreError> {
-        let events = read_events(&self.device_file(paper, device))?;
-        Ok(events.iter().map(|e| e.seq).max().unwrap_or(0) + 1)
+        let scan = self.inspect_device_file(paper, device)?;
+        Ok(scan.max_seq + 1)
     }
 
     fn append(&self, paper: &PaperId, event: &Event) -> Result<(), StoreError> {
         fs::create_dir_all(self.paper_dir(paper))?;
-        let mut line =
-            serde_json::to_string(event).map_err(|e| StoreError::Encode(e.to_string()))?;
-        line.push('\n');
+        let target_file = self.device_file(paper, &event.device);
+
+        // Check if existing file ended without a newline and repair it before appending
+        if target_file.exists() {
+            let scan = scan_file(&target_file)?;
+            if !scan.ends_with_newline {
+                let mut repair_file = OpenOptions::new().append(true).open(&target_file)?;
+                repair_file.write_all(b"\n")?;
+                repair_file.sync_data()?;
+            }
+        }
+
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
-            .open(self.device_file(paper, &event.device))?;
-        // One write call per line keeps a line whole; slice 2 proves crash behaviour.
-        file.write_all(line.as_bytes())?;
-        file.sync_data()?;
-        Ok(())
+            .open(&target_file)?;
+
+        self.append_with_writer(paper, event, &mut file)
     }
 
     fn read(&self, paper: &PaperId) -> Result<Vec<Event>, StoreError> {
+        self.read_report(paper).map(|r| r.visible_events)
+    }
+
+    fn read_report(&self, paper: &PaperId) -> Result<ReadReport, StoreError> {
         let dir = self.paper_dir(paper);
         let entries = match fs::read_dir(&dir) {
             Ok(e) => e,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(ReadReport {
+                    raw_events: Vec::new(),
+                    merged_events: Vec::new(),
+                    visible_events: Vec::new(),
+                    skipped_lines: 0,
+                    files_scanned: 0,
+                    hidden_count: 0,
+                });
+            }
             Err(e) => return Err(e.into()),
         };
+
         let mut paths: Vec<PathBuf> = entries
             .filter_map(Result::ok)
             .map(|e| e.path())
             .filter(|p| p.extension().is_some_and(|x| x == "jsonl"))
             .collect();
         paths.sort();
-        let mut all = Vec::new();
+
+        let mut raw_events = Vec::new();
+        let mut skipped_lines = 0;
+        let mut files_scanned = 0;
+
         for path in paths {
-            all.extend(read_events(&path)?);
+            files_scanned += 1;
+            let scan = scan_file(&path)?;
+            raw_events.extend(scan.events);
+            skipped_lines += scan.skipped_lines;
         }
-        all.sort_by(|a, b| (&a.ts, &a.device, a.seq).cmp(&(&b.ts, &b.device, b.seq)));
-        Ok(all)
+
+        let merged_events = merge_events(raw_events.clone());
+
+        let purges: Vec<Purge> = merged_events
+            .iter()
+            .filter_map(|ev| match &ev.body {
+                EventBody::Purge(p) => Some(Purge::new(
+                    ev.id.clone(),
+                    ev.device.clone(),
+                    ev.seq,
+                    ev.ts.clone(),
+                    p.covers.clone(),
+                )),
+                _ => None,
+            })
+            .collect();
+
+        let vis = visible(&merged_events, &purges);
+        let visible_events = sort_for_display(&vis.visible);
+
+        Ok(ReadReport {
+            raw_events,
+            merged_events,
+            visible_events,
+            skipped_lines,
+            files_scanned,
+            hidden_count: vis.hidden_count,
+        })
     }
 }

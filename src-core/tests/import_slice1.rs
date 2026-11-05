@@ -63,7 +63,9 @@ fn import_writes_exactly_one_mark_import_line_and_keeps_sources_untouched() {
     assert_eq!(events.len(), 1);
     assert_eq!(events[0].author, "Me");
     assert_eq!(events[0].seq, 1);
-    let EventBody::MarkImport(mark) = &events[0].body;
+    let EventBody::MarkImport(mark) = &events[0].body else {
+        panic!("expected MarkImport event body");
+    };
     assert_eq!(mark.key, "WXYZ2345");
     assert_eq!(mark.page_index, Some(3));
     assert!(raw.contains("\"type\":\"mark_import\""));

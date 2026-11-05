@@ -1,26 +1,36 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use scribetrace_core::adapters::{FsHistoryStore, SystemClock, UuidGenerator, ZoteroHttp};
-use scribetrace_core::application::{HistoryStore, ImportMarks, ImportReport};
-use scribetrace_core::domain::{DeviceId, Event, PaperId};
+use scribetrace_core::adapters::{
+    FsDeviceStore, FsHistoryStore, SystemClock, UuidGenerator, ZoteroHttp,
+};
+use scribetrace_core::application::{DeviceStore, HistoryStore, ImportMarks, ImportReport};
+use scribetrace_core::domain::{Event, PaperId};
 use serde::Serialize;
 
-/// Device id used until slice 2 mints and stores a real one per machine.
-const SLICE1_DEVICE: &str = "local-1";
-
-/// The chosen project folder and the Zotero port; the only state the shell keeps.
+/// The chosen project folder, app storage directory, and Zotero port; the only state the shell keeps.
 #[derive(Debug)]
 pub struct Session {
     workspace: Mutex<Option<PathBuf>>,
+    app_storage_dir: Option<PathBuf>,
     zotero_port: u16,
 }
 
 impl Session {
-    /// A session with no folder chosen yet.
+    /// A session with no folder chosen yet and default app storage.
     pub fn new(zotero_port: u16) -> Self {
         Self {
             workspace: Mutex::new(None),
+            app_storage_dir: None,
+            zotero_port,
+        }
+    }
+
+    /// A session with explicit app storage directory (used in integration testing).
+    pub fn with_app_storage(zotero_port: u16, app_storage_dir: PathBuf) -> Self {
+        Self {
+            workspace: Mutex::new(None),
+            app_storage_dir: Some(app_storage_dir),
             zotero_port,
         }
     }
@@ -74,15 +84,44 @@ pub fn import_marks(
 ) -> Result<ImportReport, String> {
     let workspace = session.workspace()?;
     let paper = PaperId::new(paper_id).map_err(err)?;
-    let device = DeviceId::new(SLICE1_DEVICE).map_err(err)?;
+
+    let app_dir = session
+        .app_storage_dir
+        .clone()
+        .unwrap_or_else(FsDeviceStore::default_app_dir);
+    let mut dev_store = FsDeviceStore::new(app_dir).map_err(err)?;
+    let store = FsHistoryStore::new(&workspace);
+
+    let current_id = dev_store.get_or_create_device_id().map_err(err)?;
+    let scan = store
+        .inspect_device_file(&paper, &current_id)
+        .map_err(err)?;
+    let device = dev_store
+        .ensure_safe_device(&paper, scan.last_event.as_ref())
+        .map_err(err)?;
+
     let zotero = ZoteroHttp::new(session.zotero_port);
-    let store = FsHistoryStore::new(workspace);
-    ImportMarks::new(&zotero, &store, &SystemClock, &UuidGenerator, device)
-        .run(&paper, &attachment_key)
-        .map_err(err)
+    let report = ImportMarks::new(
+        &zotero,
+        &store,
+        &SystemClock,
+        &UuidGenerator,
+        device.clone(),
+    )
+    .run(&paper, &attachment_key)
+    .map_err(err)?;
+
+    let scan_after = store.inspect_device_file(&paper, &device).map_err(err)?;
+    if let Some(last_ev) = scan_after.last_event {
+        dev_store
+            .record_last_event(&paper, last_ev.id)
+            .map_err(err)?;
+    }
+
+    Ok(report)
 }
 
-/// Reads the history of one paper.
+/// Reads the history of one paper across all devices.
 #[tauri::command]
 pub fn read_history(
     session: tauri::State<'_, Session>,
