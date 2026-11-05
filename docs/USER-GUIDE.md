@@ -16,12 +16,12 @@ Releases will be listed at <https://github.com/sedam-or/scribetrace/releases>. P
 | Format | Steps |
 |---|---|
 | **AppImage** | Download `ScribeTrace_<version>_amd64.AppImage`, make it runnable (`chmod +x ScribeTrace_<version>_amd64.AppImage`), then double-click it or run it from a terminal. |
-| **.deb** (Debian 12+, Ubuntu 22.04+, Linux Mint) | Download `ScribeTrace_<version>_amd64.deb`, then run `sudo apt install ./ScribeTrace_<version>_amd64.deb` (this also fetches what the package needs). Start **ScribeTrace** from your application menu or run `scribetrace`. |
+| **.deb** (Debian 12+, Ubuntu 22.04+, Linux Mint) | Download `ScribeTrace_<version>_amd64.deb`, then run `sudo apt install ./ScribeTrace_<version>_amd64.deb` (this also fetches what the package needs). Start **ScribeTrace** from your application menu or run `scribetrace` (the app; the command-line tool is `scribetrace-cli`). |
 
 Both need a 64-bit system and the WebKitGTK 4.1 library (`libwebkit2gtk-4.1`); the `.deb` installs it for you. Check the download against the published `SHA256SUMS` before you run it. There is no account and no installer wizard. Flatpak is planned, not promised ([CI-CD](CI-CD.md) §4). **Release builds, file names and the signature steps are not final.** Other distributions (Fedora, Arch and so on) should work with the AppImage but are untested.
 
 ## 3. Set up in three steps (slices 4 and 5; planned)
-1. **Switch on Zotero access.** In Zotero, open **Settings, then Advanced**, and tick **"Allow other applications on this computer to communicate with Zotero"**. Zotero must be running whenever you import. *(Setting name and menu path are from Zotero's documentation and not yet checked against a live Zotero 7; see [DECISION-LOG](DECISION-LOG.md) "What needs you" item 3.)*
+1. **Switch on Zotero access.** In Zotero, open **Settings, then Advanced**, and tick **"Allow other applications on this computer to communicate with Zotero"**. Zotero must be running whenever you import. *(A live Zotero 7 check showed that with this setting off, Zotero refuses with "Local API is not enabled" ([SPIKE-3](spikes/zotero-live-check.md)). That check changed the setting in a config file, so the exact label and menu path are still to be confirmed in the Zotero window.)*
 2. **Choose your project folder.** ScribeTrace creates a `.scribetrace` folder inside it. Your papers are not touched.
 3. **Press Connect to Zotero.** You should see "Connected, N papers." If not, the message names the setting to fix; press **Check again**. ScribeTrace never retries by itself.
 
@@ -50,13 +50,13 @@ Use this for confidential material, such as a manuscript you reviewed.
 Choose **Export to Obsidian** and a folder in your vault. ScribeTrace writes only inside a `ScribeTrace` subfolder there and overwrites only files it made that you have not edited; files you edited are skipped and reported. Export is **one way**: changes you make in Obsidian do not come back. It will not write to locations outside the folder you chose.
 
 ## 9. Your files
-History lives in `<project>/.scribetrace/papers/<paper>/<device>.jsonl`, one file per computer, and notes in `<project>/.scribetrace/notes/`. A command-line tool, `scribetrace check`, reads them with the same code as the app and counts damaged lines (slice 13; planned). The format is **unstable v0** and may change before 1.0. Back up or sync the folder with your own tools; keep it out of public Git repositories if it holds confidential work.
+History lives in `<project>/.scribetrace/papers/<paper>/<device>.jsonl`, one file per computer, and notes in `<project>/.scribetrace/notes/`. A command-line tool, `scribetrace-cli`, reads them with the same code as the app. `scribetrace-cli check <folder>` counts damaged lines for each paper and gives the reason; its exit code is 0 when all lines are fine, 1 when damaged lines were found, and 2 for a usage or read error. `scribetrace-cli export <folder> [paper]` prints a paper's history as Markdown to the screen and writes no files. A `timeline` command follows with slice 7. Files are never changed by these commands. The format is **unstable v0** and may change before 1.0. Back up or sync the folder with your own tools; keep it out of public Git repositories if it holds confidential work.
 
 ## 10. Privacy
 No account, no telemetry, no background process. The only network contact is a request to Zotero **on this computer** (127.0.0.1) when you click Import, Refresh or Connect. **Check for updates** only opens the releases page in your browser. Full policy: [PRIVACY](../PRIVACY.md). Marks and notes are shown as text only, never run. The author label in files is "Me"; your user name is not written.
 
 ## 11. Limits (honest list)
-- Needs Zotero 7 running with local access on. Whether Zotero's local interface returns every mark, date and page location is **not yet verified** (SPIKE-3).
+- Needs Zotero 7 running with local access on. A live check on Linux with Zotero 7 and three open-access papers showed that the local interface returns highlights, notes, colours, dates and page positions ([SPIKE-3](spikes/zotero-live-check.md)). It was a small test; other mark types and large libraries are not yet checked.
 - No history of a changing web page. Save links with Zotero's browser button, then import.
 - PDF and Markdown only. Linux is the first supported system; Windows and macOS follow the same build, untested for users.
 - No own reader in Stage 1.
@@ -65,9 +65,9 @@ No account, no telemetry, no background process. The only network contact is a r
 ## 12. Troubleshooting
 | Message | What to do |
 |---|---|
-| "Zotero cannot be reached" | Start Zotero; tick the access setting (step 1 above); press Check again. |
-| "Zotero said no" | Zotero is running but refused: make sure the access setting is ticked. |
+| "Zotero cannot be reached" | Start Zotero and keep it open; press Check again. |
+| "Zotero said no" | Zotero is running but its access setting is off: tick it (step 1 above); press Check again. |
 | "Zotero did not answer" | Close any open Zotero dialog, then press Check again. |
-| "N damaged lines were skipped" | Your files were not changed. Run `scribetrace check` to see where. |
+| "N damaged lines were skipped" | Your files were not changed. Run `scribetrace-cli check <folder>` to see where. |
 
 Report problems at <https://github.com/sedam-or/scribetrace/issues>. Do not paste paper text or notes you want to keep private.

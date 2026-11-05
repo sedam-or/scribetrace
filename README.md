@@ -11,7 +11,7 @@ You highlight a paper, come back months later, and the page shows only today's m
 - **History of your reading.** Every import from Zotero and every note change is kept. You name milestones ("first skim", "rebuttal") and compare any two: marks added, removed, edited, and what changed in your notes.
 - **A companion, not a replacement.** You keep reading and marking in Zotero and writing in Obsidian. ScribeTrace never writes into Zotero and never modifies your papers.
 - **Lightweight.** Targets, to be measured: an installer of 20 MB or less, 120 MB of memory when idle, a start in 2 seconds or less, no background process, no account, no telemetry. No network traffic unless you click, and then only to Zotero on your own computer.
-- **Files you own.** Plain, documented files in a `.scribetrace/` folder next to your papers, readable without the app, plus a small `scribetrace` command-line tool. The format is **unstable v0** until real outside use.
+- **Files you own.** Plain, documented files in a `.scribetrace/` folder next to your papers, readable without the app, plus a small command-line tool, `scribetrace-cli`. The format is **unstable v0** until real outside use.
 - **Yours to erase.** A "forget this paper's history" button for confidential material, with a plain warning that copies in sync services or Git may remain.
 
 ## Quick start (planned)

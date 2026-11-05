@@ -37,7 +37,7 @@ Rule for #4 to #10: one honest post per place, state the pre-alpha limits, answe
 |---|---|
 | 1. **First value fast:** import marks, see a milestone and "what changed" within minutes | 3-3-3-3 usability test: first mark within 5 min of install ([VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md)) |
 | 2. **Trust:** your papers and Zotero are never modified, and nothing leaves your computer except a click that talks to Zotero | Byte-identical check before and after; network-namespace test with one loopback connection ([SEC-1](SECURITY-REQUIREMENTS.md)) |
-| 3. **Open files:** you can read your history without the app | `scribetrace check` reads the sample and real files; published format and sample files |
+| 3. **Open files:** you can read your history without the app | `scribetrace-cli check` reads the sample and real files; published format and sample files |
 
 **Do not claim yet:** "the first or only tool with annotation history" (unverified); any lightness number (until measured); "no data loss" (until the crash test passes); "tamper-proof" or "securely erased" (forget cannot remove sync or Git copies); support for web pages or live-page history; "works with every Zotero" (needs the live check); "stable" format (it is unstable v0); trademark-cleared (it is not); any revenue or user numbers.
 

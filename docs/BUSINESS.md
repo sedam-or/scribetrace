@@ -1,7 +1,7 @@
 # ScribeTrace: Business Requirements & Strategy (v1.1)
 
 **Date:** 2026-11-05 · **Author:** pm · **Status:** draft for the user's review · **Replaces:** v1.0 (a Palimpsest document with wider scope)
-**Product name:** ScribeTrace (formerly Palimpsest, codename clickme) · **Folder:** `.scribetrace/` · **CLI:** `scribetrace`
+**Product name:** ScribeTrace (formerly Palimpsest, codename clickme) · **Folder:** `.scribetrace/` · **CLI:** `scribetrace-cli` (the app binary is `scribetrace`)
 Updated for the debate outcome ([03](debate/03-decision-memo.md), [08](debate/08-links-and-3-step.md)). Facts carry a URL and check date; anything not backed by a page we read is marked **unverified** (†).
 
 ## 1. Positioning
