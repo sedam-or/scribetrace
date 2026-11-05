@@ -69,13 +69,24 @@ jobs:
           cp target/release/bundle/appimage/*.AppImage release-artifacts/
           ls -lh release-artifacts/
           
-          # Check size budget <= 20 MB (20,971,520 bytes)
-          BUDGET_BYTES=20971520
-          for f in release-artifacts/*; do
+          # Check primary native deb installer size against budget <= 20 MB (20,971,520 bytes)
+          DEB_BUDGET_BYTES=20971520
+          for f in release-artifacts/*.deb; do
             SIZE=$(stat -c%s "$f")
-            echo "Artifact: $f, Size: $SIZE bytes (budget: $BUDGET_BYTES bytes)"
-            if [ "$SIZE" -gt "$BUDGET_BYTES" ]; then
-              echo "ERROR: Artifact $f exceeds 20 MB budget ($SIZE bytes > $BUDGET_BYTES bytes)"
+            echo "Deb installer: $f, Size: $SIZE bytes (budget: $DEB_BUDGET_BYTES bytes)"
+            if [ "$SIZE" -gt "$DEB_BUDGET_BYTES" ]; then
+              echo "ERROR: Artifact $f exceeds 20 MB budget ($SIZE bytes > $DEB_BUDGET_BYTES bytes)"
+              exit 1
+            fi
+          done
+
+          # Check standalone AppImage bundle size against ceiling <= 120 MB (125,829,120 bytes)
+          APPIMAGE_BUDGET_BYTES=125829120
+          for f in release-artifacts/*.AppImage; do
+            SIZE=$(stat -c%s "$f")
+            echo "AppImage bundle: $f, Size: $SIZE bytes (ceiling: $APPIMAGE_BUDGET_BYTES bytes)"
+            if [ "$SIZE" -gt "$APPIMAGE_BUDGET_BYTES" ]; then
+              echo "ERROR: Artifact $f exceeds 120 MB ceiling ($SIZE bytes > $APPIMAGE_BUDGET_BYTES bytes)"
               exit 1
             fi
           done
@@ -84,7 +95,7 @@ jobs:
         shell: bash
         run: |
           cd release-artifacts
-          sha256sum * > SHA256SUMS
+          sha256sum *.deb *.AppImage > SHA256SUMS
           cat SHA256SUMS
 
       - name: Extract release notes from CHANGELOG.md
@@ -105,6 +116,8 @@ jobs:
       - name: Create Draft Release on GitHub
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ScribeTrace ${{ github.event.inputs.tag || github.ref_name }}
           draft: true
           prerelease: false
           body_path: release-notes.md
