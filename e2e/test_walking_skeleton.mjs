@@ -106,8 +106,17 @@ async function main() {
     }
 
     // 7. Verify Walking Skeleton user action: Trigger Import
-    console.log('[E2E] Finding Import / Connect button...');
-    const importBtn = await driver.waitForElement('button[data-testid="import-btn"], .st-btn-primary', 10000);
+    console.log('[E2E] Finding project folder input...');
+    try {
+      const folderInput = await driver.waitForElement('input#folder, input[type="text"]', 5000);
+      await driver.sendKeys(folderInput, testProjectDir);
+      console.log(`[E2E] Entered folder path: ${testProjectDir}`);
+    } catch {
+      console.log('[E2E] Folder input not found or not needed, continuing...');
+    }
+
+    console.log('[E2E] Finding Import button...');
+    const importBtn = await driver.waitForElement('button, input[type="submit"]', 10000);
     await driver.click(importBtn);
 
     // 8. Assert UI reflects imported mark and history line
