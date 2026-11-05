@@ -31,9 +31,11 @@
 | **SPIKE-4A** | **Empty Shell Binary Size (Windows)** | `≤ 20 MB` | **1.81 MB** (stripped), **7.26 MB** (standalone) | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Windows) |
 | **SPIKE-4A** | **Empty Shell Installer Bundle (.deb)** | `≤ 20 MB` | **2.47 MB** (2,593,650 B) | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Ubuntu) |
 | **SPIKE-4A** | **Empty Shell Installer Bundle (.exe NSIS)** | `≤ 20 MB` | **1.63 MB** (1,704,064 B) | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Windows) |
-| **SPIKE-4A** | **Empty Shell Cold Start (Linux)** | `≤ 2000 ms` | **122 ms** | **PASS** | Live Tauri window initialization |
+| **SPIKE-4A** | **Empty Shell Cold Start (Linux)** | `≤ 2000 ms` | **91–166 ms** (tuned desktop), **489 ms** (untuned desktop), **122 ms** (CI) | **PASS** | Live Tauri window initialization |
+| **SPIKE-4A** | **Empty Shell Cold Start (macOS)** | `≤ 2000 ms` | **UNMEASURED** | **UNMEASURED** | Hosted macos-latest queue timeout ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515)) |
 | **SPIKE-4A** | **Empty Shell Cold Start (Windows)** | `≤ 2000 ms` | **510 ms** | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Windows) |
-| **SPIKE-4A** | **Empty Shell Idle Memory (Linux PSS)** | `≤ 120 MB` | **57.83 MB** (CI runner) / **211 MB** (desktop) | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Ubuntu) |
+| **SPIKE-4A** | **Empty Shell Idle Memory (Linux PSS)** | `≤ 120 MB` | **FAIL >50% (untuned desktop: 195.52–211.41 MB)** / **156.85 MB** (`DMABUF=1`, **Tier 2 Stay**) / **57.83 MB** (CI headless) | **FAIL >50% (untuned) / TIER 2 STAY (tuned)** | Pinned procedure (whole tree, 10s settle, 5s sample) |
+| **SPIKE-4A** | **Empty Shell Idle Memory (macOS RSS)** | `≤ 120 MB` | **UNMEASURED** | **UNMEASURED** | Hosted macos-latest queue timeout ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515)) |
 | **SPIKE-4A** | **Empty Shell Idle Memory (Windows WorkingSet)** | `≤ 120 MB` | **136.08 MB** (median over 5s) | **TIER 2 STAY (≤ 180 MB)** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Windows) |
 | **SPIKE-4B** | **Cold First-Page Render (Linux)** | `< 1500 ms` (ceiling 2000 ms)| **140 ms** (10x faster) | **Node baseline, NOT webview** | [CI Run 42076856930](https://github.com/sedam-or/scribetrace/actions/runs/42076856930) (Ubuntu) |
 | **SPIKE-4B** | **Idle Memory RSS (Linux)** | `< 250 MB` | **161.7 MB** | **Node baseline, NOT webview** | [CI Run 42076856930](https://github.com/sedam-or/scribetrace/actions/runs/42076856930) (Ubuntu) |
@@ -68,12 +70,22 @@ Per `docs/TECH-OPTIMIZATION.md` §3, the empty shell metrics decide whether Scri
   - **macOS (macOS 15 Apple Silicon):** Release binary **2.67 MB** (2,804,568 B) — **PASS** ([Run 42076856930](https://github.com/sedam-or/scribetrace/actions/runs/42076856930))
   - **Windows (Windows Server 2025):** Release binary **1.81 MB** (stripped), **7.26 MB** (standalone release), `.exe` NSIS setup bundle **1.63 MB** (1,704,064 B) — **PASS** ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515))
 - **Cold Start Time (Budget ≤ 2000 ms):**
-  - Linux: **122 ms** (live local desktop) / **10,057 ms** (initial xvfb-run server launch in CI runner)
-  - Windows: **510 ms** (live CI runner desktop session) — **PASS** ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515))
-- **Idle Memory (Budget ≤ 120 MB whole process tree):**
-  - Linux: **57.83 MB** (CI runner headless PSS) — **PASS**; **211.41 MB** (desktop display with full Mesa/OpenGL drivers, placing WebKitGTK in Tier 3 evaluation per TECH-OPT §3)
-  - Windows: **136.08 MB** (Windows WorkingSetSize CIM across process tree; within Tier 2 Stay budget $\le 180\text{ MB}$ per TECH-OPT §3) — **PASS** ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515))
-- **Verdict:** Release binaries (1.81–5.58 MB) and installer bundles (1.63–2.47 MB) are dramatically beneath the 20 MB ceiling across all 3 OS. Tauri v2 is confirmed for Stage 1.
+  - **Linux:** **91 ms** (`DMABUF=1`), **166 ms** (`COMPOSITING=1`), **489 ms** (untuned desktop), **122 ms** (CI xvfb-run) — **PASS**
+  - **Windows:** **510 ms** (live CI runner desktop session) — **PASS** ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515))
+  - **macOS:** **UNMEASURED** (Hosted arm64 runner timed out in queue during Run 42080470515)
+- **Idle Memory (Budget ≤ 120 MB whole process tree; ceiling 180 MB for Tier 2 Stay):**
+  - **Linux CI Runner (xvfb-run headless buffer):** **57.83 MB** PSS — **PASS** (Run 42080470515)
+  - **Linux Live Desktop (Untuned Default):** **195.52 MB** PSS (initial run **211.41 MB**) — **FAIL > 50%** (exceeds 180 MB ceiling; mandates fallback or tuning)
+  - **Linux Live Desktop (`WEBKIT_DISABLE_DMABUF_RENDERER=1`):** **156.85 MB** PSS — **TIER 2 STAY** (≤ 180 MB ceiling, +30.7% over 120 MB budget)
+  - **Linux Live Desktop (`WEBKIT_DISABLE_COMPOSITING_MODE=1`):** **171.67 MB** PSS — **TIER 2 STAY** (≤ 180 MB ceiling, +43.1% over 120 MB budget)
+  - **Linux Live Desktop (Both WebKit flags):** **191.33 MB** PSS — **FAIL > 50%**
+  - **Windows 11 Runner:** **136.08 MB** WorkingSetSize CIM across process tree — **TIER 2 STAY** (≤ 180 MB ceiling, +13.4% over 120 MB budget) ([Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515))
+  - **macOS:** **UNMEASURED** (Hosted arm64 runner timed out in queue during Run 42080470515)
+- **Decision Verdict & Architectural Routing:**
+  - Binary and installer sizes are dramatically under budget across all platforms (1.63–2.47 MB bundle vs 20 MB budget).
+  - On Windows, memory (136.08 MB) qualifies for Tier 2 Stay under TECH-OPTIMIZATION §3.
+  - On Linux, untuned live desktop memory (195.52–211.41 MB) honestly **fails the 120 MB budget by >50%** (exceeding 180 MB). However, standard WebKitGTK tuning (`WEBKIT_DISABLE_DMABUF_RENDERER=1`) brings memory down to **156.85 MB** (qualifying for Tier 2 Stay).
+  - Forwarded to Architect to ratify either: (A) OS fallback on Linux (`scribetrace serve`), or (B) adopting `WEBKIT_DISABLE_DMABUF_RENDERER=1` in the desktop launcher with an adjusted 160–180 MB idle budget in ADR.
 
 ### SPIKE-4B: PDF.js & Lightness Harness (Node.js Baseline, Not Webview)
 Benchmarked against a 500-page / 52.91 MB PDF fixture with 10 sequential page navigations:
