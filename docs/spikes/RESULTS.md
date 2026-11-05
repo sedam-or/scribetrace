@@ -25,7 +25,7 @@
 | **SPIKE-2** | Unrelated Device Protection | Devices not in covers not hidden | **Never hidden (seq >= 0 preserved)** | **PASS** | `cd spikes/purge && cargo test --release --test purge_cases` |
 | **SPIKE-2** | Multiple Purge Order Invariance | Identical in 10,000 orders | **10,000 / 10,000 PASS** | **PASS** | `cd spikes/purge && cargo test --release --test random_orders_test` |
 | **SPIKE-2** | Fresh History Post-Purge | Paper ID not sealed | **New seq visible; history restarts** | **PASS** | `cd spikes/purge && cargo test --release --test purge_cases` |
-| **SPIKE-3** | Zotero 7 Local HTTP Interface Contract | Metadata + rects + colors | **All fields documented** | **documented, not live-verified** | Desk check: `docs/spikes/zotero-desk-check.md` |
+| **SPIKE-3** | Zotero 7 Local HTTP Interface Contract | Metadata + rects + colors | **All fields live verified on Linux** | **PASS** | Live check: `docs/spikes/zotero-live-check.md` & fixtures `tests/fixtures/zotero/` |
 | **SPIKE-4A** | **Empty Shell Binary Size (Linux)** | `≤ 20 MB` | **5.58 MB** (stripped), **9.75 MB** (standalone) | **PASS** | [CI Run 42076856930](https://github.com/sedam-or/scribetrace/actions/runs/42076856930) (Ubuntu) |
 | **SPIKE-4A** | **Empty Shell Binary Size (macOS)** | `≤ 20 MB` | **2.67 MB** (2,804,568 B) | **PASS** | [CI Run 42076856930](https://github.com/sedam-or/scribetrace/actions/runs/42076856930) (macOS) |
 | **SPIKE-4A** | **Empty Shell Binary Size (Windows)** | `≤ 20 MB` | **1.81 MB** (stripped), **7.26 MB** (standalone) | **PASS** | [CI Run 42080470515](https://github.com/sedam-or/scribetrace/actions/runs/42080470515) (Windows) |
@@ -59,9 +59,10 @@
 - **Supremum Property & Clock Independence:** Covered sequence numbers are suppressed regardless of clock skew or timestamps. Devices not included in `covers` are never hidden.
 - **Order Invariance:** 10,000 random order permutations yielded byte-identical visibility.
 
-### SPIKE-3: Zotero Desk Check
-- **Local API Contract:** Documented that Zotero 7's built-in HTTP server on `127.0.0.1:23119` exposes annotations under `/api/users/0/items/<attachmentKey>/children?itemType=annotation`.
-- **Honest Status:** Remains strictly **documented, not live-verified** until live curl checks against an installed Zotero instance.
+### SPIKE-3: Zotero Live Contract Check
+- **Local API Contract Live Verified:** Verified against live Zotero 7 on Linux (`127.0.0.1:23119`) with throwaway profile `/tmp/zotero-test-profile` and 3 open-access arXiv papers (Vaswani 2017, He 2016, Brown 2020).
+- **Endpoint & Schema Fidelity:** Verified `/connector/ping`, top-level items `/api/users/0/items/top`, child attachments `/api/users/0/items/<key>/children`, and child annotations `/api/users/0/items/<attachmentKey>/children?itemType=annotation`. Pinned fixtures committed under `tests/fixtures/zotero/` (0 personal data).
+- **Status:** **PASS (Live Verified)**. Full report recorded in `docs/spikes/zotero-live-check.md`.
 
 ### SPIKE-4A: Empty Stage 1 Shell (Decision Gate for Stage 1)
 Per `docs/TECH-OPTIMIZATION.md` §3, the empty shell metrics decide whether ScribeTrace stays on Tauri v2 for Stage 1:
@@ -115,6 +116,6 @@ Benchmarked against a 500-page / 52.91 MB PDF fixture with 10 sequential page na
 
 ## 4. Gate Conclusion
 - **Gates 1 & 2 (Log-Merge & Purge):** **PASS** (verified by QA and Architect).
-- **Gate 3 (Zotero Local API):** **DESK CHECK ONLY** (documented, not live-verified; live check stays with user).
-- **Gate 4A (Empty Stage 1 Shell):** **PASS across all 3 OS** (binary sizes: Linux 5.58 MB / 2.47 MB deb, macOS 2.67 MB, Windows 1.81 MB; cold start: 122 ms; idle PSS: 211 MB Linux helper tree; Tauri confirmed for Stage 1).
-- **Gate 4B (PDF.js Parse Baseline):** **Node baseline, NOT webview** (Node cold first page: 117–197 ms, Node RSS: 125.8–164.3 MB; text match: true; Stage 2 reader cleared to proceed).
+- **Gate 3 (Zotero Local API):** **PASS** (live verified against real Zotero 7 on Linux; contract check documented in `docs/spikes/zotero-live-check.md`; clean fixtures in `tests/fixtures/zotero/`).
+- **Gate 4A (Empty Stage 1 Shell):** Binary and installer sizes PASS across all 3 OS (1.63–2.47 MB bundle vs 20 MB budget). Cold start PASS (91–166 ms tuned Linux, 510 ms Windows). Idle memory: **Linux confirmed for Stage 1 under ADR 0014** (untuned desktop FAIL >50% at 195.5–211.4 MB; tuned Tier 2 at 156.85 MB with `WEBKIT_DISABLE_DMABUF_RENDERER=1`, meeting ADR 0014 ≤160 MB budget); **macOS UNMEASURED** (hosted queue timeout in CI run 42080470515); **Windows Tier 2** (136.08 MB, meeting ADR 0014 ≤140 MB budget).
+- **Gate 4B (PDF.js Parse Baseline):** **Node baseline, NOT webview** (Node cold first page: 117–197 ms, Node RSS: 125.8–164.3 MB; text match: true; native webview rendering deferred to Stage 2).
