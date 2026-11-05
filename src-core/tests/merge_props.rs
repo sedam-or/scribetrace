@@ -2,7 +2,6 @@
 
 use proptest::prelude::*;
 use scribetrace_core::domain::{merge_events, DeviceId, Event, EventBody};
-use serde_json::json;
 
 fn arb_event_pool() -> impl Strategy<Value = Vec<Event>> {
     // Generate up to 40 unique events across 5 virtual devices
@@ -117,7 +116,16 @@ proptest! {
             1,
             "2026-11-05T10:00:00Z",
             "Me",
-            EventBody::MarkCreate(json!({"bytes": payload_a})),
+            EventBody::MarkImport(scribetrace_core::domain::Mark {
+                key: format!("k-a-{payload_a:?}"),
+                kind: "highlight".to_string(),
+                text: Some("text a".to_string()),
+                comment: None,
+                color: None,
+                page_index: Some(1),
+                added: None,
+                modified: None,
+            }),
         );
         let ev_b = Event::new(
             1,
@@ -126,7 +134,16 @@ proptest! {
             1,
             "2026-11-05T10:00:00Z",
             "Me",
-            EventBody::MarkCreate(json!({"bytes": payload_b})),
+            EventBody::MarkImport(scribetrace_core::domain::Mark {
+                key: format!("k-b-{payload_b:?}"),
+                kind: "note".to_string(),
+                text: Some("text b".to_string()),
+                comment: None,
+                color: None,
+                page_index: Some(2),
+                added: None,
+                modified: None,
+            }),
         );
 
         let ab = merge_events(vec![ev_a.clone(), ev_b.clone()]);
@@ -149,7 +166,16 @@ fn test_conflicting_copies_both_rules() {
         1,
         "2026-11-05T10:00:00Z",
         "Me",
-        EventBody::MarkCreate(json!({"val": "A"})),
+        EventBody::MarkImport(scribetrace_core::domain::Mark {
+            key: "k1".into(),
+            kind: "highlight".into(),
+            text: Some("A".into()),
+            comment: None,
+            color: None,
+            page_index: Some(1),
+            added: None,
+            modified: None,
+        }),
     );
     let ev_b = Event::new(
         1,
@@ -158,7 +184,16 @@ fn test_conflicting_copies_both_rules() {
         1,
         "2026-11-05T10:00:00Z",
         "Me",
-        EventBody::MarkCreate(json!({"val": "B"})),
+        EventBody::MarkImport(scribetrace_core::domain::Mark {
+            key: "k2".into(),
+            kind: "highlight".into(),
+            text: Some("B".into()),
+            comment: None,
+            color: None,
+            page_index: Some(1),
+            added: None,
+            modified: None,
+        }),
     );
 
     // Cross-device: smaller device id wins regardless of order
@@ -175,7 +210,16 @@ fn test_conflicting_copies_both_rules() {
         1,
         "2026-11-05T10:00:00Z",
         "Me",
-        EventBody::MarkCreate(json!({"val": "1"})),
+        EventBody::MarkImport(scribetrace_core::domain::Mark {
+            key: "k1".into(),
+            kind: "highlight".into(),
+            text: Some("1".into()),
+            comment: None,
+            color: None,
+            page_index: Some(1),
+            added: None,
+            modified: None,
+        }),
     );
     let ev2 = Event::new(
         1,
@@ -184,7 +228,16 @@ fn test_conflicting_copies_both_rules() {
         1,
         "2026-11-05T10:00:00Z",
         "Me",
-        EventBody::MarkCreate(json!({"val": "2"})),
+        EventBody::MarkImport(scribetrace_core::domain::Mark {
+            key: "k2".into(),
+            kind: "highlight".into(),
+            text: Some("2".into()),
+            comment: None,
+            color: None,
+            page_index: Some(1),
+            added: None,
+            modified: None,
+        }),
     );
 
     let order1 = merge_events(vec![ev1.clone(), ev2.clone()]);

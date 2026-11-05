@@ -1,11 +1,14 @@
+use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 
+use serde_json::Value;
+
 use crate::application::{HistoryStore, LogWriter, ReadReport, StoreError};
 use crate::domain::{
-    merge_events, sort_for_display, visible, DeviceId, Event, EventBody, PaperId, Purge,
-    MAX_LINE_BYTES,
+    classify_line, merge_events, sort_for_display, visible, DeviceId, Event, EventBody, LineClass,
+    PaperId, Purge, MAX_LINE_BYTES,
 };
 
 /// Per-device JSONL files at `<workspace>/.scribetrace/papers/<paper-id>/<device-id>.jsonl`.
@@ -23,6 +26,7 @@ enum LineRead {
 fn read_line_bounded<R: BufRead>(reader: &mut R, max_bytes: usize) -> std::io::Result<LineRead> {
     let mut buf = Vec::new();
     let mut too_large = false;
+    let max_with_newline = max_bytes.saturating_add(1);
 
     loop {
         let available = reader.fill_buf()?;
@@ -30,11 +34,11 @@ fn read_line_bounded<R: BufRead>(reader: &mut R, max_bytes: usize) -> std::io::R
             if buf.is_empty() {
                 return Ok(LineRead::Eof);
             }
-            return if too_large {
-                Ok(LineRead::TooLarge)
+            if too_large || buf.len() > max_bytes {
+                return Ok(LineRead::TooLarge);
             } else {
-                Ok(LineRead::Valid(buf))
-            };
+                return Ok(LineRead::Valid(buf));
+            }
         }
 
         let newline_pos = available.iter().position(|&b| b == b'\n');
@@ -44,9 +48,20 @@ fn read_line_bounded<R: BufRead>(reader: &mut R, max_bytes: usize) -> std::io::R
         };
 
         if !too_large {
-            let space_remaining = max_bytes.saturating_sub(buf.len());
+            let space_remaining = max_with_newline.saturating_sub(buf.len());
             if take_bytes <= space_remaining {
                 buf.extend_from_slice(&available[..take_bytes]);
+                if newline_pos.is_some() {
+                    let content_len = if buf.ends_with(b"\n") {
+                        buf.len() - 1
+                    } else {
+                        buf.len()
+                    };
+                    if content_len > max_bytes {
+                        too_large = true;
+                        buf.clear();
+                    }
+                }
             } else {
                 too_large = true;
                 buf.clear();
@@ -70,6 +85,8 @@ fn read_line_bounded<R: BufRead>(reader: &mut R, max_bytes: usize) -> std::io::R
 pub struct FileScan {
     pub events: Vec<Event>,
     pub skipped_lines: usize,
+    pub bad_lines: HashMap<String, usize>,
+    pub other_lines: usize,
     pub last_event: Option<Event>,
     pub max_seq: u64,
     pub ends_with_newline: bool,
@@ -82,6 +99,8 @@ fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
             return Ok(FileScan {
                 events: Vec::new(),
                 skipped_lines: 0,
+                bad_lines: HashMap::new(),
+                other_lines: 0,
                 last_event: None,
                 max_seq: 0,
                 ends_with_newline: true,
@@ -90,9 +109,13 @@ fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
         Err(e) => return Err(e.into()),
     };
 
+    let expected_device = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+
     let mut reader = BufReader::new(file);
     let mut events = Vec::new();
     let mut skipped_lines = 0;
+    let mut bad_lines: HashMap<String, usize> = HashMap::new();
+    let mut other_lines = 0;
     let mut last_event = None;
     let mut max_seq = 0;
     let mut ends_with_newline = true;
@@ -102,6 +125,7 @@ fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
             LineRead::Eof => break,
             LineRead::TooLarge => {
                 skipped_lines += 1;
+                *bad_lines.entry("too_long".to_string()).or_insert(0) += 1;
                 ends_with_newline = true;
             }
             LineRead::Valid(mut bytes) => {
@@ -115,20 +139,53 @@ fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
                 if bytes.iter().all(|b| b.is_ascii_whitespace()) {
                     continue;
                 }
-                match serde_json::from_slice::<Event>(&bytes) {
-                    Ok(ev) => {
-                        if ev.seq == 0 {
+                match classify_line(&bytes) {
+                    LineClass::Valid(ev) => {
+                        if ev.device.as_str() != expected_device {
+                            // spec/FORMAT.md §2: device MUST equal the file name without .jsonl
                             skipped_lines += 1;
+                            *bad_lines.entry("bad_value".to_string()).or_insert(0) += 1;
+                            if ev.seq > max_seq {
+                                max_seq = ev.seq;
+                            }
                         } else {
                             if ev.seq > max_seq {
                                 max_seq = ev.seq;
                             }
-                            last_event = Some(ev.clone());
-                            events.push(ev);
+                            last_event = Some((*ev).clone());
+                            events.push(*ev);
                         }
                     }
-                    Err(_) => {
+                    LineClass::Other { .. } => {
+                        // Envelope is valid. Enforce device == file stem.
+                        if let Ok(Value::Object(map)) = serde_json::from_slice::<Value>(&bytes) {
+                            let dev_str = map.get("device").and_then(|v| v.as_str()).unwrap_or("");
+                            if dev_str != expected_device {
+                                skipped_lines += 1;
+                                *bad_lines.entry("bad_value".to_string()).or_insert(0) += 1;
+                            } else {
+                                other_lines += 1;
+                            }
+                            if let Some(s) = map.get("seq").and_then(|v| v.as_u64()) {
+                                if s > max_seq {
+                                    max_seq = s;
+                                }
+                            }
+                        } else {
+                            other_lines += 1;
+                        }
+                    }
+                    LineClass::Bad(bad) => {
                         skipped_lines += 1;
+                        *bad_lines.entry(bad.code().to_string()).or_insert(0) += 1;
+                        // Lenient sequence recovery from corrupted line
+                        if let Ok(Value::Object(map)) = serde_json::from_slice::<Value>(&bytes) {
+                            if let Some(s) = map.get("seq").and_then(|v| v.as_u64()) {
+                                if s > max_seq {
+                                    max_seq = s;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -138,6 +195,8 @@ fn scan_file(path: &Path) -> Result<FileScan, StoreError> {
     Ok(FileScan {
         events,
         skipped_lines,
+        bad_lines,
+        other_lines,
         last_event,
         max_seq,
         ends_with_newline,
@@ -233,6 +292,8 @@ impl HistoryStore for FsHistoryStore {
                     merged_events: Vec::new(),
                     visible_events: Vec::new(),
                     skipped_lines: 0,
+                    bad_lines: HashMap::new(),
+                    other_lines: 0,
                     files_scanned: 0,
                     hidden_count: 0,
                 });
@@ -249,6 +310,8 @@ impl HistoryStore for FsHistoryStore {
 
         let mut raw_events = Vec::new();
         let mut skipped_lines = 0;
+        let mut bad_lines: HashMap<String, usize> = HashMap::new();
+        let mut other_lines = 0;
         let mut files_scanned = 0;
 
         for path in paths {
@@ -256,6 +319,10 @@ impl HistoryStore for FsHistoryStore {
             let scan = scan_file(&path)?;
             raw_events.extend(scan.events);
             skipped_lines += scan.skipped_lines;
+            other_lines += scan.other_lines;
+            for (code, count) in scan.bad_lines {
+                *bad_lines.entry(code).or_insert(0) += count;
+            }
         }
 
         let merged_events = merge_events(raw_events.clone());
@@ -282,6 +349,8 @@ impl HistoryStore for FsHistoryStore {
             merged_events,
             visible_events,
             skipped_lines,
+            bad_lines,
+            other_lines,
             files_scanned,
             hidden_count: vis.hidden_count,
         })

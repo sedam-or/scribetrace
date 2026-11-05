@@ -32,22 +32,6 @@ pub enum EventBody {
     MarkImport(Mark),
     /// Forgetting history up to specific sequence numbers across devices (ADR 0007).
     Purge(PurgePayload),
-    /// Mark created manually.
-    MarkCreate(serde_json::Value),
-    /// Mark updated.
-    MarkUpdate(serde_json::Value),
-    /// Mark deleted.
-    MarkDelete(serde_json::Value),
-    /// Mark restored.
-    MarkRestore(serde_json::Value),
-    /// Mark gone from source.
-    MarkGone(serde_json::Value),
-    /// Saved revision of a paper note.
-    NoteRevision(serde_json::Value),
-    /// Named milestone in paper history.
-    Milestone(serde_json::Value),
-    /// Generic/extensible event body for forward compatibility.
-    Other(serde_json::Value),
 }
 
 /// One line of a per-device history file (ADR 0007).
@@ -145,12 +129,13 @@ pub struct VisibilityResult {
 /// Pure domain function: performs union merge over any sequence of events by `id`,
 /// returning deterministically ordered events sorted by `(device, seq, id)`.
 ///
-/// Properties (ADR 0007):
+/// Properties (ADR 0007 / spec/FORMAT.md §4):
 /// - Commutative: merge(A, B) == merge(B, A)
 /// - Idempotent: merge(merge(A, B), B) == merge(A, B)
 /// - Clock-independent: `ts` is display-only and does not affect domain ordering.
-/// - Full-record canonical tie-breaker: if two records share an ID with differing payloads,
-///   the full canonical serialization is compared to guarantee strict commutativity.
+/// - Deterministic tie-breaker (`spec/FORMAT.md` §4): if two records share an ID with differing content,
+///   the record from the device whose `device_id` is smaller in byte order wins;
+///   within the same device, the earlier file line wins.
 pub fn merge_events(events: impl IntoIterator<Item = Event>) -> Vec<Event> {
     let mut by_id: HashMap<String, Event> = HashMap::new();
 

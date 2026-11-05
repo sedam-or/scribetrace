@@ -13,6 +13,7 @@ use crate::domain::{DeviceId, DeviceState, Event, PaperDeviceState, PaperId};
 pub struct FsDeviceStore {
     app_dir: PathBuf,
     state: DeviceState,
+    recovered_corrupt: bool,
 }
 
 impl FsDeviceStore {
@@ -23,12 +24,14 @@ impl FsDeviceStore {
         let app_dir = app_dir.as_ref().to_path_buf();
         fs::create_dir_all(&app_dir)?;
 
+        let mut recovered_corrupt = false;
         let state_path = app_dir.join("device.json");
         let state = if state_path.exists() {
             let data = fs::read(&state_path)?;
             match serde_json::from_slice::<DeviceState>(&data) {
                 Ok(s) => s,
                 Err(_) => {
+                    recovered_corrupt = true;
                     let fresh = Self::fresh_random_state()?;
                     Self::persist_state_to(&app_dir, &fresh)?;
                     fresh
@@ -40,7 +43,17 @@ impl FsDeviceStore {
             fresh
         };
 
-        Ok(Self { app_dir, state })
+        Ok(Self {
+            app_dir,
+            state,
+            recovered_corrupt,
+        })
+    }
+
+    /// Indicates whether a corrupt `device.json` file was encountered on initialization
+    /// and safely recovered with a newly minted device ID.
+    pub fn was_corrupt_recovered(&self) -> bool {
+        self.recovered_corrupt
     }
 
     /// Resolves the default OS application config directory for ScribeTrace.

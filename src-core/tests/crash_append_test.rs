@@ -1,12 +1,14 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use std::fs::OpenOptions;
+use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::path::Path;
 
 use scribetrace_core::adapters::FsHistoryStore;
 use scribetrace_core::application::{HistoryStore, LogWriter};
 use scribetrace_core::domain::{DeviceId, Event, EventBody, Mark, PaperId, MAX_LINE_BYTES};
-use serde_json::json;
+use serde_json::{json, Value};
 use tempfile::tempdir;
 
 /// Fault-injecting writer that simulates process/power cut after exactly `cut_after` bytes.
@@ -61,10 +63,30 @@ impl<W: Write> LogWriter for FaultyWriter<W> {
     }
 }
 
+fn test_uuid(id: &str) -> String {
+    if id.len() == 36 && id.chars().filter(|&c| c == '-').count() == 4 {
+        id.to_string()
+    } else {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut hasher = DefaultHasher::new();
+        id.hash(&mut hasher);
+        let h1 = hasher.finish();
+        "crash-append-test-salt".hash(&mut hasher);
+        let h2 = hasher.finish();
+        format!(
+            "{:08x}-{:04x}-4000-8000-{:012x}",
+            (h1 >> 32) as u32,
+            (h1 & 0xffff) as u16,
+            h2 & 0x0000_ffff_ffff_ffff
+        )
+    }
+}
+
 fn make_test_event(id: &str, device: DeviceId, seq: u64) -> Event {
     Event::new(
         1,
-        id,
+        test_uuid(id),
         device,
         seq,
         "2026-11-05T12:00:00Z",
@@ -127,9 +149,9 @@ fn test_fault_injection_cut_after_every_byte_k_of_n() {
             report.visible_events.len() == 1 || report.visible_events.len() == 2,
             "At most the last action is lost at byte cut {k}"
         );
-        assert_eq!(report.visible_events[0].id, "ev-base-1");
+        assert_eq!(report.visible_events[0].id, test_uuid("ev-base-1"));
         if report.visible_events.len() == 2 {
-            assert_eq!(report.visible_events[1].id, "target-ev");
+            assert_eq!(report.visible_events[1].id, test_uuid("target-ev"));
             assert_eq!(report.skipped_lines, 0);
         } else {
             assert_eq!(report.skipped_lines, 1);
@@ -144,10 +166,10 @@ fn test_fault_injection_cut_after_every_byte_k_of_n() {
             report_after.visible_events.len() == 2 || report_after.visible_events.len() == 3,
             "History recovered cleanly after append"
         );
-        assert_eq!(report_after.visible_events[0].id, "ev-base-1");
+        assert_eq!(report_after.visible_events[0].id, test_uuid("ev-base-1"));
         assert_eq!(
             report_after.visible_events.last().unwrap().id,
-            "ev-recovered-3"
+            test_uuid("ev-recovered-3")
         );
     }
 }
@@ -184,7 +206,7 @@ fn test_bad_and_torn_lines_skipped_and_counted() {
     // Bad line 3: seq == 0
     let seq_zero = serde_json::to_string(&json!({
         "v": 1,
-        "id": "seq-zero",
+        "id": test_uuid("seq-zero"),
         "device": dev.as_str(),
         "seq": 0,
         "ts": "2026-11-05T12:00:00Z",
@@ -212,7 +234,7 @@ fn test_bad_and_torn_lines_skipped_and_counted() {
 
     // Valid event 1 is preserved
     assert_eq!(report.visible_events.len(), 1);
-    assert_eq!(report.visible_events[0].id, "valid-1");
+    assert_eq!(report.visible_events[0].id, test_uuid("valid-1"));
 
     // All 4 bad lines are counted and skipped
     assert_eq!(
@@ -226,6 +248,211 @@ fn test_bad_and_torn_lines_skipped_and_counted() {
 
     let report2 = store.read_report(&paper).unwrap();
     assert_eq!(report2.visible_events.len(), 2);
-    assert_eq!(report2.visible_events[0].id, "valid-1");
-    assert_eq!(report2.visible_events[1].id, "valid-2");
+    assert_eq!(report2.visible_events[0].id, test_uuid("valid-1"));
+    assert_eq!(report2.visible_events[1].id, test_uuid("valid-2"));
+}
+
+#[test]
+fn test_bounded_reader_exactly_max_and_over_max_bytes() {
+    let tmp = tempdir().unwrap();
+    let workspace = tmp.path();
+    let store = FsHistoryStore::new(workspace);
+    let dev = DeviceId::new("dev-bound").unwrap();
+    let paper = PaperId::new("z_bound_test").unwrap();
+
+    let file_path = store.device_file(&paper, &dev);
+    fs::create_dir_all(store.paper_dir(&paper)).unwrap();
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&file_path)
+        .unwrap();
+
+    // 1. Line of exactly MAX_LINE_BYTES (1,048,576) content bytes without \n, followed by \n.
+    let prefix = format!(
+        r#"{{"v":1,"id":"{}","device":"dev-bound","seq":1,"ts":"2026-11-05T12:00:00Z","type":"mark_import","payload":{{"key":"k1","kind":"highlight","text":""#,
+        test_uuid("ev-exact-max")
+    );
+    let suffix = r#""}}"#;
+    let filler_len = MAX_LINE_BYTES - prefix.len() - suffix.len();
+    let mut exact_line = Vec::with_capacity(MAX_LINE_BYTES + 1);
+    exact_line.extend_from_slice(prefix.as_bytes());
+    exact_line.resize(exact_line.len() + filler_len, b'a');
+    exact_line.extend_from_slice(suffix.as_bytes());
+    assert_eq!(exact_line.len(), MAX_LINE_BYTES);
+    exact_line.push(b'\n');
+
+    file.write_all(&exact_line).unwrap();
+
+    // 2. Line of exactly MAX_LINE_BYTES + 1 content bytes without \n, followed by \n.
+    let over_prefix = format!(
+        r#"{{"v":1,"id":"{}","device":"dev-bound","seq":2,"ts":"2026-11-05T12:00:00Z","type":"mark_import","payload":{{"key":"k2","kind":"highlight","text":""#,
+        test_uuid("ev-over-max")
+    );
+    let over_filler_len = (MAX_LINE_BYTES + 1) - over_prefix.len() - suffix.len();
+    let mut over_line = Vec::with_capacity(MAX_LINE_BYTES + 2);
+    over_line.extend_from_slice(over_prefix.as_bytes());
+    over_line.resize(over_line.len() + over_filler_len, b'b');
+    over_line.extend_from_slice(suffix.as_bytes());
+    assert_eq!(over_line.len(), MAX_LINE_BYTES + 1);
+    over_line.push(b'\n');
+
+    file.write_all(&over_line).unwrap();
+    file.sync_data().unwrap();
+
+    let report = store.read_report(&paper).unwrap();
+
+    // Exactly MAX_LINE_BYTES content line is valid and preserved!
+    assert_eq!(report.raw_events.len(), 1);
+    assert_eq!(report.raw_events[0].id, test_uuid("ev-exact-max"));
+
+    // Over MAX_LINE_BYTES line is skipped as too_long!
+    assert_eq!(report.skipped_lines, 1);
+    assert_eq!(report.bad_count("too_long"), 1);
+}
+
+#[test]
+fn test_store_conformance_with_spec_vectors() {
+    let tmp = tempdir().unwrap();
+    let workspace = tmp.path();
+    let store = FsHistoryStore::new(workspace);
+    let dev = DeviceId::new("dev-a").unwrap();
+    let paper = PaperId::new("z_spec_vectors").unwrap();
+
+    let file_path = store.device_file(&paper, &dev);
+    fs::create_dir_all(store.paper_dir(&paper)).unwrap();
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&file_path)
+        .unwrap();
+
+    let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../spec/vectors");
+    let manifest_bytes = fs::read(spec_dir.join("manifest.json")).unwrap();
+    let manifest: Value = serde_json::from_slice(&manifest_bytes).unwrap();
+    let vectors = manifest["vectors"].as_array().unwrap();
+
+    let mut expected_valid = 0;
+    let mut expected_other = 0;
+    let mut expected_bad = 0;
+    let mut expected_reasons: HashMap<String, usize> = HashMap::new();
+
+    for v in vectors {
+        let rel_file = v["file"].as_str().unwrap();
+        let expect = v["expect"].as_str().unwrap();
+        let bytes = fs::read(spec_dir.join(rel_file)).unwrap();
+        file.write_all(&bytes).unwrap();
+        if !bytes.ends_with(b"\n") {
+            file.write_all(b"\n").unwrap();
+        }
+
+        match expect {
+            "valid" => expected_valid += 1,
+            "other" => expected_other += 1,
+            bad_code => {
+                expected_bad += 1;
+                *expected_reasons.entry(bad_code.to_string()).or_insert(0) += 1;
+            }
+        }
+    }
+    file.sync_data().unwrap();
+
+    let report = store.read_report(&paper).unwrap();
+
+    assert_eq!(
+        report.raw_events.len(),
+        expected_valid,
+        "Valid lines must match spec vectors"
+    );
+    assert_eq!(
+        report.other_lines, expected_other,
+        "Other lines must be kept and counted"
+    );
+    assert_eq!(
+        report.skipped_lines, expected_bad,
+        "Bad lines must match skipped count"
+    );
+
+    for (code, count) in &expected_reasons {
+        assert_eq!(
+            report.bad_count(code),
+            *count,
+            "Reason code '{code}' count mismatch"
+        );
+    }
+
+    // Next sequence must take max_seq across both valid and other lines + 1
+    // In good vectors, max seq is 8, so next_seq must be 9
+    let next = store.next_seq(&paper, &dev).unwrap();
+    assert_eq!(
+        next, 9,
+        "next_seq must count valid and other lines without reuse"
+    );
+}
+
+#[test]
+fn test_next_seq_tracks_other_lines_and_bad_lines_with_seq() {
+    let tmp = tempdir().unwrap();
+    let workspace = tmp.path();
+    let store = FsHistoryStore::new(workspace);
+    let dev = DeviceId::new("dev-seq").unwrap();
+    let paper = PaperId::new("z_next_seq").unwrap();
+
+    let file_path = store.device_file(&paper, &dev);
+    fs::create_dir_all(store.paper_dir(&paper)).unwrap();
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&file_path)
+        .unwrap();
+
+    // 1. Valid event with seq: 1
+    let ev1 = json!({
+        "v": 1,
+        "id": test_uuid("seq-1"),
+        "device": "dev-seq",
+        "seq": 1,
+        "ts": "2026-11-05T12:00:00Z",
+        "type": "mark_import",
+        "payload": {
+            "key": "k1",
+            "kind": "highlight"
+        }
+    });
+    file.write_all(format!("{ev1}\n").as_bytes()).unwrap();
+
+    // 2. Forward-compatible 'other' event with seq: 5
+    let other_ev = json!({
+        "v": 1,
+        "id": test_uuid("seq-5"),
+        "device": "dev-seq",
+        "seq": 5,
+        "ts": "2026-11-05T12:05:00Z",
+        "author": "Me",
+        "type": "future_milestone",
+        "payload": { "future": true }
+    });
+    file.write_all(format!("{other_ev}\n").as_bytes()).unwrap();
+
+    // 3. Corrupt/bad-payload event with seq: 9
+    let bad_ev = json!({
+        "v": 1,
+        "id": test_uuid("seq-9"),
+        "device": "dev-seq",
+        "seq": 9,
+        "ts": "2026-11-05T12:10:00Z",
+        "type": "mark_import",
+        "payload": { "invalid_missing_key": true }
+    });
+    file.write_all(format!("{bad_ev}\n").as_bytes()).unwrap();
+    file.sync_data().unwrap();
+
+    let next = store.next_seq(&paper, &dev).unwrap();
+    assert_eq!(
+        next, 10,
+        "next_seq must be highest sequence across valid, other and bad lines + 1 (never reuses!)"
+    );
 }

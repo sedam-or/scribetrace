@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::domain::{DeviceId, DeviceState, DomainError, Event, Mark, PaperId};
 
 /// The reference manager could not be read.
@@ -48,12 +50,23 @@ pub struct ReadReport {
     pub merged_events: Vec<Event>,
     /// Visible events after applying purge coverage, sorted for display by `(ts, device, seq, id)`.
     pub visible_events: Vec<Event>,
-    /// Count of skipped lines (unparsable JSON, >1 MB lines, seq == 0).
+    /// Count of skipped lines (unparsable JSON, >1 MB lines, seq == 0, bad schema).
     pub skipped_lines: usize,
+    /// Breakdown of skipped lines by reason code (e.g. "too_long", "not_json", "bad_payload", etc.).
+    pub bad_lines: HashMap<String, usize>,
+    /// Count of kept lines of unrecognized or forward-compatible event types (FORMAT.md §3).
+    pub other_lines: usize,
     /// Count of device files scanned.
     pub files_scanned: usize,
     /// Count of events hidden by purges.
     pub hidden_count: usize,
+}
+
+impl ReadReport {
+    /// Returns the number of bad lines skipped for a specific reason code.
+    pub fn bad_count(&self, code: &str) -> usize {
+        self.bad_lines.get(code).copied().unwrap_or(0)
+    }
 }
 
 /// Abstraction for atomic append operations supporting fault injection (Slice 2, R-10).

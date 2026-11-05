@@ -36,7 +36,7 @@ fn test_replay_10_000_events_benchmark() {
         for seq in 1..=events_per_device {
             let ev = json!({
                 "v": 1,
-                "id": format!("bench-ev-{dev_idx}-{seq}"),
+                "id": format!("6f1f2c1e-0a4b-4c55-9d3e-{:04x}{:08x}", dev_idx, seq),
                 "device": dev_id,
                 "seq": seq,
                 "ts": "2026-11-05T12:00:00Z",
