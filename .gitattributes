@@ -15,6 +15,11 @@
 *.tsx text eol=lf
 *.js text eol=lf
 
+# Open format spec, its samples and the CLI golden files are byte-exact contracts:
+# never convert their line endings on checkout (Windows CI, ADR 0010).
+spec/** text eol=lf
+src-cli/tests/golden/** text eol=lf
+
 # Binaries
 *.png binary
 *.jpg binary
