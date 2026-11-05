@@ -103,34 +103,92 @@ proptest! {
     }
 
     #[test]
-    fn prop_same_id_conflicting_payloads_commutativity(
+    fn prop_same_id_conflicting_devices_commutativity(
         id in "[a-z0-9-]{8}",
         payload_a in prop::collection::vec(any::<u8>(), 1..20),
         payload_b in prop::collection::vec(any::<u8>(), 1..20),
     ) {
-        let dev = DeviceId::new("dev-1").unwrap();
-        let ev1 = Event::new(
+        let dev_a = DeviceId::new("dev-aaa").unwrap();
+        let dev_b = DeviceId::new("dev-bbb").unwrap();
+        let ev_a = Event::new(
             1,
             id.clone(),
-            dev.clone(),
+            dev_a.clone(),
             1,
             "2026-11-05T10:00:00Z",
             "Me",
             EventBody::MarkCreate(json!({"bytes": payload_a})),
         );
-        let ev2 = Event::new(
+        let ev_b = Event::new(
             1,
             id,
-            dev,
+            dev_b,
             1,
             "2026-11-05T10:00:00Z",
             "Me",
             EventBody::MarkCreate(json!({"bytes": payload_b})),
         );
 
-        let ab = merge_events(vec![ev1.clone(), ev2.clone()]);
-        let ba = merge_events(vec![ev2, ev1]);
+        let ab = merge_events(vec![ev_a.clone(), ev_b.clone()]);
+        let ba = merge_events(vec![ev_b, ev_a]);
 
-        prop_assert_eq!(ab, ba, "Same-id conflicting payload merge must be strictly commutative!");
+        prop_assert_eq!(&ab, &ba, "Conflicting device IDs must deterministically pick smaller device ID!");
+        prop_assert_eq!(&ab[0].device, &dev_a);
     }
+}
+
+#[test]
+fn test_conflicting_copies_both_rules() {
+    let dev_a = DeviceId::new("dev-a").unwrap();
+    let dev_b = DeviceId::new("dev-b").unwrap();
+
+    let ev_a = Event::new(
+        1,
+        "same-id",
+        dev_a.clone(),
+        1,
+        "2026-11-05T10:00:00Z",
+        "Me",
+        EventBody::MarkCreate(json!({"val": "A"})),
+    );
+    let ev_b = Event::new(
+        1,
+        "same-id",
+        dev_b,
+        1,
+        "2026-11-05T10:00:00Z",
+        "Me",
+        EventBody::MarkCreate(json!({"val": "B"})),
+    );
+
+    // Cross-device: smaller device id wins regardless of order
+    let res1 = merge_events(vec![ev_a.clone(), ev_b.clone()]);
+    let res2 = merge_events(vec![ev_b, ev_a]);
+    assert_eq!(res1, res2);
+    assert_eq!(res1[0].device, dev_a);
+
+    // Within-device: earlier file line wins
+    let ev1 = Event::new(
+        1,
+        "same-id-2",
+        dev_a.clone(),
+        1,
+        "2026-11-05T10:00:00Z",
+        "Me",
+        EventBody::MarkCreate(json!({"val": "1"})),
+    );
+    let ev2 = Event::new(
+        1,
+        "same-id-2",
+        dev_a,
+        1,
+        "2026-11-05T10:00:00Z",
+        "Me",
+        EventBody::MarkCreate(json!({"val": "2"})),
+    );
+
+    let order1 = merge_events(vec![ev1.clone(), ev2.clone()]);
+    let order2 = merge_events(vec![ev2.clone(), ev1.clone()]);
+    assert_eq!(order1[0].body, ev1.body);
+    assert_eq!(order2[0].body, ev2.body);
 }

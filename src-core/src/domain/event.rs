@@ -163,12 +163,10 @@ pub fn merge_events(events: impl IntoIterator<Item = Event>) -> Vec<Event> {
         by_id
             .entry(ev.id.clone())
             .and_modify(|existing| {
-                if let (Ok(json_new), Ok(json_existing)) =
-                    (serde_json::to_string(&ev), serde_json::to_string(existing))
-                {
-                    if json_new > json_existing {
-                        *existing = ev.clone();
-                    }
+                // spec/FORMAT.md §4: keep the line from the device whose id is smaller
+                // in byte order; within one device, the earlier file line wins (keep existing).
+                if ev.device < existing.device {
+                    *existing = ev.clone();
                 }
             })
             .or_insert(ev);
@@ -221,7 +219,7 @@ pub fn visible(events: &[Event], purges: &[Purge]) -> VisibilityResult {
         total_events += 1;
 
         if let Some(&covered_seq) = effective_covers.get(&ev.device) {
-            if ev.seq <= covered_seq {
+            if covered_seq > 0 && ev.seq <= covered_seq {
                 hidden_count += 1;
                 continue;
             }
