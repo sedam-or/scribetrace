@@ -253,7 +253,9 @@ impl FsHistoryStore {
 impl HistoryStore for FsHistoryStore {
     fn next_seq(&self, paper: &PaperId, device: &DeviceId) -> Result<u64, StoreError> {
         let scan = self.inspect_device_file(paper, device)?;
-        Ok(scan.max_seq + 1)
+        scan.max_seq
+            .checked_add(1)
+            .ok_or_else(|| StoreError::SequenceOverflow(device.clone()))
     }
 
     fn append(&self, paper: &PaperId, event: &Event) -> Result<(), StoreError> {

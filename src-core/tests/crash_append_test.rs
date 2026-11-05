@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::Path;
 
 use scribetrace_core::adapters::FsHistoryStore;
-use scribetrace_core::application::{HistoryStore, LogWriter};
+use scribetrace_core::application::{HistoryStore, LogWriter, StoreError};
 use scribetrace_core::domain::{DeviceId, Event, EventBody, Mark, PaperId, MAX_LINE_BYTES};
 use serde_json::{json, Value};
 use tempfile::tempdir;
@@ -454,5 +454,54 @@ fn test_next_seq_tracks_other_lines_and_bad_lines_with_seq() {
     assert_eq!(
         next, 10,
         "next_seq must be highest sequence across valid, other and bad lines + 1 (never reuses!)"
+    );
+}
+
+#[test]
+fn test_next_seq_overflow_returns_typed_store_error() {
+    let tmp = tempdir().unwrap();
+    let workspace = tmp.path();
+    let store = FsHistoryStore::new(workspace);
+    let dev = DeviceId::new("dev-overflow").unwrap();
+    let paper = PaperId::new("z_overflow").unwrap();
+
+    let file_path = store.device_file(&paper, &dev);
+    fs::create_dir_all(store.paper_dir(&paper)).unwrap();
+
+    // 1. Hostile / corrupt line with u64::MAX seq: 18446744073709551615
+    let hostile_bad = json!({
+        "v": 1,
+        "id": test_uuid("hostile-bad"),
+        "device": "dev-overflow",
+        "seq": u64::MAX,
+        "ts": "2026-11-05T12:00:00Z",
+        "type": "mark_import",
+        "payload": { "bad_missing_key": true }
+    });
+    fs::write(&file_path, format!("{hostile_bad}\n")).unwrap();
+
+    let err = store.next_seq(&paper, &dev).unwrap_err();
+    assert!(
+        matches!(err, StoreError::SequenceOverflow(ref d) if d == &dev),
+        "Sequence overflow on bad line must return StoreError::SequenceOverflow"
+    );
+
+    // 2. Forward-compatible 'other' line with u64::MAX seq: 18446744073709551615
+    let hostile_other = json!({
+        "v": 1,
+        "id": test_uuid("hostile-other"),
+        "device": "dev-overflow",
+        "seq": u64::MAX,
+        "ts": "2026-11-05T12:00:00Z",
+        "author": "Me",
+        "type": "future_milestone",
+        "payload": { "future": true }
+    });
+    fs::write(&file_path, format!("{hostile_other}\n")).unwrap();
+
+    let err2 = store.next_seq(&paper, &dev).unwrap_err();
+    assert!(
+        matches!(err2, StoreError::SequenceOverflow(ref d) if d == &dev),
+        "Sequence overflow on other line must return StoreError::SequenceOverflow"
     );
 }

@@ -25,6 +25,9 @@ pub enum StoreError {
     /// Domain validation failed on an ID.
     #[error("domain error: {0}")]
     Domain(#[from] DomainError),
+    /// Sequence number reached maximum representable integer (u64::MAX).
+    #[error("sequence overflow on device {0}: device must be retired")]
+    SequenceOverflow(DeviceId),
 }
 
 /// Anything a use case can fail with.
