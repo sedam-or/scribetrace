@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- ScribeTrace Official Logo: Mark + Wordmark (Hand-written SVG, works at 16px and in monochrome) -->
+  <style>
+    .st-mark { stroke-width: 2.25; }
+    .st-fill { fill: currentColor; stroke: none; }
+    .st-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+    .st-sub { font-weight: 400; opacity: 0.85; }
+    @media (prefers-color-scheme: dark) {
+      .st-dark-invert { color: #f8fafc; }
+    }
+  </style>
+
+  <!-- Mark (40x40 area, viewBox 0 0 48 48 equivalent, scalable down to 16px) -->
+  <g class="st-mark" transform="translate(4, 4)">
+    <!-- Document / Parchment Base Layer -->
+    <path d="M8 6 C8 4.895 8.895 4 10 4 L26 4 L34 12 L34 34 C34 35.105 33.105 36 32 36 L10 36 C8.895 36 8 35.105 8 34 Z" fill="none" stroke="currentColor" stroke-width="2.5" />
+    <!-- Folded Corner -->
+    <path d="M26 4 L26 12 L34 12" fill="none" stroke="currentColor" stroke-width="2.2" />
+    
+    <!-- Scribe Quill / Pen Nib Trace Path -->
+    <path d="M14 28 L28 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+    <polygon points="14,28 14,23 19,28" class="st-fill" />
+    
+    <!-- Timeline Trace Nodes (3 history milestones: added, edited, referenced) -->
+    <circle cx="15" cy="17" r="2" class="st-fill" />
+    <circle cx="21" cy="21" r="2.2" class="st-fill" />
+    <circle cx="27" cy="25" r="2" class="st-fill" />
+    <!-- Subtle Timeline Connector -->
+    <line x1="15" y1="17" x2="27" y2="25" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.5 2" />
+  </g>
+
+  <!-- Wordmark -->
+  <g class="st-fill" transform="translate(56, 33)">
+    <text class="st-text">Scribe<tspan class="st-sub">Trace</tspan></text>
+  </g>
+</svg>

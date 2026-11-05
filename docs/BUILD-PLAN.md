@@ -1,0 +1,33 @@
+# ScribeTrace: Stage 1 build plan
+
+**Date:** 2026-11-06 · **Author:** architect · **Inputs:** [REQUIREMENTS](REQUIREMENTS.md) R-01..R-23, [ARCHITECTURE](ARCHITECTURE.md), [TECH-OPTIMIZATION](TECH-OPTIMIZATION.md)
+**Rules:** one slice = one user-visible capability, shipped through all layers (domain → application → adapter → shell → UI) with its test; no slice without a requirement ID. Size: S ≤1 day, M ≈2–3 days, L ≈1 week of agent work. **Who:** *Agent* = an AI agent builds it alone and CI is the review; *Review* = a person must read the result (data loss, security, or product wording).
+
+| # | Slice (what the user can do) | Req | Depends | Size | Who | Acceptance test (must be automated unless marked) |
+|---|---|---|---|---|---|---|
+| 1 | **Walking skeleton:** open a project folder, press Import on one hard-wired paper, see **one imported mark** and **one history line** | R-01 (1 mark), R-06, R-19, R-21 | none | M | Review | In CI, a stand-in Zotero server serves a fixture; core writes exactly 1 valid line (`mark_import`, author "Me") into `<device>.jsonl`; UI test shows the mark and the line; source files byte-identical before/after; `cargo tree -p scribetrace-core -i tauri` is empty (layering). |
+| 2 | Safe device id and crash-proof append | R-08, R-10 | 1 | M | Review | Cloned `device.json` mints a new id and leaves the old file untouched; kill the process at every write step in a table test → no malformed line, at most the last action lost. |
+| 3 | Open a paper's history from many machines; bad lines are counted | R-07, R-09 | 1 | S | Agent | SPIKE-1 property tests moved in: any order and double merge give the same result; torn and over-1 MB lines skipped, counted in the window; files unchanged; 10k events ≤500 ms. |
+| 4 | **Real import and refresh** from local Zotero: paper list, marks, dates, page locations | R-01, R-02, R-03, R-20 | 1, 3, **SPIKE-3 live** | L | Review (security) | Replay of fixtures recorded from a dummy library; broker refuses non-GET, off-list paths, redirects, >5 s, >15 MB; wrong API-version header → clear error; hostile mark text shown as inert text; no network traffic without a click. |
+| 5 | First run in three steps and plain Zotero error messages | R-04, R-05 | 4 | M | Review (wording) | Stand-in returns refused / 403 / timeout → each shows one message naming the exact Zotero setting; setup reaches "Connected, N papers" in ≤3 steps; "no marks" papers listed with that text. |
+| 6 | Each import or refresh makes a milestone you can name | R-11 | 4 | S | Agent | Refresh with no change creates no milestone; with change creates one; rename adds an event, not an edit. |
+| 7 | Timeline and "what changed between two milestones" | R-12 | 6 | M | Agent | Fixture with 200 marks and 5 milestones: added/removed/edited marks and note text diff match a golden file; timeline opens ≤1 s. |
+| 8 | Notes: plain `note.md` + saved revisions, outside edits kept | R-14, R-20 | 3 | M | Review (data loss) | Edit the file outside, then save in the app: both versions are in history and restorable; 512 KB cap enforced; Markdown with script/HTML/link payloads renders inert (hostile corpus). |
+| 9 | Copy a mark as a quote with citation key (or author, year, title) | R-15 | 4, 8 | S | Agent | Golden strings for: key present, key absent, missing author. |
+| 10 | Restore an earlier milestone (as a new event) | R-13 | 6, 7 | M | Agent | After restore, all earlier events are byte-identical, one new event exists, Zotero untouched, restore of a restore works. |
+| 11 | Forget a paper's history (local delete + purge, banner on other machines) | R-16 | 2, 3 | M | Review (destructive) | SPIKE-2 property tests moved in (any purge order, same result); local files gone after confirm; a second device hides covered events and offers "Delete hidden files"; unseen offline events stay visible; UI warns that sync copies may remain. |
+| 12 | Export to Obsidian (one way, marked subfolder) | R-17, R-19 | 8 | M | Review (paths) | Only files with the marker line are overwritten, others reported skipped; symlink or `..` escape refused; nothing written outside the chosen folder's `ScribeTrace/`. |
+| 13 | Open format spec and `scribetrace check / timeline / export` | R-18 | 3, 7 | M | Agent | Schema and sample files validate in CI; CLI `check` bad-line count equals the window's; CLI output on the sample project matches a golden file; spec marked "unstable v0". |
+| 14 | "Check for updates" and the lightness gates | R-22, R-23 | 1 | S | Agent | Click opens the fixed release URL in the system browser and the app makes no request; CI fails above the installer, idle-memory, cold-start and crate/package budgets, reporting UNMEASURED where a runner cannot measure. |
+
+## Slice 1 in detail (it fixes the architecture for all others)
+- **Domain** (`src-core/domain`): `Event`, `MarkImport`, `PaperId`; pure, no I/O.
+- **Application**: use case `ImportMarks`, ports `ZoteroSource` and `HistoryStore`.
+- **Adapters**: `ureq` loopback client (stand-in server in tests), JSONL file store under `.scribetrace/papers/<paper-id>/`.
+- **Shell** (`src-tauri`): one command per use case. **UI** (`src`): talks only to a typed `Rpc` interface; Tauri `invoke` is its one adapter (this seam is what keeps the [fallback in TECH-OPTIMIZATION §3](TECH-OPTIMIZATION.md) cheap). Deliberately left out: milestones, setup screens, error wording, notes.
+
+## Order and risk
+- 1 → 2/3 → 4 is the spine. Slices 6–13 can be built in parallel by several agents once 4 lands, except 10 (after 7) and 12 (after 8).
+- Slice 4 is the only one blocked by an outside fact: SPIKE-3 (a live check against real Zotero). Slices 1–3 use the stand-in server and are not blocked.
+- Slices 1, 2, 4, 5, 8, 11, 12 need a human reader; 7 of 14 slices can be built and merged by agents alone. Agents must not merge a Review slice without a person.
+- Not planned in Stage 1: PDF reading, anchoring, side-by-side compare, reading sessions, W3C export, CLI `merge` (R-30..R-34, [ARCHITECTURE Later](ARCHITECTURE.md)).

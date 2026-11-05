@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- ScribeTrace Official Desktop Application Icon (Legible from 512px down to 16px) -->
+  <defs>
+    <!-- Background Gradient for Squircle / Container -->
+    <linearGradient id="st-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Accent Trace Gradient -->
+    <linearGradient id="st-accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+
+    <!-- Milestone Colors (Added / Edited / Trace) -->
+    <linearGradient id="st-node-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="st-node-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+
+  <!-- Desktop App Squircle (macOS / Linux standard continuous curve) -->
+  <rect x="32" y="32" width="448" height="448" rx="104" fill="url(#st-bg-grad)" stroke="#334155" stroke-width="4" />
+
+  <!-- Inner Document Geometry (Crisp, High-Contrast White / Slate-100) -->
+  <g transform="translate(112, 96)">
+    <!-- Main Manuscript Sheet -->
+    <path d="M24 0 L208 0 L272 64 L272 288 C272 305.67 257.67 320 240 320 L24 320 C6.33 320 0 305.67 0 288 L0 32 C0 14.33 6.33 0 24 0 Z" 
+          fill="#0f172a" stroke="#f8fafc" stroke-width="20" stroke-linejoin="round" />
+    
+    <!-- Folded Corner Notch -->
+    <path d="M208 0 L208 64 L272 64" fill="none" stroke="#f8fafc" stroke-width="18" stroke-linejoin="round" />
+
+    <!-- Manuscript Text Guide Lines (Simulating Scholar Reading Marks) -->
+    <line x1="48" y1="88" x2="160" y2="88" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+    <line x1="48" y1="136" x2="224" y2="136" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+    <line x1="48" y1="184" x2="140" y2="184" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+
+    <!-- Chronological Trace Line (Connecting Reading History Milestones) -->
+    <path d="M56 248 C 96 220, 144 260, 216 160" 
+          fill="none" stroke="url(#st-accent-grad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 4" />
+
+    <!-- History Milestone Nodes (Added: Emerald, Edited: Amber, Milestone: Sky) -->
+    <circle cx="56" cy="248" r="20" fill="url(#st-node-emerald)" stroke="#0f172a" stroke-width="6" />
+    <circle cx="120" cy="236" r="18" fill="url(#st-node-amber)" stroke="#0f172a" stroke-width="6" />
+    <circle cx="216" cy="160" r="22" fill="#38bdf8" stroke="#0f172a" stroke-width="6" />
+
+    <!-- Scribe Stylus / Nib Crossing the Timeline -->
+    <path d="M192 112 L248 56" stroke="#f8fafc" stroke-width="22" stroke-linecap="round" />
+    <polygon points="172,132 172,104 200,132" fill="#f8fafc" />
+  </g>
+</svg>
