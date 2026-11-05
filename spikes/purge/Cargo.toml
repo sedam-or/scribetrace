@@ -1,0 +1,15 @@
+[package]
+name = "scribetrace-spike-purge"
+version = "0.1.0"
+edition = "2021"
+authors = ["sedam-or and ScribeTrace Contributors"]
+license = "Apache-2.0"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.10", features = ["v4"] }
+
+[dev-dependencies]
+proptest = "1.5"
+rand = "0.8"

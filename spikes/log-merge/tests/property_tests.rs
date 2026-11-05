@@ -1,0 +1,96 @@
+use proptest::prelude::*;
+use scribetrace_spike_log_merge::{merge_events, Event};
+use serde_json::json;
+
+fn arb_event_pool() -> impl Strategy<Value = Vec<Event>> {
+    // Generate up to 40 unique events across 5 virtual devices
+    prop::collection::vec(
+        (
+            0u8..5,       // device index (0..4)
+            1u64..100,    // sequence number
+            0u32..10_000, // fake timestamp
+        ),
+        1..40,
+    )
+    .prop_map(|raw_tuples| {
+        raw_tuples
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (dev_idx, seq, ts_sec))| {
+                Event::new(
+                    1,
+                    format!("event-uuid-{idx}-{dev_idx}-{seq}"),
+                    format!("virtual-device-{dev_idx}"),
+                    seq,
+                    format!(
+                        "2026-11-05T{:02}:{:02}:{:02}Z",
+                        (ts_sec / 3600) % 24,
+                        (ts_sec % 3600) / 60,
+                        ts_sec % 60
+                    ),
+                    "Me",
+                    "mark_import",
+                    json!({"seq": seq, "dev": dev_idx}),
+                )
+            })
+            .collect()
+    })
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10_000))]
+
+    #[test]
+    fn prop_merge_commutativity_and_idempotency(
+        pool in arb_event_pool(),
+        split_mask in prop::collection::vec(any::<bool>(), 1..40),
+        duplicate_indices in prop::collection::vec(0usize..40, 0..15),
+    ) {
+        // Build set A and set B from the pool based on split_mask
+        let mut list_a = Vec::new();
+        let mut list_b = Vec::new();
+
+        for (i, ev) in pool.iter().enumerate() {
+            let take_a = split_mask.get(i).copied().unwrap_or(true);
+            if take_a {
+                list_a.push(ev.clone());
+            } else {
+                list_b.push(ev.clone());
+            }
+        }
+
+        // Simulate duplicate deliveries and split deliveries across peers
+        for &idx in &duplicate_indices {
+            if let Some(ev) = pool.get(idx % pool.len()) {
+                if idx % 2 == 0 {
+                    list_a.push(ev.clone());
+                } else {
+                    list_b.push(ev.clone());
+                }
+            }
+        }
+
+        // Commutativity test: merge(A, B) == merge(B, A)
+        let mut union_ab = list_a.clone();
+        union_ab.extend(list_b.clone());
+
+        let mut union_ba = list_b.clone();
+        union_ba.extend(list_a);
+
+        let merged_ab = merge_events(union_ab);
+        let merged_ba = merge_events(union_ba);
+
+        prop_assert_eq!(&merged_ab, &merged_ba, "merge(A, B) must equal merge(B, A)");
+
+        // Idempotency test: merge(merge(A, B), B) == merge(A, B)
+        let mut union_with_b = merged_ab.clone();
+        union_with_b.extend(list_b);
+
+        let merged_idempotent = merge_events(union_with_b);
+        prop_assert_eq!(
+            &merged_idempotent,
+            &merged_ab,
+            "merge(merge(A, B), B) must equal merge(A, B)"
+        );
+    }
+}
