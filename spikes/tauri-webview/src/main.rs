@@ -2,7 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::time::Instant;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,7 +16,7 @@ pub struct WebviewMetrics {
 fn get_process_rss_mb() -> f64 {
     #[cfg(target_os = "linux")]
     {
-        if let Ok(statm) = fs::read_to_string("/proc/self/statm") {
+        if let Ok(statm) = std::fs::read_to_string("/proc/self/statm") {
             let parts: Vec<&str> = statm.split_whitespace().collect();
             if parts.len() >= 2 {
                 if let Ok(pages) = parts[1].parse::<u64>() {

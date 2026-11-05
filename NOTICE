@@ -1,0 +1,42 @@
+ScribeTrace
+Copyright 2026 sedam-or and ScribeTrace Contributors
+
+This product includes software developed at ScribeTrace
+(https://github.com/sedam-or/scribetrace).
+
+========================================================================
+Third-Party Software Notices and Attributions
+========================================================================
+
+This project incorporates third-party open-source software under various
+permissive licenses. The original copyright notices and license attributions
+are listed below:
+
+1. Mozilla PDF.js
+   Copyright 2012 Mozilla Foundation
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   Source: https://github.com/mozilla/pdf.js
+
+2. The Tauri Programme
+   Copyright 2019-2026 Tauri Programme within The Commons Conservancy
+   Licensed under the Apache License, Version 2.0 or the MIT License.
+   Source: https://github.com/tauri-apps/tauri
+
+3. Mozilla Public License 2.0 Components
+   This product includes software components (such as cssparser and dtoa-short)
+   covered by the Mozilla Public License, Version 2.0.
+   In accordance with MPL-2.0 Section 3.3, these components are distributed
+   as part of a Larger Work under the Apache License, Version 2.0. The source
+   code of these MPL-licensed crates remains available from their upstream
+   repositories on crates.io.
+
+4. Unicode Consortium
+   Copyright © 1991-2026 Unicode, Inc. All rights reserved.
+   Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+5. Rust and Web Ecosystem Crates and Packages
+   Additional third-party libraries licensed under Apache-2.0, MIT, BSD-2-Clause,
+   BSD-3-Clause, ISC, and Zlib are used in accordance with their respective
+   license terms. An inventory of all dependency licenses is documented in
+   docs/LEGAL.md and enforced in continuous integration via deny.toml.

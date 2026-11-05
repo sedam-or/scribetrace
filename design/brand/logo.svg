@@ -1,36 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-  <!-- ScribeTrace Official Logo: Mark + Wordmark (Hand-written SVG, works at 16px and in monochrome) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48" fill="none">
+  <!-- 
+    ScribeTrace Official Logo: Mark + Wordmark
+    100% Original Vector Art (Not derived from any icon set / Lucide / Feather / FontAwesome)
+    Motifs (BRAND.md §6): Strata / stacked reading layers, scholar's margin rule, and timeline trace.
+    Works at 16px and in pure monochrome (currentColor).
+  -->
   <style>
-    .st-mark { stroke-width: 2.25; }
-    .st-fill { fill: currentColor; stroke: none; }
-    .st-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
-    .st-sub { font-weight: 400; opacity: 0.85; }
-    @media (prefers-color-scheme: dark) {
-      .st-dark-invert { color: #f8fafc; }
+    .st-stroke { stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+    .st-fill { fill: currentColor; }
+    .st-wordmark {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.035em;
+      fill: currentColor;
+    }
+    .st-sub {
+      font-weight: 400;
+      opacity: 0.82;
     }
   </style>
 
-  <!-- Mark (40x40 area, viewBox 0 0 48 48 equivalent, scalable down to 16px) -->
-  <g class="st-mark" transform="translate(4, 4)">
-    <!-- Document / Parchment Base Layer -->
-    <path d="M8 6 C8 4.895 8.895 4 10 4 L26 4 L34 12 L34 34 C34 35.105 33.105 36 32 36 L10 36 C8.895 36 8 35.105 8 34 Z" fill="none" stroke="currentColor" stroke-width="2.5" />
-    <!-- Folded Corner -->
-    <path d="M26 4 L26 12 L34 12" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <!-- Brand Mark: Strata Layers & Margin Trace (40x40 box: x=4, y=4, legible at 16px) -->
+  <g class="st-stroke" transform="translate(4, 4)">
+    <!-- Scholar's Margin Guide Rule -->
+    <line x1="12" y1="6" x2="12" y2="34" stroke-width="1.75" opacity="0.4" />
+
+    <!-- Three Horizontal Strata / Stacked Page Layers (Earliest to Current) -->
+    <!-- Stratum 1 (Top / Earlier reading layer, dashed/fading ink) -->
+    <line x1="18" y1="11" x2="36" y2="11" stroke-width="2.5" stroke-dasharray="2 3" opacity="0.55" />
+
+    <!-- Stratum 2 (Middle reading milestone) -->
+    <line x1="18" y1="20" x2="38" y2="20" stroke-width="2.5" opacity="0.8" />
+
+    <!-- Stratum 3 (Base / Current reading milestone) -->
+    <line x1="18" y1="29" x2="34" y2="29" stroke-width="2.75" />
+
+    <!-- The Scribe Trace (Continuous margin notation loop connecting the reading layers) -->
+    <path d="M7 11 C 7 7, 12 7, 12 11 L 12 24 C 12 29, 6 29, 6 33 C 6 36, 12 36, 15 33" stroke-width="2.5" />
     
-    <!-- Scribe Quill / Pen Nib Trace Path -->
-    <path d="M14 28 L28 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-    <polygon points="14,28 14,23 19,28" class="st-fill" />
-    
-    <!-- Timeline Trace Nodes (3 history milestones: added, edited, referenced) -->
-    <circle cx="15" cy="17" r="2" class="st-fill" />
-    <circle cx="21" cy="21" r="2.2" class="st-fill" />
-    <circle cx="27" cy="25" r="2" class="st-fill" />
-    <!-- Subtle Timeline Connector -->
-    <line x1="15" y1="17" x2="27" y2="25" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.5 2" />
+    <!-- Active Milestone Trace Anchor (Terminal focus node) -->
+    <circle cx="18" cy="29" r="2.75" class="st-fill" stroke="none" />
+    <!-- Secondary Milestone Node on Middle Layer -->
+    <circle cx="12" cy="20" r="2" class="st-fill" stroke="none" />
   </g>
 
-  <!-- Wordmark -->
-  <g class="st-fill" transform="translate(56, 33)">
-    <text class="st-text">Scribe<tspan class="st-sub">Trace</tspan></text>
+  <!-- Wordmark: ScribeTrace (Exact casing: ScribeTrace, one word) -->
+  <g transform="translate(56, 33)">
+    <text class="st-wordmark">Scribe<tspan class="st-sub">Trace</tspan></text>
   </g>
 </svg>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — Paper List (Empty State)</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .app-window {
+      max-width: 960px;
+      margin: 24px auto;
+      background: var(--st-color-bg-canvas);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      box-shadow: var(--st-shadow-modal);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 560px;
+    }
+    .window-header {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .window-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+    }
+    .screen-meta-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      border: 1px solid var(--st-color-border);
+    }
+    .status-bar {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-surface);
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--st-font-size-sm);
+    }
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--st-space-2);
+      color: var(--st-mark-added);
+      font-weight: var(--st-font-weight-medium);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--st-mark-added);
+    }
+    .empty-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--st-space-8);
+    }
+    .empty-card {
+      max-width: 480px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--st-space-3);
+    }
+    .empty-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--st-radius-full);
+      background: var(--st-color-bg-subtle);
+      border: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--st-color-text-secondary);
+      margin-bottom: var(--st-space-2);
+    }
+    .empty-title {
+      font-size: var(--st-font-size-lg);
+      font-weight: var(--st-font-weight-semibold);
+      color: var(--st-color-text-primary);
+    }
+    .empty-desc {
+      font-size: var(--st-font-size-base);
+      color: var(--st-color-text-secondary);
+      line-height: var(--st-line-height-normal);
+    }
+    .st-btn {
+      height: 32px;
+      padding: 0 var(--st-space-4);
+      border-radius: var(--st-radius-md);
+      font-size: var(--st-font-size-base);
+      font-weight: var(--st-font-weight-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: background var(--st-transition-fast), border-color var(--st-transition-fast);
+    }
+    .st-btn-primary {
+      background: var(--st-color-primary);
+      color: var(--st-color-text-inverse);
+    }
+    .st-btn-primary:hover {
+      background: var(--st-color-primary-hover);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 4px 8px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+    <header class="window-header">
+      <div class="window-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"></path>
+          <path d="M14 2v6h6"></path>
+          <path d="M10 13l4-4"></path>
+          <circle cx="9" cy="17" r="1"></circle>
+          <circle cx="15" cy="13" r="1"></circle>
+        </svg>
+        <span>ScribeTrace</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="screen-meta-badge">R-01, R-05 • 3-3-3-3 Setup (Step 3) / Onboarding (Step 1)</span>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <!-- Top Connection & Project Status -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>Connected to Zotero (127.0.0.1:23119)</span>
+      </div>
+      <div style="color: var(--st-color-text-secondary);">
+        Folder: <code>~/Documents/Research/QuantumMechanics2026/</code>
+      </div>
+    </div>
+
+    <!-- Empty State Content -->
+    <main class="empty-container">
+      <div class="empty-card">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <h1 class="empty-title">No papers imported into this project yet</h1>
+        <p class="empty-desc">
+          ScribeTrace connects to your local Zotero library and tracks the history of highlights and notes you make on your research papers.
+        </p>
+        <div style="margin-top: var(--st-space-2);">
+          <a href="paper-list.html" class="st-btn st-btn-primary">Scan Zotero Library for Marked Papers</a>
+        </div>
+        <p style="font-size: var(--st-font-size-xs); color: var(--st-color-text-muted); margin-top: var(--st-space-2);">
+          First mark imported within 5 minutes of install • Reading and marking remain in Zotero
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+  </script>
+</body>
+</html>

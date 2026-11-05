@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.scribetrace.spike4",
   "build": {
-    "frontendDist": "."
+    "frontendDist": "ui"
   },
   "bundle": {
     "active": false,

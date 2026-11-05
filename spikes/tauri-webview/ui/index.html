@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ScribeTrace Spike 4: PDF.js Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 1rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+    }
+    #viewer-container {
+      position: relative;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      overflow: auto;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #11111b;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+    .text-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      opacity: 0.2;
+      line-height: 1.0;
+    }
+  </style>
+</head>
+<body>
+  <h1>ScribeTrace Spike 4 Benchmark View</h1>
+  <div id="status">Loading PDF.js...</div>
+  <div id="viewer-container">
+    <canvas id="pdf-canvas"></canvas>
+    <div id="text-layer" class="text-layer"></div>
+  </div>
+</body>
+</html>

@@ -24,7 +24,7 @@
 | i | **3-3-3-3 journey and lightness numbers are a standing review rule**, published only after the prototype proves them (D8-B/C) | Makes "lightweight" checkable; blocks feature creep | Qualitative promise | Yes | Numbers are targets; some may be missed |
 | j | **W3C JSON-LD export moved to Later** (ARCH §7) | Not needed to prove the product; adds format surface to test | Ship in Stage 1 | Yes (trigger: an outside tool maintainer asks) | Weakens the "open standard" story at launch |
 | k | **Licence Apache-2.0** | Patent grant for an open format others may embed; Rust/Tauri norm († not re-checked) | MIT: shorter, but no patent grant | Hard once outside contributions arrive | **Differs from your MIT choice in Kinevo**; confirm you want a different licence here |
-| l | **GitHub repo `sedam-or/scribetrace` created private**, stays private until you decide | Nothing is public before the name, licence and trademark are settled | Public now | Yes | None; delays outside feedback |
+| l | ~~**GitHub repo `sedam-or/scribetrace` created private**, stays private until you decide~~ **Superseded 2026-11-06: the owner made the repo public** (see "What needs you" item 4; promotion stays gated by decision n) | Nothing is public before the name, licence and trademark are settled | Public now | Yes | None; delays outside feedback |
 
 ## Business round decisions (2026-11-06)
 Taken by chief-of-staff under the user's delegation, on pm's recommendations from [GO-TO-MARKET](GO-TO-MARKET.md) §7 and [VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md) §6. Each has a **revisit trigger**: the event that reopens it.

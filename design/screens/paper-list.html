@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — Paper List</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .app-window {
+      max-width: 1040px;
+      margin: 24px auto;
+      background: var(--st-color-bg-canvas);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      box-shadow: var(--st-shadow-modal);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 600px;
+    }
+    .window-header {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .window-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+    }
+    .screen-meta-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      border: 1px solid var(--st-color-border);
+    }
+    .toolbar {
+      padding: var(--st-space-3) var(--st-space-4);
+      background: var(--st-color-bg-surface);
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--st-space-4);
+    }
+    .search-input {
+      width: 280px;
+      height: 30px;
+      padding: 4px 10px;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-canvas);
+      color: var(--st-color-text-primary);
+      font-size: var(--st-font-size-base);
+    }
+    .st-btn {
+      height: 30px;
+      padding: 0 var(--st-space-3);
+      border-radius: var(--st-radius-md);
+      font-size: var(--st-font-size-base);
+      font-weight: var(--st-font-weight-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--st-space-1);
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: background var(--st-transition-fast), border-color var(--st-transition-fast);
+    }
+    .st-btn-primary {
+      background: var(--st-color-primary);
+      color: var(--st-color-text-inverse);
+    }
+    .st-btn-primary:hover {
+      background: var(--st-color-primary-hover);
+    }
+    .st-btn-secondary {
+      background: var(--st-color-bg-surface);
+      border-color: var(--st-color-border);
+      color: var(--st-color-text-primary);
+    }
+    .st-btn-secondary:hover {
+      background: var(--st-color-bg-subtle);
+      border-color: var(--st-color-border-strong);
+    }
+    
+    /* Paper List Table */
+    .paper-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .paper-table th {
+      padding: var(--st-space-2) var(--st-space-4);
+      font-size: var(--st-font-size-xs);
+      font-weight: var(--st-font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--st-color-text-secondary);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+    }
+    .paper-row {
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      transition: background var(--st-transition-fast);
+      cursor: pointer;
+    }
+    .paper-row:hover {
+      background: var(--st-color-bg-subtle);
+    }
+    .paper-row.selected {
+      background: var(--st-color-primary-subtle);
+      border-left: 3px solid var(--st-color-primary);
+    }
+    .paper-table td {
+      padding: var(--st-space-3) var(--st-space-4);
+      vertical-align: middle;
+    }
+    .paper-title {
+      font-size: var(--st-font-size-base);
+      font-weight: var(--st-font-weight-semibold);
+      color: var(--st-color-text-primary);
+      margin-bottom: 2px;
+    }
+    .paper-meta {
+      font-size: var(--st-font-size-sm);
+      color: var(--st-color-text-secondary);
+      display: flex;
+      gap: var(--st-space-2);
+    }
+    .citekey-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 1px 6px;
+      border-radius: var(--st-radius-sm);
+      border: 1px solid var(--st-color-border-subtle);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      font-size: var(--st-font-size-xs);
+      font-weight: var(--st-font-weight-medium);
+    }
+    .pill-marks {
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-primary);
+      border: 1px solid var(--st-color-border);
+    }
+    .pill-added {
+      background: var(--st-mark-added-bg);
+      color: var(--st-mark-added);
+      border: 1px solid var(--st-mark-added-border);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 4px 8px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+    <header class="window-header">
+      <div class="window-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"></path>
+          <path d="M14 2v6h6"></path>
+          <path d="M10 13l4-4"></path>
+          <circle cx="9" cy="17" r="1"></circle>
+          <circle cx="15" cy="13" r="1"></circle>
+        </svg>
+        <span>ScribeTrace — QuantumMechanics2026</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="screen-meta-badge">R-01, R-02, R-11 • 3-3-3-3 Everyday (Step 1–2)</span>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <!-- Filter & Action Toolbar -->
+    <div class="toolbar">
+      <input type="text" class="search-input" placeholder="Filter papers, tags, or authors (Ctrl+K)...">
+      <div style="display: flex; gap: var(--st-space-2);">
+        <button type="button" class="st-btn st-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Refresh from Zotero
+        </button>
+        <button type="button" class="st-btn st-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export to Obsidian
+        </button>
+      </div>
+    </div>
+
+    <!-- Paper Table -->
+    <main style="flex: 1; overflow-y: auto;">
+      <table class="paper-table">
+        <thead>
+          <tr>
+            <th style="width: 50%;">Paper Title & Authors</th>
+            <th style="width: 15%;">Citation Key</th>
+            <th style="width: 15%;">History & Marks</th>
+            <th style="width: 20%; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Paper 1 (Selected) -->
+          <tr class="paper-row selected" onclick="window.location.href='paper-timeline.html'">
+            <td>
+              <div class="paper-title">Attention Is All You Need</div>
+              <div class="paper-meta">
+                <span>Vaswani, Shazeer, Parmar, Uszkoreit et al.</span>
+                <span>•</span>
+                <span>NeurIPS 2017</span>
+              </div>
+            </td>
+            <td>
+              <span class="citekey-badge">@vaswani2017attention</span>
+            </td>
+            <td>
+              <span class="pill pill-marks">18 marks</span>
+              <span class="pill pill-added">+4 in v3</span>
+            </td>
+            <td style="text-align: right;">
+              <a href="paper-timeline.html" class="st-btn st-btn-primary" style="height: 26px; font-size: var(--st-font-size-xs);">View Timeline</a>
+              <a href="quote-copy.html" class="st-btn st-btn-secondary" style="height: 26px; font-size: var(--st-font-size-xs);">Quote</a>
+            </td>
+          </tr>
+
+          <!-- Paper 2 -->
+          <tr class="paper-row" onclick="window.location.href='paper-timeline.html'">
+            <td>
+              <div class="paper-title">Deep Residual Learning for Image Recognition</div>
+              <div class="paper-meta">
+                <span>He, Zhang, Ren, Sun</span>
+                <span>•</span>
+                <span>CVPR 2016</span>
+              </div>
+            </td>
+            <td>
+              <span class="citekey-badge">@he2016deep</span>
+            </td>
+            <td>
+              <span class="pill pill-marks">24 marks</span>
+              <span style="font-size: var(--st-font-size-xs); color: var(--st-color-text-secondary);">4 milestones</span>
+            </td>
+            <td style="text-align: right;">
+              <a href="paper-timeline.html" class="st-btn st-btn-secondary" style="height: 26px; font-size: var(--st-font-size-xs);">View Timeline</a>
+              <button type="button" class="st-btn st-btn-secondary" style="height: 26px; font-size: var(--st-font-size-xs);">Quote</button>
+            </td>
+          </tr>
+
+          <!-- Paper 3 -->
+          <tr class="paper-row" onclick="window.location.href='paper-timeline.html'">
+            <td>
+              <div class="paper-title">Quantum Supremacy Using a Programmable Superconducting Processor</div>
+              <div class="paper-meta">
+                <span>Arute, Arya, Babbush, Bacon et al.</span>
+                <span>•</span>
+                <span>Nature 2019</span>
+              </div>
+            </td>
+            <td>
+              <span class="citekey-badge">@arute2019quantum</span>
+            </td>
+            <td>
+              <span class="pill pill-marks">9 marks</span>
+              <span style="font-size: var(--st-font-size-xs); color: var(--st-color-text-secondary);">1 milestone</span>
+            </td>
+            <td style="text-align: right;">
+              <a href="paper-timeline.html" class="st-btn st-btn-secondary" style="height: 26px; font-size: var(--st-font-size-xs);">View Timeline</a>
+              <button type="button" class="st-btn st-btn-secondary" style="height: 26px; font-size: var(--st-font-size-xs);">Quote</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <!-- Bottom Status Bar -->
+    <footer style="padding: var(--st-space-2) var(--st-space-4); background: var(--st-color-bg-subtle); border-top: 1px solid var(--st-color-border); font-size: var(--st-font-size-xs); color: var(--st-color-text-secondary); display: flex; justify-content: space-between;">
+      <span>3 papers in project • Local sidecars: <code>.scribetrace/history/*.jsonl</code></span>
+      <span>Zotero Local API: <code>127.0.0.1:23119</code> (connected, idle)</span>
+    </footer>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+  </script>
+</body>
+</html>

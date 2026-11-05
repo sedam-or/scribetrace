@@ -59,6 +59,31 @@ jobs:
             echo "No Cargo.toml files found yet; skipping Rust checks for initial scaffold."
           fi
 
+      - name: Transitive crate count and rustls guard
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          echo "=== Verifying transitive crate count and rustls avoidance (TECH-OPTIMIZATION Cut 2) ==="
+          if cargo tree --manifest-path spikes/tauri-webview/Cargo.toml -i rustls 2>/dev/null; then
+            echo "Error: Forbidden crate 'rustls' detected in spikes/tauri-webview dependencies!" >&2
+            exit 1
+          fi
+          echo "Verified: 0 rustls dependencies found."
+          
+          for item in "spikes/log-merge:26" "spikes/purge:23" "spikes/tauri-webview:375"; do
+            dir="${item%%:*}"
+            max="${item##*:}"
+            if [ -f "$dir/Cargo.toml" ]; then
+              count=$(cargo tree --manifest-path "$dir/Cargo.toml" -e normal --prefix none | sort -u | wc -l)
+              echo "$dir crate count: $count (limit: $max)"
+              if [ "$count" -gt "$max" ]; then
+                echo "Error: $dir crate count ($count) exceeds +20% ceiling ($max)!" >&2
+                exit 1
+              fi
+            fi
+          done
+          echo "All crate count guards passed."
+
   docs-lint:
     name: Documentation Link Check
     runs-on: ubuntu-latest

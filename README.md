@@ -30,6 +30,11 @@ Our target is a first mark imported within 5 minutes of install ([journey target
 - In the first stage you read and mark in Zotero; ScribeTrace's own reader is built only if people actually use the history.
 - The name is not trademark-cleared yet ([naming notes](docs/NAMING.md)).
 
+## Our pledge
+
+- **No open core.** Every feature of the app stays Apache-2.0.
+- **The app never needs an account or a server.** If an optional paid service ever exists, it will not be required and will not reduce the free app ([decision o](docs/DECISION-LOG.md)).
+
 ## Documents
 
 | | |

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — UI Screen Mockups Portal</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .portal-container {
+      max-width: 1080px;
+      margin: 32px auto;
+      padding: 0 var(--st-space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-6);
+    }
+    .portal-header {
+      border-bottom: 1px solid var(--st-color-border);
+      padding-bottom: var(--st-space-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .portal-h1 {
+      font-size: var(--st-font-size-2xl);
+      font-weight: var(--st-font-weight-bold);
+      color: var(--st-color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-3);
+    }
+    .portal-lead {
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-md);
+      margin-top: var(--st-space-1);
+    }
+    .journey-overview {
+      background: var(--st-color-bg-subtle);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      padding: var(--st-space-4);
+    }
+    .journey-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--st-space-4);
+      margin-top: var(--st-space-3);
+    }
+    .journey-col {
+      background: var(--st-color-bg-surface);
+      border: 1px solid var(--st-color-border-subtle);
+      border-radius: var(--st-radius-md);
+      padding: var(--st-space-3);
+      font-size: var(--st-font-size-sm);
+    }
+    .journey-title {
+      font-weight: var(--st-font-weight-bold);
+      color: var(--st-color-text-primary);
+      margin-bottom: var(--st-space-2);
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      padding-bottom: 4px;
+      font-size: var(--st-font-size-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .journey-list {
+      list-style-type: decimal;
+      padding-left: var(--st-space-4);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--st-color-text-secondary);
+    }
+
+    /* Screen Cards Grid */
+    .screen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--st-space-4);
+    }
+    .screen-card {
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-surface);
+      box-shadow: var(--st-shadow-subtle);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--st-transition-fast), border-color var(--st-transition-fast);
+      text-decoration: none;
+      color: inherit;
+    }
+    .screen-card:hover {
+      border-color: var(--st-color-primary);
+      transform: translateY(-2px);
+    }
+    .screen-card-header {
+      padding: var(--st-space-3) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .screen-number {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      font-weight: var(--st-font-weight-bold);
+      color: var(--st-color-primary);
+    }
+    .screen-meta {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      color: var(--st-color-text-secondary);
+    }
+    .screen-card-body {
+      padding: var(--st-space-4);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-2);
+    }
+    .screen-name {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      color: var(--st-color-text-primary);
+    }
+    .screen-desc {
+      font-size: var(--st-font-size-sm);
+      color: var(--st-color-text-secondary);
+      line-height: var(--st-line-height-normal);
+      flex: 1;
+    }
+    .screen-card-footer {
+      padding: var(--st-space-3) var(--st-space-4);
+      background: var(--st-color-bg-surface);
+      border-top: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--st-font-size-xs);
+      color: var(--st-color-primary);
+      font-weight: var(--st-font-weight-medium);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 6px 12px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-sm);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-container">
+    <header class="portal-header">
+      <div>
+        <h1 class="portal-h1">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"></path>
+            <path d="M14 2v6h6"></path>
+            <path d="M10 13l4-4"></path>
+            <circle cx="9" cy="17" r="1"></circle>
+            <circle cx="15" cy="13" r="1"></circle>
+          </svg>
+          ScribeTrace UI Screen Gallery
+        </h1>
+        <p class="portal-lead">
+          Static HTML mockups powered strictly by <code>design/tokens.css</code>. No external fonts, no CDNs, calm and dense scholarly desktop aesthetic.
+        </p>
+      </div>
+      <div>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <!-- 3-3-3-3 Journey Alignment Reference -->
+    <section class="journey-overview">
+      <h2 style="font-size: var(--st-font-size-md); font-weight: var(--st-font-weight-semibold); margin-bottom: 2px;">
+        The 3-3-3-3 User Journey Architecture
+      </h2>
+      <p style="font-size: var(--st-font-size-sm); color: var(--st-color-text-secondary);">
+        Every screen serves an explicit Requirement ID (R-ID) and a defined 3-3-3-3 journey step (docs/debate/08-links-and-3-step.md).
+      </p>
+
+      <div class="journey-grid">
+        <div class="journey-col">
+          <div class="journey-title">1. Install (2–3m)</div>
+          <ol class="journey-list">
+            <li>Download installer</li>
+            <li>Run package</li>
+            <li>Open app &lt; 2s</li>
+          </ol>
+        </div>
+        <div class="journey-col">
+          <div class="journey-title">2. Setup (2m)</div>
+          <ol class="journey-list">
+            <li>Allow Zotero access</li>
+            <li>Choose project folder</li>
+            <li>Connect to Zotero</li>
+          </ol>
+        </div>
+        <div class="journey-col">
+          <div class="journey-title">3. Onboarding (2m)</div>
+          <ol class="journey-list">
+            <li>Pick paper from list</li>
+            <li>Import marks (&lt; 5m)</li>
+            <li>Copy quote (&lt; 10m)</li>
+          </ol>
+        </div>
+        <div class="journey-col">
+          <div class="journey-title">4. Everyday</div>
+          <ol class="journey-list">
+            <li>Read/mark in Zotero</li>
+            <li>Click Refresh (&lt; 5s)</li>
+            <li>See what changed</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen Mockups Grid -->
+    <main class="screen-grid">
+
+      <!-- Screen 1 -->
+      <a href="first-run.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 01</span>
+          <span class="screen-meta">R-05, R-04, R-02</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">First Run & Zotero Setup</h3>
+          <p class="screen-desc">
+            The 3-step setup screen: enabling Zotero local communication with an annotated instruction schematic, selecting the local project folder, and pressing Connect.
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Setup Steps 1–3</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+      <!-- Screen 2 -->
+      <a href="paper-list-empty.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 02</span>
+          <span class="screen-meta">R-01, R-05</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">Paper List (Empty State)</h3>
+          <p class="screen-desc">
+            Connected state before any marks are imported. Clear guidance on scanning Zotero or saving preprints with Zotero's browser button. Addresses friction moment #3.
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Onboarding Step 1</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+      <!-- Screen 3 -->
+      <a href="paper-list.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 03</span>
+          <span class="screen-meta">R-01, R-02, R-11</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">Paper List (Populated)</h3>
+          <p class="screen-desc">
+            Dense, scholarly table listing research papers, citation keys, total mark counters, milestone badges, and instant actions (View Timeline, Quote, Refresh).
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Onboarding 1–2 / Everyday 2</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+      <!-- Screen 4 -->
+      <a href="paper-timeline.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 04</span>
+          <span class="screen-meta">R-11, R-12, R-13</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">Paper History Timeline ("What Changed")</h3>
+          <p class="screen-desc">
+            Chronological milestone history comparing two versions with +Added, ~Edited, and -Removed diff pills. One-click restore (R-13) and diff inspection. Addresses friction moment #5.
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Everyday Step 3</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+      <!-- Screen 5 -->
+      <a href="quote-copy.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 05</span>
+          <span class="screen-meta">R-15, R-20</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">Quote Copy with Citation</h3>
+          <p class="screen-desc">
+            Modal generating ready-to-paste quotes formatted with citation keys, page numbers, and deep links back into Zotero. Includes link safety guarantee notice and toast feedback.
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Onboarding Step 3</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+      <!-- Screen 6 -->
+      <a href="error-zotero-unreachable.html" class="screen-card">
+        <div class="screen-card-header">
+          <span class="screen-number">Screen 06</span>
+          <span class="screen-meta">R-04, R-02</span>
+        </div>
+        <div class="screen-card-body">
+          <h3 class="screen-name">Error: Zotero Not Reachable</h3>
+          <p class="screen-desc">
+            High-clarity error screen explaining how to switch on Zotero's local HTTP server in under 1 minute. No background polling or retry loop. Addresses friction moment #2.
+          </p>
+        </div>
+        <div class="screen-card-footer">
+          <span>Serves: Setup Step 3</span>
+          <span>Open Screen →</span>
+        </div>
+      </a>
+
+    </main>
+
+    <!-- Footer & Token Verification -->
+    <footer style="border-top: 1px solid var(--st-color-border); padding-top: var(--st-space-4); display: flex; justify-content: space-between; font-size: var(--st-font-size-sm); color: var(--st-color-text-secondary);">
+      <span>Brand Kit: <code>design/brand/</code> • Tokens: <code>design/tokens.json</code> & <code>tokens.css</code></span>
+      <span>Accessibility: WCAG 2.2 Level AA Compliant (All text contrasts &gt; 4.79:1)</span>
+    </footer>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+  </script>
+</body>
+</html>

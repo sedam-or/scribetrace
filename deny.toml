@@ -1,0 +1,56 @@
+# ScribeTrace cargo-deny configuration
+# Governs license compliance, security advisories, and dependency sources.
+# Generated: 2026-11-06
+
+[graph]
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-pc-windows-msvc" },
+    { triple = "x86_64-apple-darwin" },
+    { triple = "aarch64-apple-darwin" },
+]
+
+[licenses]
+unused-allowed-license = "allow"
+confidence-threshold = 0.8
+
+# Explicitly allowed licenses per chief-of-staff legal compliance decision:
+# Permissive licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Unicode-3.0, Unicode-DFS-2016, Zlib, 0BSD, CC0-1.0
+# LLVM exception: Apache-2.0 WITH LLVM-exception
+# Weak copyleft: MPL-2.0 (file-level weak copyleft only)
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "0BSD",
+    "CC0-1.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MPL-2.0",
+]
+
+# MPL-2.0 is a file-level weak copyleft license (used by crates like cssparser, dtoa-short).
+# In ScribeTrace, these crates are incorporated unmodified into larger compiled binaries
+# under MPL-2.0 § 3.3, which explicitly permits distribution of the larger work under Apache-2.0.
+exceptions = []
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+deny = []
+
+[advisories]
+ignore = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — Paper History Timeline</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .app-window {
+      max-width: 1040px;
+      margin: 24px auto;
+      background: var(--st-color-bg-canvas);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      box-shadow: var(--st-shadow-modal);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 620px;
+    }
+    .window-header {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .window-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+    }
+    .screen-meta-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      border: 1px solid var(--st-color-border);
+    }
+    .paper-header {
+      padding: var(--st-space-4);
+      background: var(--st-color-bg-surface);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .paper-h1 {
+      font-size: var(--st-font-size-lg);
+      font-weight: var(--st-font-weight-bold);
+      color: var(--st-color-text-primary);
+      margin-bottom: var(--st-space-1);
+    }
+    .citekey-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 6px;
+      border-radius: var(--st-radius-sm);
+      border: 1px solid var(--st-color-border);
+    }
+    
+    /* Diff Summary Bar */
+    .diff-summary-bar {
+      padding: var(--st-space-3) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--st-font-size-sm);
+    }
+    .diff-pills {
+      display: flex;
+      gap: var(--st-space-2);
+    }
+    .diff-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      font-weight: var(--st-font-weight-semibold);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .diff-added {
+      color: var(--st-mark-added);
+      background: var(--st-mark-added-bg);
+      border: 1px solid var(--st-mark-added-border);
+    }
+    .diff-edited {
+      color: var(--st-mark-edited);
+      background: var(--st-mark-edited-bg);
+      border: 1px solid var(--st-mark-edited-border);
+    }
+    .diff-removed {
+      color: var(--st-mark-removed);
+      background: var(--st-mark-removed-bg);
+      border: 1px solid var(--st-mark-removed-border);
+    }
+
+    /* Timeline Structure */
+    .timeline-container {
+      padding: var(--st-space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-6);
+      position: relative;
+    }
+    .timeline-container::before {
+      content: '';
+      position: absolute;
+      top: 36px;
+      bottom: 36px;
+      left: 39px;
+      width: 2px;
+      background: var(--st-color-border);
+    }
+    .timeline-entry {
+      display: flex;
+      gap: var(--st-space-4);
+      position: relative;
+    }
+    .timeline-node {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--st-radius-full);
+      background: var(--st-color-bg-canvas);
+      border: 2px solid var(--st-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .timeline-node.current {
+      background: var(--st-color-primary);
+      box-shadow: 0 0 0 4px var(--st-color-primary-subtle);
+    }
+    .timeline-node.past {
+      border-color: var(--st-color-border-strong);
+    }
+    .timeline-card {
+      flex: 1;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-surface);
+      padding: var(--st-space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-3);
+    }
+    .timeline-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--st-color-border-subtle);
+      padding-bottom: var(--st-space-2);
+    }
+    .milestone-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      color: var(--st-color-text-primary);
+    }
+    .milestone-date {
+      font-size: var(--st-font-size-xs);
+      color: var(--st-color-text-secondary);
+      font-family: var(--st-font-mono);
+    }
+
+    /* Change Item Lines */
+    .change-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-2);
+    }
+    .change-item {
+      padding: var(--st-space-2) var(--st-space-3);
+      border-radius: var(--st-radius-sm);
+      font-size: var(--st-font-size-sm);
+      display: flex;
+      gap: var(--st-space-2);
+      align-items: flex-start;
+      border-left: 3px solid transparent;
+    }
+    .change-item.added {
+      background: var(--st-mark-added-bg);
+      border-left-color: var(--st-mark-added);
+      color: var(--st-color-text-primary);
+    }
+    .change-item.edited {
+      background: var(--st-mark-edited-bg);
+      border-left-color: var(--st-mark-edited);
+      color: var(--st-color-text-primary);
+    }
+    .change-item.removed {
+      background: var(--st-mark-removed-bg);
+      border-left-color: var(--st-mark-removed);
+      color: var(--st-color-text-secondary);
+      text-decoration: line-through;
+    }
+
+    .st-btn {
+      height: 28px;
+      padding: 0 var(--st-space-3);
+      border-radius: var(--st-radius-md);
+      font-size: var(--st-font-size-sm);
+      font-weight: var(--st-font-weight-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--st-color-border);
+      background: var(--st-color-bg-surface);
+      color: var(--st-color-text-primary);
+      text-decoration: none;
+    }
+    .st-btn:hover {
+      background: var(--st-color-bg-subtle);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 4px 8px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+    <header class="window-header">
+      <div class="window-title">
+        <a href="paper-list.html" style="color: var(--st-color-text-secondary); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+          ← Back to Papers
+        </a>
+        <span>/</span>
+        <span>Paper History</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="screen-meta-badge">R-11, R-12, R-13 • 3-3-3-3 Everyday (Step 3)</span>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <!-- Paper Header Details -->
+    <div class="paper-header">
+      <div>
+        <h1 class="paper-h1">Attention Is All You Need</h1>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="citekey-badge">@vaswani2017attention</span>
+          <span style="font-size: var(--st-font-size-sm); color: var(--st-color-text-secondary);">Vaswani et al. (2017) • 18 total marks</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: var(--st-space-2);">
+        <a href="quote-copy.html" class="st-btn">Quote with Citation</a>
+        <button type="button" class="st-btn">Refresh from Zotero</button>
+      </div>
+    </div>
+
+    <!-- What Changed Comparison Header -->
+    <div class="diff-summary-bar">
+      <div>
+        <strong>Comparing v3 (Latest) with v2 (Oct 12, 2026):</strong>
+      </div>
+      <div class="diff-pills">
+        <span class="diff-badge diff-added" aria-label="4 marks added">+4 Added</span>
+        <span class="diff-badge diff-edited" aria-label="2 marks edited">~2 Edited</span>
+        <span class="diff-badge diff-removed" aria-label="1 mark removed">-1 Removed</span>
+      </div>
+    </div>
+
+    <!-- Timeline Content -->
+    <main class="timeline-container">
+
+      <!-- Milestone 3 (Latest) -->
+      <article class="timeline-entry">
+        <div class="timeline-node current" aria-hidden="true"></div>
+        <div class="timeline-card">
+          <div class="timeline-card-header">
+            <div>
+              <span class="milestone-title">v3: Rebuttal pass & reviewer note reconciliation</span>
+              <span style="margin-left: 8px; font-size: var(--st-font-size-xs); background: var(--st-color-primary-subtle); color: var(--st-color-primary); padding: 1px 6px; border-radius: 4px; font-weight: 500;">Current State</span>
+            </div>
+            <time class="milestone-date">Nov 5, 2026, 14:32 • by Me (laptop)</time>
+          </div>
+          <div class="change-list">
+            <div class="change-item added">
+              <strong style="color: var(--st-mark-added); font-family: var(--st-font-mono);">[+ Added]</strong>
+              <div>
+                <strong>p. 4, §3.2.2:</strong> "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions."
+                <div style="font-size: var(--st-font-size-xs); color: var(--st-color-text-secondary); margin-top: 2px;">Note: Key thesis rebuttal evidence for Reviewer 2.</div>
+              </div>
+            </div>
+            <div class="change-item edited">
+              <strong style="color: var(--st-mark-edited); font-family: var(--st-font-mono);">[~ Edited]</strong>
+              <div>
+                <strong>p. 7, Table 1:</strong> Note modified: <em>"Check BLEU reproduction on WMT 2014 En-De"</em> (was: <em>"verify table"</em>).
+              </div>
+            </div>
+            <div class="change-item removed">
+              <strong style="color: var(--st-mark-removed); font-family: var(--st-font-mono);">[- Removed]</strong>
+              <div>
+                <strong>p. 9, §5.3:</strong> Highlight on learning rate warmup step formula deleted in Zotero.
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Milestone 2 -->
+      <article class="timeline-entry">
+        <div class="timeline-node past" aria-hidden="true"></div>
+        <div class="timeline-card">
+          <div class="timeline-card-header">
+            <div>
+              <span class="milestone-title">v2: Lab seminar preparation</span>
+            </div>
+            <time class="milestone-date">Oct 12, 2026, 09:15 • by Me (desktop)</time>
+          </div>
+          <div style="font-size: var(--st-font-size-sm); color: var(--st-color-text-secondary);">
+            5 new highlights imported; added seminar presentation notes to <code>.scribetrace/notes/vaswani2017.md</code>.
+          </div>
+          <div>
+            <button type="button" class="st-btn" style="font-size: var(--st-font-size-xs); height: 24px;">Restore copy as of this point (R-13)</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Milestone 1 (Initial Import) -->
+      <article class="timeline-entry">
+        <div class="timeline-node past" aria-hidden="true"></div>
+        <div class="timeline-card">
+          <div class="timeline-card-header">
+            <div>
+              <span class="milestone-title">v1: First skim</span>
+            </div>
+            <time class="milestone-date">Aug 20, 2026, 16:40 • by Me (laptop)</time>
+          </div>
+          <div style="font-size: var(--st-font-size-sm); color: var(--st-color-text-secondary);">
+            Initial import from Zotero. 10 highlights captured on architecture overview and abstract.
+          </div>
+        </div>
+      </article>
+
+    </main>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+  </script>
+</body>
+</html>

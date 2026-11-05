@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — Quote Copy with Citation</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .app-window {
+      max-width: 840px;
+      margin: 24px auto;
+      background: var(--st-color-bg-canvas);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      box-shadow: var(--st-shadow-modal);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 580px;
+    }
+    .window-header {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .window-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+    }
+    .screen-meta-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      border: 1px solid var(--st-color-border);
+    }
+    .modal-body {
+      padding: var(--st-space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-5);
+    }
+    .quote-box {
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-subtle);
+      padding: var(--st-space-4);
+    }
+    .quote-text {
+      font-size: var(--st-font-size-md);
+      line-height: var(--st-line-height-relaxed);
+      color: var(--st-color-text-primary);
+      border-left: 3px solid var(--st-color-primary);
+      padding-left: var(--st-space-3);
+      margin-bottom: var(--st-space-3);
+      font-style: italic;
+    }
+    .quote-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--st-font-size-sm);
+      color: var(--st-color-text-secondary);
+      padding-top: var(--st-space-2);
+      border-top: 1px solid var(--st-color-border-subtle);
+    }
+    
+    /* Code output preview */
+    .preview-box {
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-canvas);
+      padding: var(--st-space-3);
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      color: var(--st-color-text-primary);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    
+    /* Security confirmation notice */
+    .link-safety-notice {
+      border: 1px solid var(--st-color-border);
+      background: var(--st-color-bg-surface);
+      border-radius: var(--st-radius-md);
+      padding: var(--st-space-3);
+      font-size: var(--st-font-size-xs);
+      color: var(--st-color-text-secondary);
+      display: flex;
+      gap: var(--st-space-2);
+      align-items: center;
+    }
+
+    /* Actions */
+    .action-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--st-space-3);
+      margin-top: var(--st-space-2);
+    }
+    .st-btn {
+      height: 32px;
+      padding: 0 var(--st-space-4);
+      border-radius: var(--st-radius-md);
+      font-size: var(--st-font-size-base);
+      font-weight: var(--st-font-weight-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--st-space-2);
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .st-btn-primary {
+      background: var(--st-color-primary);
+      color: var(--st-color-text-inverse);
+    }
+    .st-btn-secondary {
+      background: var(--st-color-bg-surface);
+      border-color: var(--st-color-border);
+      color: var(--st-color-text-primary);
+    }
+
+    /* Toast Notification */
+    .toast-pill {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: var(--st-color-text-primary);
+      color: var(--st-color-text-inverse);
+      padding: 8px 16px;
+      border-radius: var(--st-radius-md);
+      box-shadow: var(--st-shadow-modal);
+      font-size: var(--st-font-size-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+      animation: fadeIn 150ms ease-in-out;
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 4px 8px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+    <header class="window-header">
+      <div class="window-title">
+        <a href="paper-timeline.html" style="color: var(--st-color-text-secondary); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+          ← Back to Timeline
+        </a>
+        <span>/</span>
+        <span>Quote with Citation</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="screen-meta-badge">R-15, R-20 • 3-3-3-3 Onboarding (Step 3)</span>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <main class="modal-body">
+      <div>
+        <h1 style="font-size: var(--st-font-size-lg); font-weight: var(--st-font-weight-bold); margin-bottom: 4px;">
+          Copy Highlight as Ready-to-Paste Quote
+        </h1>
+        <p style="font-size: var(--st-font-size-base); color: var(--st-color-text-secondary);">
+          Formats the marked text with bibliographic citation key, page number, and direct link back into Zotero.
+        </p>
+      </div>
+
+      <!-- Highlight Card -->
+      <div class="quote-box">
+        <blockquote class="quote-text">
+          "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this."
+        </blockquote>
+        <div class="quote-meta-row">
+          <span><strong>Paper:</strong> Attention Is All You Need (Vaswani et al., 2017)</span>
+          <span><strong>Location:</strong> Page 4, §3.2.2</span>
+        </div>
+      </div>
+
+      <!-- Output Preview Format -->
+      <div>
+        <label style="font-size: var(--st-font-size-sm); font-weight: var(--st-font-weight-semibold); display: block; margin-bottom: 6px;">
+          Generated Markdown Output (Ready for Obsidian / Notes):
+        </label>
+        <div class="preview-box">
+&gt; Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.
+&gt; — [@vaswani2017attention, p. 4](zotero://open-pdf/0_ABCD1234/4)</div>
+      </div>
+
+      <!-- Link Safety Guarantee Notice -->
+      <div class="link-safety-notice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>
+          <strong>Link Safety Guarantee (R-15, R-20):</strong> Links to <code>zotero://</code> or the web are never executed automatically. ScribeTrace always asks for explicit user confirmation before opening any external address.
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-row">
+        <a href="paper-timeline.html" class="st-btn st-btn-secondary">Close</a>
+        <button type="button" class="st-btn st-btn-primary" onclick="showToast()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy Quote with Citation
+        </button>
+      </div>
+    </main>
+
+    <!-- Simulated Ephemeral Toast (R-15) -->
+    <div id="toast" class="toast-pill" role="status" aria-live="polite">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span>Quote copied with citation to clipboard (pasted in &lt; 10 min target)</span>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+    function showToast() {
+      const t = document.getElementById('toast');
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+  </script>
+</body>
+</html>

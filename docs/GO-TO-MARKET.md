@@ -70,11 +70,11 @@ Stars and views are not metrics. A number we cannot measure without tracking use
 | **Grant: NLnet** | Application work only | Full. First grants €5,000 to €50,000, open licence required, "strong European dimension" required, "proposals and projects should be made by humans, not AI"; next deadline listed 2027-01-03 ([NLnet](https://nlnet.nl/propose/), checked 2026-11-06) | Apply only when the gate passes **and** a human applicant with a clear European link writes the proposal. Because AI agents write our first code, say so honestly. Do not rush for 2027-01-03 |
 | **Grant: Sovereign Tech Fund** | High | Neutral | **Not a fit now:** funds base technology other software depends on, minimum cost of work above €50,000, user-facing apps not currently sought ([STF](https://www.sovereign.tech/programs/fund), checked 2026-11-06). Revisit only if the format becomes shared infrastructure |
 | Zotero-ecosystem funds | n/a | n/a | No such fund found; **unverified**. Ask in the Zotero forum only after launch |
-| **Open core** (paid extras on a free core) | Splits the community; legal effort | Weak: the open format is the moat | **No.** Reconsider only if an institution asks and pays |
-| **Paid sync or hosting** | Server, accounts, support | **Contradicts** local-first and no-account | **No** for v1; users sync with their own tools |
+| **Open core** (paid extras on a free core) | Splits the community; legal effort | Weak: the open format is the moat | **No, pledged** ([DECISION-LOG](DECISION-LOG.md) o): every feature of the app stays Apache-2.0 |
+| **Optional paid service** (for example hosted sync) | Server, accounts, support | Fits only if never required: the app itself needs no account or server (pledged, decision o) | **Not for v1; no pledge against it ever** (decision o). Revisit after the product gate. It would need its own decision, must never be required, and must not reduce the free app |
 
-## 7. Decisions only the user can take
-1. **Primary segment:** SSH PhD students and postdocs with Zotero 7 and Markdown/Obsidian. Recommend **yes**.
-2. **No promotion until all gates in §4 are met**, even though the repo is public. Recommend **yes**.
-3. **NLnet:** will a human with a European link apply, and when? Recommend: decide after the product gate.
-4. **Pledge:** no open core and no paid sync, in writing in the README. Recommend **yes** (it supports trust, and nothing suggests demand for paid features).
+## 7. Decisions (all four taken 2026-11-06; see [DECISION-LOG](DECISION-LOG.md) m, n, s, o)
+1. **Primary segment:** PhD students and postdocs in the social sciences and humanities with Zotero 7 and Markdown/Obsidian. Recommend **yes**. **Decided: yes** (m).
+2. **No promotion until all gates in §4 are met**, even though the repo is public. Recommend **yes**. **Decided: yes** (n).
+3. **NLnet:** will a human with a European link apply, and when? Recommend: decide after the product gate. **Decided: after the product gate, human owner applies** (s).
+4. **Pledge:** no open core, and the app never needs an account or a server, in writing in the README. **Decided: yes to both; no pledge against optional paid services** (o). This replaces the earlier recommendation, which also ruled out paid sync.

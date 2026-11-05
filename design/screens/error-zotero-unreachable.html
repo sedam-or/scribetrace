@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScribeTrace — Zotero Unreachable</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <style>
+    .app-window {
+      max-width: 800px;
+      margin: 32px auto;
+      background: var(--st-color-bg-canvas);
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-lg);
+      box-shadow: var(--st-shadow-modal);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .window-header {
+      padding: var(--st-space-2) var(--st-space-4);
+      background: var(--st-color-bg-subtle);
+      border-bottom: 1px solid var(--st-color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .window-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--st-space-2);
+    }
+    .screen-meta-badge {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-surface-raised);
+      color: var(--st-color-text-secondary);
+      padding: 2px 8px;
+      border-radius: var(--st-radius-full);
+      border: 1px solid var(--st-color-border);
+    }
+    .window-body {
+      padding: var(--st-space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-5);
+    }
+    
+    /* Error Card */
+    .error-card {
+      border: 1px solid var(--st-color-error-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-error-bg);
+      padding: var(--st-space-4);
+      display: flex;
+      gap: var(--st-space-3);
+    }
+    .error-icon {
+      color: var(--st-color-error-text);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .error-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-bold);
+      color: var(--st-color-error-text);
+      margin-bottom: 4px;
+    }
+    .error-desc {
+      font-size: var(--st-font-size-base);
+      color: var(--st-color-text-primary);
+      line-height: var(--st-line-height-normal);
+    }
+
+    /* Step-by-Step Resolution */
+    .resolution-box {
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-md);
+      background: var(--st-color-bg-surface);
+      padding: var(--st-space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-3);
+    }
+    .resolution-title {
+      font-size: var(--st-font-size-md);
+      font-weight: var(--st-font-weight-semibold);
+      color: var(--st-color-text-primary);
+    }
+    .resolution-list {
+      padding-left: var(--st-space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--st-space-2);
+      font-size: var(--st-font-size-base);
+      color: var(--st-color-text-primary);
+    }
+    .code-pill {
+      font-family: var(--st-font-mono);
+      font-size: var(--st-font-size-xs);
+      background: var(--st-color-bg-subtle);
+      border: 1px solid var(--st-color-border-subtle);
+      padding: 1px 6px;
+      border-radius: var(--st-radius-sm);
+    }
+
+    /* Actions */
+    .action-row {
+      display: flex;
+      gap: var(--st-space-3);
+      align-items: center;
+      padding-top: var(--st-space-2);
+    }
+    .st-btn {
+      height: 32px;
+      padding: 0 var(--st-space-4);
+      border-radius: var(--st-radius-md);
+      font-size: var(--st-font-size-base);
+      font-weight: var(--st-font-weight-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--st-space-2);
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .st-btn-primary {
+      background: var(--st-color-primary);
+      color: var(--st-color-text-inverse);
+    }
+    .st-btn-secondary {
+      background: var(--st-color-bg-surface);
+      border-color: var(--st-color-border);
+      color: var(--st-color-text-primary);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--st-color-border);
+      border-radius: var(--st-radius-sm);
+      padding: 4px 8px;
+      color: var(--st-color-text-secondary);
+      font-size: var(--st-font-size-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+    <header class="window-header">
+      <div class="window-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"></path>
+          <path d="M14 2v6h6"></path>
+          <path d="M10 13l4-4"></path>
+          <circle cx="9" cy="17" r="1"></circle>
+          <circle cx="15" cy="13" r="1"></circle>
+        </svg>
+        <span>ScribeTrace — Connection Status</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="screen-meta-badge">R-04, R-02 • 3-3-3-3 Setup (Step 3) | Friction Moment #2</span>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">Theme: <span id="theme-lbl">Light</span></button>
+      </div>
+    </header>
+
+    <main class="window-body">
+      <!-- Error Notice Card -->
+      <section class="error-card" role="alert">
+        <div class="error-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="error-title">Cannot reach Zotero at 127.0.0.1:23119</h1>
+          <p class="error-desc">
+            ScribeTrace could not connect to Zotero's local interface. This usually means Zotero is not running, or its local access setting is switched off. ScribeTrace does not retry in the background (R-04).
+          </p>
+        </div>
+      </section>
+
+      <!-- Exact Setting to Change -->
+      <section class="resolution-box">
+        <h2 class="resolution-title">How to fix this in under one minute:</h2>
+        <ol class="resolution-list">
+          <li>
+            <strong>Open Zotero</strong> on this computer.
+          </li>
+          <li>
+            Open Zotero's preferences:
+            <ul>
+              <li>On <strong>macOS</strong>: <span class="code-pill">Zotero → Settings → Advanced</span></li>
+              <li>On <strong>Windows / Linux</strong>: <span class="code-pill">Edit → Preferences → Advanced</span></li>
+            </ul>
+          </li>
+          <li>
+            Under <em>Advanced</em>, check the box:
+            <div style="margin-top: 4px; padding: 6px 10px; background: var(--st-color-bg-subtle); border-radius: 4px; font-weight: 500;">
+              ☑ Allow other applications on this computer to communicate with Zotero
+            </div>
+          </li>
+          <li>
+            Return here and click <strong>Check Connection Again</strong> below.
+          </li>
+        </ol>
+      </section>
+
+      <!-- Action Buttons -->
+      <footer class="action-row">
+        <a href="paper-list.html" class="st-btn st-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Check Connection Again
+        </a>
+        <a href="first-run.html" class="st-btn st-btn-secondary">Back to Setup</a>
+      </footer>
+
+      <div style="font-size: var(--st-font-size-xs); color: var(--st-color-text-secondary); border-top: 1px solid var(--st-color-border-subtle); padding-top: var(--st-space-3);">
+        <strong>Honest Privacy Invariant (R-02, R-03, SEC-1):</strong> ScribeTrace communicates exclusively over loopback (<code>127.0.0.1:23119</code>) on an explicit user click. It never modifies your Zotero database, never starts a background daemon, and never transmits data to any external server.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-lbl').textContent = next.charAt(0).toUpperCase() + next.slice(1);
+    }
+  </script>
+</body>
+</html>

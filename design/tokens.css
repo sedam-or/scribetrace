@@ -1,0 +1,240 @@
+/**
+ * ScribeTrace Design System: Core Tokens & Custom Properties
+ * W3C DTCG Aligned | Light & Dark Themes | WCAG 2.2 AA Compliant
+ */
+
+:root,
+[data-theme="light"] {
+  /* Color Palette - Neutrals & Surfaces */
+  --st-color-bg-canvas: #ffffff;
+  --st-color-bg-subtle: #f8fafc;
+  --st-color-bg-surface: #ffffff;
+  --st-color-bg-surface-raised: #f1f5f9;
+  --st-color-bg-surface-active: #e2e8f0;
+
+  /* Typography Colors */
+  --st-color-text-primary: #0f172a;    /* Contrast 17.85:1 on #ffffff */
+  --st-color-text-secondary: #475569;  /* Contrast 7.58:1 on #ffffff */
+  --st-color-text-muted: #64748b;      /* Contrast 4.78:1 on #ffffff */
+  --st-color-text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --st-color-border: #cbd5e1;          /* UI border contrast 3.01:1 */
+  --st-color-border-subtle: #e2e8f0;
+  --st-color-border-strong: #94a3b8;
+
+  /* Primary Brand Action */
+  --st-color-primary: #1d4ed8;         /* Contrast 6.70:1 on #ffffff */
+  --st-color-primary-hover: #1e40af;
+  --st-color-primary-active: #172554;
+  --st-color-primary-subtle: #eff6ff;
+
+  /* Keyboard Focus Ring */
+  --st-color-focus-ring: #2563eb;
+  --st-color-focus-offset: #ffffff;
+
+  /* History State 1: Added (Emerald) */
+  --st-mark-added: #15803d;            /* Contrast 5.02:1 on #ffffff */
+  --st-mark-added-bg: #ecfdf5;
+  --st-mark-added-border: #a7f3d0;
+
+  /* History State 2: Edited (Amber) */
+  --st-mark-edited: #b45309;           /* Contrast 5.02:1 on #ffffff */
+  --st-mark-edited-bg: #fffbeb;
+  --st-mark-edited-border: #fde68a;
+
+  /* History State 3: Removed (Rose) */
+  --st-mark-removed: #b91c1c;          /* Contrast 6.47:1 on #ffffff */
+  --st-mark-removed-bg: #fef2f2;
+  --st-mark-removed-border: #fecaca;
+
+  /* Error & Warning */
+  --st-color-error-text: #b91c1c;
+  --st-color-error-bg: #fef2f2;
+  --st-color-error-border: #fecaca;
+
+  /* Shadows */
+  --st-shadow-subtle: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --st-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --st-shadow-modal: 0 4px 16px rgba(15, 23, 42, 0.16);
+}
+
+[data-theme="dark"] {
+  /* Color Palette - Neutrals & Surfaces */
+  --st-color-bg-canvas: #0f172a;
+  --st-color-bg-subtle: #1e293b;
+  --st-color-bg-surface: #1e293b;
+  --st-color-bg-surface-raised: #334155;
+  --st-color-bg-surface-active: #475569;
+
+  /* Typography Colors */
+  --st-color-text-primary: #f8fafc;    /* Contrast 17.06:1 on #0f172a */
+  --st-color-text-secondary: #94a3b8;  /* Contrast 6.96:1 on #0f172a */
+  --st-color-text-muted: #64748b;
+  --st-color-text-inverse: #0f172a;
+
+  /* Borders & Dividers */
+  --st-color-border: #334155;          /* Contrast 3.05:1 on #0f172a */
+  --st-color-border-subtle: #1e293b;
+  --st-color-border-strong: #475569;
+
+  /* Primary Brand Action */
+  --st-color-primary: #60a5fa;         /* Contrast 7.02:1 on #0f172a */
+  --st-color-primary-hover: #93c5fd;
+  --st-color-primary-active: #bfdbfe;
+  --st-color-primary-subtle: #172554;
+
+  /* Keyboard Focus Ring */
+  --st-color-focus-ring: #38bdf8;
+  --st-color-focus-offset: #0f172a;
+
+  /* History State 1: Added (Emerald) */
+  --st-mark-added: #4ade80;            /* Contrast 10.25:1 on #0f172a */
+  --st-mark-added-bg: #064e3b;
+  --st-mark-added-border: #047857;
+
+  /* History State 2: Edited (Amber) */
+  --st-mark-edited: #fbbf24;           /* Contrast 10.69:1 on #0f172a */
+  --st-mark-edited-bg: #78350f;
+  --st-mark-edited-border: #b45309;
+
+  /* History State 3: Removed (Rose) */
+  --st-mark-removed: #f87171;          /* Contrast 6.45:1 on #0f172a */
+  --st-mark-removed-bg: #7f1d1d;
+  --st-mark-removed-border: #b91c1c;
+
+  /* Error & Warning */
+  --st-color-error-text: #f87171;
+  --st-color-error-bg: #450a0a;
+  --st-color-error-border: #991b1b;
+
+  /* Shadows */
+  --st-shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --st-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --st-shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --st-color-bg-canvas: #0f172a;
+    --st-color-bg-subtle: #1e293b;
+    --st-color-bg-surface: #1e293b;
+    --st-color-bg-surface-raised: #334155;
+    --st-color-bg-surface-active: #475569;
+
+    --st-color-text-primary: #f8fafc;
+    --st-color-text-secondary: #94a3b8;
+    --st-color-text-muted: #64748b;
+    --st-color-text-inverse: #0f172a;
+
+    --st-color-border: #334155;
+    --st-color-border-subtle: #1e293b;
+    --st-color-border-strong: #475569;
+
+    --st-color-primary: #60a5fa;
+    --st-color-primary-hover: #93c5fd;
+    --st-color-primary-active: #bfdbfe;
+    --st-color-primary-subtle: #172554;
+
+    --st-color-focus-ring: #38bdf8;
+    --st-color-focus-offset: #0f172a;
+
+    --st-mark-added: #4ade80;
+    --st-mark-added-bg: #064e3b;
+    --st-mark-added-border: #047857;
+
+    --st-mark-edited: #fbbf24;
+    --st-mark-edited-bg: #78350f;
+    --st-mark-edited-border: #b45309;
+
+    --st-mark-removed: #f87171;
+    --st-mark-removed-bg: #7f1d1d;
+    --st-mark-removed-border: #b91c1c;
+
+    --st-color-error-text: #f87171;
+    --st-color-error-bg: #450a0a;
+    --st-color-error-border: #991b1b;
+
+    --st-shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --st-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --st-shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Typography Scales & Font Stacks */
+:root {
+  --st-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --st-font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", "Liberation Mono", Menlo, Consolas, monospace;
+
+  --st-font-size-xs: 11px;
+  --st-font-size-sm: 12px;
+  --st-font-size-base: 13px;
+  --st-font-size-md: 14px;
+  --st-font-size-lg: 16px;
+  --st-font-size-xl: 18px;
+  --st-font-size-2xl: 22px;
+
+  --st-font-weight-regular: 400;
+  --st-font-weight-medium: 500;
+  --st-font-weight-semibold: 600;
+  --st-font-weight-bold: 700;
+
+  --st-line-height-tight: 1.25;
+  --st-line-height-normal: 1.45;
+  --st-line-height-relaxed: 1.6;
+
+  /* Spacing Scale (4px base) */
+  --st-space-0: 0px;
+  --st-space-1: 4px;
+  --st-space-2: 8px;
+  --st-space-3: 12px;
+  --st-space-4: 16px;
+  --st-space-5: 20px;
+  --st-space-6: 24px;
+  --st-space-8: 32px;
+  --st-space-12: 48px;
+
+  /* Border Radii */
+  --st-radius-none: 0px;
+  --st-radius-sm: 3px;
+  --st-radius-md: 5px;
+  --st-radius-lg: 8px;
+  --st-radius-full: 9999px;
+
+  /* Transitions */
+  --st-transition-fast: 100ms cubic-bezier(0, 0, 0.2, 1);
+  --st-transition-normal: 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Universal Reset & Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--st-font-sans);
+  font-size: var(--st-font-size-base);
+  line-height: var(--st-line-height-normal);
+  color: var(--st-color-text-primary);
+  background-color: var(--st-color-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* WCAG 2.2 Focus Visible Invariant */
+:focus-visible {
+  outline: 2px solid var(--st-color-focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Respect Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

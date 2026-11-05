@@ -54,7 +54,27 @@ jobs:
             echo "No Cargo.toml in spikes/tauri-webview; skipping Rust build."
           fi
 
-      - name: Run measurement / benchmark script
+      - name: Measure empty Stage 1 shell (Part A)
+        shell: bash
+        run: |
+          echo "=== SPIKE-4 Part A: Empty Stage 1 Shell Metrics ==="
+          bin_path=""
+          if [ -f "spikes/tauri-webview/target/release/scribetrace-spike-tauri-webview" ]; then
+            bin_path="spikes/tauri-webview/target/release/scribetrace-spike-tauri-webview"
+          elif [ -f "spikes/tauri-webview/target/release/scribetrace-spike-tauri-webview.exe" ]; then
+            bin_path="spikes/tauri-webview/target/release/scribetrace-spike-tauri-webview.exe"
+          fi
+          if [ -n "$bin_path" ]; then
+            bin_bytes=$(wc -c < "$bin_path" | tr -d ' ')
+            bin_mb=$(python3 -c "print(round($bin_bytes / (1024*1024), 2))" 2>/dev/null || python -c "print(round($bin_bytes / (1024*1024), 2))")
+            echo "Release Binary Path: $bin_path"
+            echo "Release Binary Size: $bin_mb MB ($bin_bytes bytes)"
+            echo "Stage 1 installer/binary budget: <= 20 MB"
+          else
+            echo "Release binary not found"
+          fi
+
+      - name: Run measurement / benchmark script (Part B)
         shell: bash
         run: |
           chmod +x spikes/tauri-webview/measure.sh spikes/tauri-webview/measure.py
