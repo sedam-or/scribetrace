@@ -3,10 +3,10 @@
 **Date:** 2026-11-05 · **Author:** pm · Decisions taken under the user's delegation ("run end to end overnight, decide with reasons"). Each can be reversed unless noted. Related: [REQUIREMENTS](REQUIREMENTS.md), [BUSINESS](BUSINESS.md), [ARCHITECTURE](ARCHITECTURE.md), [STRESS-TEST](STRESS-TEST.md).
 
 ## What needs you
-1. **Recruit about 10 researchers** (labs, PhD friends) for the product gate. Only you have the network. I supply the script and mock-up brief.
+1. **Post the open invitation and hold the reply address** (decision t). Only you have the account and the network; 16 people are wanted (decision q). pm supplies the text ([VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md) §1) and screens the replies, so you never see who joined. If fewer than 8 reply in 14 days, decide on a small gift (decision r).
 2. **Trademark search**, manual, USPTO + EUIPO + WIPO, for ScribeTrace before any public launch ([NAMING](NAMING.md)).
 3. **Live Zotero check**: install Zotero 7, switch on local access, run the one-day check (SPIKE-3). Not installed on this machine, so marks, dates and page locations are unverified.
-4. **Make the repository public**, when you decide. `sedam-or/scribetrace` stays private until then.
+4. ~~Make the repository public.~~ **Done:** you made `sedam-or/scribetrace` public (decision l is superseded). We still do not promote it until the gates pass (decision n).
 5. **Rust maintenance risk**: your other repositories are Laravel, Vue, TypeScript and Python. AI agents write the first code, but someone must maintain it. Say whether you accept Rust, or want Electron and TypeScript instead.
 
 ## Decisions
@@ -25,6 +25,20 @@
 | j | **W3C JSON-LD export moved to Later** (ARCH §7) | Not needed to prove the product; adds format surface to test | Ship in Stage 1 | Yes (trigger: an outside tool maintainer asks) | Weakens the "open standard" story at launch |
 | k | **Licence Apache-2.0** | Patent grant for an open format others may embed; Rust/Tauri norm († not re-checked) | MIT: shorter, but no patent grant | Hard once outside contributions arrive | **Differs from your MIT choice in Kinevo**; confirm you want a different licence here |
 | l | **GitHub repo `sedam-or/scribetrace` created private**, stays private until you decide | Nothing is public before the name, licence and trademark are settled | Public now | Yes | None; delays outside feedback |
+
+## Business round decisions (2026-11-06)
+Taken by chief-of-staff under the user's delegation, on pm's recommendations from [GO-TO-MARKET](GO-TO-MARKET.md) §7 and [VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md) §6. Each has a **revisit trigger**: the event that reopens it.
+
+| | Decision | Reason | Alternative | Revisit trigger |
+|---|---|---|---|---|
+| m | **Primary segment: social sciences and humanities PhD students and postdocs who use Zotero 7 and Markdown or Obsidian.** Yes | The narrowest group that needs both integrations, and the easiest to reach in named forums. Evidence is weak and old (2018 survey, [GO-TO-MARKET](GO-TO-MARKET.md) §1) | Three segments at once (lab STEM, reviewers, power users): dilutes every message | The diary study shows the 2 non-segment participants use the history more than the 5 segment participants, or fewer than 8 sign-ups after 14 days from the segment's channels |
+| n | **No promotion until every gate in [GO-TO-MARKET](GO-TO-MARKET.md) §4 passes, though the repo is public.** Yes | A failed first impression in small academic communities is hard to undo; the claims (lightness, 3-3-3-3, trust) must be measured first | Post early for feedback | All §4 gates met, or the user decides to accept the risk in writing |
+| o | **Pledges.** Yes to: (1) "no open core: every feature of the app stays Apache-2.0"; (2) "the app never needs an account or a server". **No** pledge against optional paid services (for example hosted sync) ever | Keeps a sustainability path open without breaking the local-first promise; the app itself stays free and offline. Differs from the earlier recommendation in [GO-TO-MARKET](GO-TO-MARKET.md) §7.4, which also ruled out paid sync | A blanket "never any paid service" pledge: stronger trust, closes the only revenue path | After the product gate. A paid service would need its own decision, must never be required, and must not reduce the free app |
+| p | **Pass/fail rule and "concrete use" definition signed off as written** ([VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md) §2) | Fixed before any participant starts, so the result cannot be argued afterwards; qa approved the method | Adjust the rule after seeing data | Stage 0 interviews show the rule cannot be run (for example the Zotero check fails), never after data arrives |
+| q | **Recruit 16 people: 8 for the diary study and 8 for usability tests (5 used, 3 in reserve).** Yes | Fewer testers weaken the stop-and-fix rule | 8 + 5 with no reserve | Fewer than 8 sign-ups after 14 days: shrink Test B to 5 and run it later |
+| r | **Thank-you gift: none at first.** Offer credit in the README acknowledgements and in the results summary | No budget yet, and paid incentives attract people outside the segment | A small gift from the start | Fewer than 8 sign-ups after 14 days: the owner decides a small gift, stated up front, never tied to results |
+| s | **NLnet: decide after the product gate; the applicant must be the human owner** | NLnet asks that proposals are made by humans and for a strong European link ([GO-TO-MARKET](GO-TO-MARKET.md) §6); no point applying before there is evidence | Apply for the 2027-01-03 deadline | The product gate passes, or a deadline appears that fits a finished gate |
+| t | **Posting the invitation and holding the reply address are owner-only actions** | They need a human account and an inbox; the owner must stay blind to who joins ([VALIDATION-PROTOCOL](VALIDATION-PROTOCOL.md) §1) | pm posts through an account | The owner names a helper who can read the replies but is not part of their circle |
 
 ## Also decided in this round
 - Requirements rewritten from scratch (R-01 to R-34) in the staged scope; old F1–F7 numbering is retired ([REQUIREMENTS](REQUIREMENTS.md)).

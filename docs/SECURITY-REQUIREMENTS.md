@@ -196,7 +196,7 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 ### 2.7 Principle 7: Release Distribution & Browser-Based Update Visibility
 
 #### SEC-28: External Browser Dispatch for Update Visibility `[Enforced in Code]`
-* **EARS Pattern (Event-driven):** WHEN the user clicks "Check for Updates" in the application menu THEN the system SHALL display the currently installed version number and dispatch the user's default system browser via `tauri-plugin-opener` to the fixed, compiled-in release page URL (`https://github.com/scribetrace-app/scribetrace/releases`), and SHALL NOT execute in-app HTTP requests, run update routines, or parse remote version data.
+* **EARS Pattern (Event-driven):** WHEN the user clicks "Check for Updates" in the application menu THEN the system SHALL display the currently installed version number and dispatch the user's default system browser via `tauri-plugin-opener` to the fixed, compiled-in release page URL (`https://github.com/sedam-or/scribetrace/releases`), and SHALL NOT execute in-app HTTP requests, run update routines, or parse remote version data.
 * **Threat Mitigation:** `THREAT-7.1` (Updater hijacking & RCE)
 * **Verification Method:** Integration test verifying menu action opens system browser with hardcoded release URL; assert zero in-app network calls.
 

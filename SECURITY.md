@@ -17,7 +17,7 @@ We strongly encourage coordinated vulnerability disclosure. If you discover a se
 
 ### Preferred Reporting Method
 Please report security vulnerabilities using **GitHub Private Vulnerability Reporting**:
-- Navigate to the [Security Advisories](https://github.com/scribetrace-app/scribetrace/security/advisories) tab of the repository.
+- Navigate to the [Security Advisories](https://github.com/sedam-or/scribetrace/security/advisories) tab of the repository.
 - Click **"Report a vulnerability"** to submit your findings confidentially.
 
 ### Alternative Reporting Channel
@@ -64,7 +64,7 @@ ScribeTrace follows a standard **90-day coordinated disclosure policy**:
 - Untrusted document parsers (PDF, EPUB, arXiv HTML, Markdown).
 - Local storage and sidecar ingestion (`.scribetrace/` JSON Lines).
 - Tauri v2 IPC bridge capabilities and webview sandboxing.
-- Official application auto-updater and release distribution pipelines.
+- Official release distribution pipelines, signed artifacts, and update dispatch.
 
 ### Out-of-Scope Surfaces
 - Compromise requiring pre-existing root/administrator access on the host system.
