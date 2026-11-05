@@ -29,5 +29,5 @@
 ## Order and risk
 - 1 → 2/3 → 4 is the spine. Slices 6–13 can be built in parallel by several agents once 4 lands, except 10 (after 7) and 12 (after 9).
 - Slice 4 is the only one blocked by an outside fact: SPIKE-3 (a live check against real Zotero). Slices 1–3 use the stand-in server and are not blocked.
-- Slices 1, 2, 4, 5, 9, 11, 12 need a human reader; 7 of 14 slices can be built and merged by agents alone. Agents must not merge a Review slice without a person.
+- Slices 1, 2, 4, 5, 9, 11, 12 need a human reader; 7 of 14 slices can be built and merged by agents alone. A Review slice is merged only after a second-agent code review plus qa verification of its acceptance test, per [DECISION-LOG](DECISION-LOG.md) row u (this replaces the earlier "a person reads it" rule; the owner still checks the release candidate).
 - Not planned in Stage 1: PDF reading, anchoring, side-by-side compare, reading sessions, W3C export, CLI `merge` (R-30..R-34, [ARCHITECTURE Later](ARCHITECTURE.md)).
