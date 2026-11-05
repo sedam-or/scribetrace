@@ -1,5 +1,6 @@
 import { Button } from "./Button.tsx";
 import { DiffBadge } from "./DiffBadge.tsx";
+import { t } from "../strings.ts";
 
 export interface TimelineDiffCounts {
   added?: number;
@@ -31,11 +32,12 @@ export function TimelineItem({
   note,
   isCurrent = false,
   onRestore,
-  restoreLabel = "Restore this milestone",
+  restoreLabel,
   className = "",
 }: TimelineItemProps) {
   const origin = [author, device].filter(Boolean).join(" · ");
   const metaText = origin ? `${timestamp} · ${origin}` : timestamp;
+  const actionText = restoreLabel ?? t("history.restore.action");
 
   return (
     <li className={`st-timeline-item ${className}`.trim()}>
@@ -52,9 +54,9 @@ export function TimelineItem({
               size="small"
               variant="secondary"
               onClick={() => onRestore(id)}
-              aria-label={`${restoreLabel} ${title}`}
+              aria-label={`${actionText} ${title}`}
             >
-              {restoreLabel}
+              {actionText}
             </Button>
           )}
         </div>

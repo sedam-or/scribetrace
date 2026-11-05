@@ -11,6 +11,12 @@
 
   "app.name": "ScribeTrace",
   "app.independent": "ScribeTrace is an independent project, not affiliated with or endorsed by Zotero or Obsidian.",
+  "app.skip_to_content": "Skip to main content",
+  "app.tagline": "Remember how your reading changed.",
+  "app.theme.system": "Theme: System",
+  "app.theme.light": "Theme: Light",
+  "app.theme.dark": "Theme: Dark",
+  "app.nav.papers": "Papers",
 
   "setup.title": "Set up ScribeTrace in three steps",
   "setup.intro": "ScribeTrace keeps the history of your marks and notes. You keep reading in Zotero.",

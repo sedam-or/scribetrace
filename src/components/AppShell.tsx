@@ -40,15 +40,15 @@ export function AppShell({
 
   const themeLabel =
     theme === "system"
-      ? "Theme: System"
+      ? t("app.theme.system")
       : theme === "light"
-        ? "Theme: Light"
-        : "Theme: Dark";
+        ? t("app.theme.light")
+        : t("app.theme.dark");
 
   return (
     <div className="st-app-shell">
       <a href="#main-content" className="st-skip-link">
-        Skip to main content
+        {t("app.skip_to_content")}
       </a>
 
       <header className="st-header" role="banner">
@@ -71,9 +71,7 @@ export function AppShell({
             </svg>
           </div>
           <span className="st-header-title">{t("app.name")}</span>
-          <span className="st-header-tagline">
-            Remember how your reading changed
-          </span>
+          <span className="st-header-tagline">{t("app.tagline")}</span>
         </div>
 
         <div className="st-header-controls">
@@ -82,7 +80,6 @@ export function AppShell({
             size="small"
             variant="ghost"
             onClick={cycleTheme}
-            aria-label={`Current theme is ${theme}. Click to switch theme.`}
             title={themeLabel}
           >
             {themeLabel}
@@ -91,7 +88,7 @@ export function AppShell({
       </header>
 
       <div className="st-app-body">
-        <aside className="st-nav-pane" aria-label="Papers">
+        <aside className="st-nav-pane" aria-label={t("app.nav.papers")}>
           {navContent}
         </aside>
 
