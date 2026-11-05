@@ -20,3 +20,22 @@ pub struct Mark {
     /// When the mark was last changed, as given by the source.
     pub modified: Option<String>,
 }
+
+impl Mark {
+    /// Checks the rules of `spec/FORMAT.md` for a `mark_import` payload.
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if self.key.is_empty() || self.key.len() > 128 {
+            return Err("key");
+        }
+        if !["highlight", "note", "underline", "image", "ink"].contains(&self.kind.as_str()) {
+            return Err("kind");
+        }
+        if let Some(c) = &self.color {
+            let b = c.as_bytes();
+            if !(b.len() == 7 && b[0] == b'#' && b[1..].iter().all(u8::is_ascii_hexdigit)) {
+                return Err("color");
+            }
+        }
+        Ok(())
+    }
+}
