@@ -33,19 +33,30 @@ All development tools are installed at user level without root/sudo privilege:
 To verify code formatting, static analysis, and all unit / property / integration tests across all crates:
 
 ```bash
-# Check formatting
-cargo fmt --all -- --check
-
-# Run strict clippy linting across all targets
-cargo clippy --all-targets -- -D warnings
-
-# Execute all tests with nextest
-cargo nextest run
-
-# Run supply-chain security checks
-cargo deny check
-cargo audit
+pnpm install --frozen-lockfile
+pnpm lint && pnpm test && pnpm build        # UI: boundary lint, 3 headless tests, bundle (dist/ is needed by the shell crate)
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cargo llvm-cov -p scribetrace-core --fail-under-lines 80 --summary-only
+cargo deny check && cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2024-0429
+./tools/check-gates.sh                      # layering and budget gates
 ```
+
+Run the app: `pnpm tauri dev` is not wired yet; start `cargo run -p scribetrace-shell` after `pnpm build`, or `pnpm dev` for the UI alone.
+The rules a change must meet are in [DEFINITION-OF-DONE](DEFINITION-OF-DONE.md).
+
+### Repository map
+
+| Path | What lives here | May depend on |
+|---|---|---|
+| `src-core/` | crate `scribetrace-core`: `domain/` (pure), `application/` (use cases + ports), `adapters/` (JSONL store, Zotero HTTP, clock, ids) | nothing UI, no tauri, no TLS |
+| `src-tauri/` | crate `scribetrace-shell`: thin IPC gateway; `build.rs` + `capabilities/default.json` are the command allowlist | core |
+| `src/` | React UI. Talks to the core only through `src/rpc/rpc.ts`; `tauri-adapter.ts` is the single Tauri-aware file | nothing else |
+| `tests-ui/`, `src-core/tests/`, `src-tauri/tests/` | headless tests per layer (no display needed) | |
+| `test-support/zotero-standin/` | dev-only loopback stand-in for Zotero, serves `tests/fixtures/zotero/` | |
+| `tools/` | `check-gates.sh`, `lint-ui-boundaries.mjs` (+ its self-test), `transitive-baseline.txt` | |
+| `spikes/` | throw-away experiments, not workspace members | |
 
 ---
 

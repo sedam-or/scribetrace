@@ -51,3 +51,6 @@ spikes/**/fixtures/*.pdf
 .env.*.local
 *.pem
 *.key
+
+# UI test output
+.test-out/

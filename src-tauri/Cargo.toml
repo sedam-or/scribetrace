@@ -1,0 +1,38 @@
+[package]
+name = "scribetrace-shell"
+description = "ScribeTrace desktop shell: a thin Tauri IPC gateway over scribetrace-core."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[lib]
+name = "scribetrace_shell"
+path = "src/lib.rs"
+
+[[bin]]
+name = "scribetrace"
+path = "src/main.rs"
+
+[features]
+# Set by `tauri build`; embeds the UI instead of loading the dev server.
+custom-protocol = ["tauri/custom-protocol"]
+
+[dependencies]
+scribetrace-core = { path = "../src-core" }
+tauri = { version = "2", default-features = false, features = ["wry"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+tauri-build = { version = "2", default-features = false, features = [] }
+
+[dev-dependencies]
+tauri = { version = "2", default-features = false, features = ["wry", "test"] }
+tempfile = "3"
+zotero-standin = { path = "../test-support/zotero-standin" }

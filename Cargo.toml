@@ -1,0 +1,34 @@
+# ScribeTrace workspace. Layering: see docs/ARCHITECTURE.md and AGENTS.md.
+#   src-core   scribetrace-core   domain, application, adapters (no UI, no Tauri, no TLS)
+#   src-tauri  scribetrace-shell  thin IPC gateway over the core
+#   test-support/zotero-standin   dev-only stand-in for Zotero's local interface
+# Spikes are throw-away experiments with their own lockfiles and are not members.
+[workspace]
+resolver = "2"
+members = ["src-core", "src-tauri", "test-support/zotero-standin"]
+exclude = ["spikes"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["sedam-or and ScribeTrace Contributors"]
+repository = "https://github.com/sedam-or/scribetrace"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+dbg_macro = "deny"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

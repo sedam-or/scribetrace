@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-import-marks"
+description = "Enables the import_marks command without any pre-configured scope."
+commands.allow = ["import_marks"]
+
+[[permission]]
+identifier = "deny-import-marks"
+description = "Denies the import_marks command without any pre-configured scope."
+commands.deny = ["import_marks"]

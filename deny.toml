@@ -47,7 +47,13 @@ wildcards = "allow"
 deny = []
 
 [advisories]
-ignore = []
+# Every ignore needs a reason and an owner; review at each Tauri upgrade (docs/DEFINITION-OF-DONE.md).
+# Both come only from Tauri's Linux GTK3 stack (wry -> webkit2gtk -> gtk3); we cannot upgrade them
+# ourselves and neither is reachable from scribetrace-core.
+ignore = [
+    { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained; build-time macro of gtk3-macros, ships no runtime code" },
+    { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter unsound; we never call it, and the gtk3 line gets no fix" },
+]
 
 [sources]
 unknown-registry = "deny"

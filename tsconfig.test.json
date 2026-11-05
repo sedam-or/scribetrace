@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "outDir": ".test-out",
+    "types": ["node"]
+  },
+  "include": ["src", "tests-ui"],
+  "exclude": ["src/main.tsx"]
+}

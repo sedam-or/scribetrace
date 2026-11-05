@@ -1,0 +1,17 @@
+@import "../design/tokens.css";
+
+body {
+  margin: 0;
+  background: var(--st-color-bg-canvas);
+  color: var(--st-color-text-primary);
+  font: var(--st-font-size-base, 13px) / 1.5 system-ui, sans-serif;
+}
+main { padding: var(--st-space-6, 24px); max-width: 48rem; }
+label { display: block; margin-block-end: var(--st-space-1, 4px); }
+input { width: 100%; padding: var(--st-space-2, 8px) var(--st-space-3, 12px); border: 1px solid var(--st-color-border-strong); }
+button { margin-block: var(--st-space-3, 12px); padding: var(--st-space-2, 8px) var(--st-space-4, 16px); background: var(--st-color-primary); color: var(--st-color-text-inverse); border: 0; }
+button:disabled { opacity: 0.5; }
+:focus-visible { outline: 2px solid var(--st-color-focus-ring); outline-offset: 2px; }
+.error { color: var(--st-color-error-text); background: var(--st-color-error-bg); padding: var(--st-space-3, 12px); }
+.meta { color: var(--st-color-text-secondary); font-size: var(--st-font-size-sm, 12px); }
+blockquote { margin: var(--st-space-2, 8px) 0; padding-inline-start: var(--st-space-3, 12px); border-inline-start: 3px solid var(--st-mark-added); }
