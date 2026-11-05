@@ -11,7 +11,14 @@ fn request(cmd: &str, body: serde_json::Value) -> InvokeRequest {
         cmd: cmd.into(),
         callback: tauri::ipc::CallbackFn(0),
         error: tauri::ipc::CallbackFn(1),
-        url: "tauri://localhost".parse().unwrap(),
+        // WebView2 serves the app from http://tauri.localhost; the other OS use tauri://localhost.
+        url: (if cfg!(windows) {
+            "http://tauri.localhost"
+        } else {
+            "tauri://localhost"
+        })
+        .parse()
+        .unwrap(),
         body: InvokeBody::Json(body),
         headers: Default::default(),
         invoke_key: tauri::test::INVOKE_KEY.to_string(),
