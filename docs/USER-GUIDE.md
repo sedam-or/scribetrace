@@ -15,10 +15,10 @@ Releases will be listed at <https://github.com/sedam-or/scribetrace/releases>. P
 
 | Format | Steps |
 |---|---|
-| **AppImage** | Download, then make it runnable (`chmod +x ScribeTrace-*.AppImage`) and double-click it or run it from a terminal. |
-| **.deb** (Debian 12+, Ubuntu 22.04+, Linux Mint) | Download, then `sudo apt install ./scribetrace_*.deb`. |
+| **AppImage** | Download `ScribeTrace_<version>_amd64.AppImage`, make it runnable (`chmod +x ScribeTrace_<version>_amd64.AppImage`), then double-click it or run it from a terminal. |
+| **.deb** (Debian 12+, Ubuntu 22.04+, Linux Mint) | Download `ScribeTrace_<version>_amd64.deb`, then run `sudo apt install ./ScribeTrace_<version>_amd64.deb` (this also fetches what the package needs). Start **ScribeTrace** from your application menu or run `scribetrace`. |
 
-Check the download against the published `SHA256SUMS` before you run it. There is no account and no installer wizard. Flatpak is planned, not promised ([CI-CD](CI-CD.md) §4). **Release builds, file names and the signature steps are not final.**
+Both need a 64-bit system and the WebKitGTK 4.1 library (`libwebkit2gtk-4.1`); the `.deb` installs it for you. Check the download against the published `SHA256SUMS` before you run it. There is no account and no installer wizard. Flatpak is planned, not promised ([CI-CD](CI-CD.md) §4). **Release builds, file names and the signature steps are not final.** Other distributions (Fedora, Arch and so on) should work with the AppImage but are untested.
 
 ## 3. Set up in three steps (slices 4 and 5; planned)
 1. **Switch on Zotero access.** In Zotero, open **Settings, then Advanced**, and tick **"Allow other applications on this computer to communicate with Zotero"**. Zotero must be running whenever you import. *(Setting name and menu path are from Zotero's documentation and not yet checked against a live Zotero 7; see [DECISION-LOG](DECISION-LOG.md) "What needs you" item 3.)*
