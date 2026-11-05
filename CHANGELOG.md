@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue and pull request templates for community contributions.
 - Business and brand documents: go-to-market plan, validation protocol, brand voice (`docs/GO-TO-MARKET.md`, `docs/VALIDATION-PROTOCOL.md`, `docs/BRAND.md`).
 - Single source of user-facing text (`src/strings/en.json`) and a Linux-first draft user guide (`docs/USER-GUIDE.md`).
+- Open history format spec, unstable v0 (`spec/FORMAT.md`), JSON Schema and good/bad sample lines (`spec/`), per ADR 0010.
 
 ### Changed
 - Decision log now records the pledge (no open core; no account or server), the second-agent review policy and the full-dev roles (decisions o, u, v).

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sedam-or/scribetrace/spec/schema/line.schema.json",
+  "title": "ScribeTrace history line, unstable v0",
+  "type": "object",
+  "required": ["v", "id", "device", "seq", "ts", "type", "payload"],
+  "properties": {
+    "v": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+    "device": { "$ref": "#/$defs/identifier" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "ts": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "author": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "type": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "payload": { "type": "object" }
+  },
+  "allOf": [
+    { "if": { "properties": { "type": { "const": "mark_import" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/mark" } } } },
+    { "if": { "properties": { "type": { "const": "purge" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/purge" } } } },
+    { "if": { "properties": { "type": { "const": "milestone" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone" } } } },
+    { "if": { "properties": { "type": { "const": "milestone_rename" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone_rename" } } } },
+    { "if": { "properties": { "type": { "const": "milestone_restore" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone_restore" } } } }
+  ],
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+    "cut": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "mark": {
+      "type": "object",
+      "required": ["key", "kind"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "enum": ["highlight", "note", "underline", "image", "ink"] },
+        "text": { "type": ["string", "null"] },
+        "comment": { "type": ["string", "null"] },
+        "color": { "type": ["string", "null"], "pattern": "^#[0-9a-fA-F]{6}$" },
+        "page_index": { "type": ["integer", "null"], "minimum": 0 },
+        "added": { "type": ["string", "null"] },
+        "modified": { "type": ["string", "null"] }
+      }
+    },
+    "purge": {
+      "type": "object",
+      "required": ["covers"],
+      "properties": { "covers": { "$ref": "#/$defs/cut" } }
+    },
+    "milestone": {
+      "type": "object",
+      "required": ["label", "reason", "upto"],
+      "properties": {
+        "label": { "type": ["string", "null"] },
+        "reason": { "enum": ["import", "refresh", "session", "manual", "before_restore"] },
+        "upto": { "$ref": "#/$defs/cut" }
+      }
+    },
+    "milestone_rename": {
+      "type": "object",
+      "required": ["milestone", "label"],
+      "properties": {
+        "milestone": { "type": "string" },
+        "label": { "type": ["string", "null"] }
+      }
+    },
+    "milestone_restore": {
+      "type": "object",
+      "required": ["milestone"],
+      "properties": { "milestone": { "type": "string" } }
+    }
+  }
+}
