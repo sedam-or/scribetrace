@@ -1,0 +1,5 @@
+{"v":1,"id":"11111111-0000-4000-8000-000000000001","device":"dev-a","seq":1,"ts":"2026-11-06T09:00:00Z","type":"mark_import","payload":{"key":"AB12CD36","kind":"highlight","text":"Erased on purpose.","page_index":0}}
+{"v":1,"id":"11111111-0000-4000-8000-000000000002","device":"dev-a","seq":2,"ts":"2026-11-06T09:01:00Z","type":"purge","payload":{"covers":{"dev-a":1}}}
+{"v":1,"id":"11111111-0000-4000-8000-000000000003","device":"dev-a","seq":3,"ts":"2026-11-06T09:02:00Z","type":"mark_import","payload":{"key":"AB12CD34","kind":"highlight","text":"Memory is not a recording but a reconstruction.","comment":"Cite in intro","color":"#ffd400","page_index":2,"added":null,"modified":null}}
+{"v":1,"id":"11111111-0000-4000-8000-000000000004","device":"dev-a","seq":4,"ts":"2026-11-06T09:03:00Z","type":"mark_import","payload":{"key":"AB12CD35","kind":"note","text":null,"comment":"Check <b>this</b> & *that*\nsecond line","color":null,"page_index":4}}
+{"v":1,"id":"11111111-0000-4000-8000-000000000005","device":"dev-a","seq":5,"ts":"2026-11-06T09:06:00Z","type":"milestone","payload":{"label":null,"reason":"manual","upto":{"dev-a":4}}}

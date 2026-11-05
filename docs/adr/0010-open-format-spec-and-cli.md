@@ -8,7 +8,7 @@
 
 ## Decision
 - Publish `spec/FORMAT.md` (the event lines of [ADR 0007](0007-per-device-history-log-merge-and-forget.md)), a schema per line type, and good/bad sample files (`spec/vectors/`) that every reader must treat the same way. Label it **unstable v0**.
-- A CLI built from the same core with three commands: `check` (validate a folder, list skipped lines), `timeline` (print milestones), `export` (Markdown). It never edits a document and never uses the network.
+- A CLI (`scribetrace-cli`; the name `scribetrace` is the app's own binary) built from the same core with three commands: `check` (validate a folder, list skipped lines), `timeline` (print milestones), `export` (Markdown). It never edits a document and never uses the network.
 - Readers ignore and preserve unknown fields; newer apps read older files without migration. *Why:* no migration code to write or test.
 - **Later:** W3C JSON-LD export of current state (add when a tool maintainer asks); `merge` dry run (the timeline already shows the union).
 

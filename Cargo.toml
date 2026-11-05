@@ -1,11 +1,12 @@
 # ScribeTrace workspace. Layering: see docs/ARCHITECTURE.md and AGENTS.md.
 #   src-core   scribetrace-core   domain, application, adapters (no UI, no Tauri, no TLS)
 #   src-tauri  scribetrace-shell  thin IPC gateway over the core
+#   src-cli    scribetrace-cli    read-only command line (check, export) over the same core
 #   test-support/zotero-standin   dev-only stand-in for Zotero's local interface
 # Spikes are throw-away experiments with their own lockfiles and are not members.
 [workspace]
 resolver = "2"
-members = ["src-core", "src-tauri", "test-support/zotero-standin"]
+members = ["src-core", "src-tauri", "src-cli", "test-support/zotero-standin"]
 exclude = ["spikes"]
 
 [workspace.package]

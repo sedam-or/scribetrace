@@ -1,0 +1,26 @@
+[package]
+name = "scribetrace-cli"
+description = "ScribeTrace command line: check and export a project folder. Read-only, offline."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "scribetrace_cli"
+path = "src/lib.rs"
+
+# `scribetrace` is the desktop app's binary, so the command-line tool has its own name.
+[[bin]]
+name = "scribetrace-cli"
+path = "src/main.rs"
+
+[dependencies]
+scribetrace-core = { path = "../src-core" }
+
+[dev-dependencies]
+tempfile = "3"

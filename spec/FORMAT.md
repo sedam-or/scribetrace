@@ -2,7 +2,7 @@
 
 Status: **unstable v0**. Nothing here is promised stable until an outside tool uses it and a maintainer of that tool says so ([ADR 0010](../docs/adr/0010-open-format-spec-and-cli.md)). Reasoning behind the rules: [ADR 0007](../docs/adr/0007-per-device-history-log-merge-and-forget.md). The words MUST, MUST NOT, SHOULD and MAY are meant literally: MUST and MUST NOT are requirements, SHOULD is a strong recommendation, MAY is optional. In this document a **reader** is a program that reads these files (the app, the `scribetrace` tool, or yours), and a **writer** is a program that adds lines to them.
 
-Everything is plain text. You can read, diff and check a history with a text editor, `git` and the `scribetrace` command-line tool, which uses the same checker as the app.
+Everything is plain text. You can read, diff and check a history with a text editor, `git` and the `scribetrace-cli` command-line tool, which uses the same checker as the app.
 
 ## 1. Layout
 

@@ -211,6 +211,32 @@ impl FsHistoryStore {
         }
     }
 
+    /// Ids of the papers that have a folder under `.scribetrace/papers/`, sorted.
+    /// Names that are not valid ids, and anything that is not a real directory (a symlink
+    /// included), are ignored (spec/FORMAT.md section 1).
+    pub fn list_papers(&self) -> Result<Vec<PaperId>, StoreError> {
+        let entries = match fs::read_dir(&self.root) {
+            Ok(e) => e,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => return Err(e.into()),
+        };
+        let mut papers = Vec::new();
+        for entry in entries {
+            let entry = entry?;
+            if !entry.file_type()?.is_dir() {
+                continue;
+            }
+            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+                continue;
+            };
+            if let Ok(id) = PaperId::new(name) {
+                papers.push(id);
+            }
+        }
+        papers.sort();
+        Ok(papers)
+    }
+
     /// Returns the directory path for `paper`.
     pub fn paper_dir(&self, paper: &PaperId) -> PathBuf {
         self.root.join(paper.as_str())
