@@ -1,0 +1,9 @@
+HTTP/1.0 403 Forbidden
+X-Zotero-Version: 10.0.7
+X-Zotero-Connector-API-Version: 3
+Content-Type: application/json
+Zotero-API-Version: 3
+Zotero-Schema-Version: 44
+Zotero-Server-ID: PqphJprFvn43
+
+Local API is not enabled

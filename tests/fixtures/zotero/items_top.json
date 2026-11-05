@@ -1,0 +1,264 @@
+[
+  {
+    "key": "6WG6QNHB",
+    "version": 1,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/6WG6QNHB",
+        "type": "application/json"
+      },
+      "attachment": {
+        "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+        "type": "application/json",
+        "attachmentType": "application/pdf",
+        "attachmentSize": 2215244
+      }
+    },
+    "meta": {
+      "creatorSummary": "Vaswani et al.",
+      "parsedDate": "2017",
+      "numChildren": 1
+    },
+    "data": {
+      "key": "6WG6QNHB",
+      "version": 1,
+      "itemType": "journalArticle",
+      "title": "Attention is all you need",
+      "date": "2017",
+      "url": "https://arxiv.org/abs/1706.03762",
+      "volume": "30",
+      "publicationTitle": "Advances in neural information processing systems",
+      "creators": [
+        {
+          "firstName": "Ashish",
+          "lastName": "Vaswani",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Noam",
+          "lastName": "Shazeer",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Niki",
+          "lastName": "Parmar",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Jakob",
+          "lastName": "Uszkoreit",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Llion",
+          "lastName": "Jones",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Aidan N",
+          "lastName": "Gomez",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Łukasz",
+          "lastName": "Kaiser",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Illia",
+          "lastName": "Polosukhin",
+          "creatorType": "author"
+        }
+      ],
+      "tags": [],
+      "collections": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:19:03Z",
+      "dateModified": "2026-11-05T18:19:03Z"
+    }
+  },
+  {
+    "key": "KBPLWQT5",
+    "version": 2,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/KBPLWQT5",
+        "type": "application/json"
+      },
+      "attachment": {
+        "href": "http://localhost:23119/api/users/0/items/45Y8JGAU",
+        "type": "application/json",
+        "attachmentType": "application/pdf",
+        "attachmentSize": 819383
+      }
+    },
+    "meta": {
+      "creatorSummary": "He et al.",
+      "parsedDate": "2016",
+      "numChildren": 1
+    },
+    "data": {
+      "key": "KBPLWQT5",
+      "version": 2,
+      "itemType": "journalArticle",
+      "title": "Deep residual learning for image recognition",
+      "date": "2016",
+      "url": "https://arxiv.org/abs/1512.03385",
+      "pages": "770–778",
+      "publicationTitle": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+      "creators": [
+        {
+          "firstName": "Kaiming",
+          "lastName": "He",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Xiangyu",
+          "lastName": "Zhang",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Shaoqing",
+          "lastName": "Ren",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Jian",
+          "lastName": "Sun",
+          "creatorType": "author"
+        }
+      ],
+      "tags": [],
+      "collections": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:19:03Z",
+      "dateModified": "2026-11-05T18:19:03Z"
+    }
+  },
+  {
+    "key": "HMIBIMH7",
+    "version": 3,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/HMIBIMH7",
+        "type": "application/json"
+      },
+      "attachment": {
+        "href": "http://localhost:23119/api/users/0/items/RNBV2SQM",
+        "type": "application/json",
+        "attachmentType": "application/pdf",
+        "attachmentSize": 6768044
+      }
+    },
+    "meta": {
+      "creatorSummary": "Brown et al.",
+      "parsedDate": "2020",
+      "numChildren": 1
+    },
+    "data": {
+      "key": "HMIBIMH7",
+      "version": 3,
+      "itemType": "journalArticle",
+      "title": "Language models are few-shot learners",
+      "date": "2020",
+      "url": "https://arxiv.org/abs/2005.14165",
+      "volume": "33",
+      "pages": "1877–1901",
+      "publicationTitle": "Advances in neural information processing systems",
+      "creators": [
+        {
+          "firstName": "Tom",
+          "lastName": "Brown",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Benjamin",
+          "lastName": "Mann",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Nick",
+          "lastName": "Ryder",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Melanie",
+          "lastName": "Subbiah",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Jared D",
+          "lastName": "Kaplan",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Prafulla",
+          "lastName": "Dhariwal",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Arvind",
+          "lastName": "Neelakantan",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Pranav",
+          "lastName": "Shyam",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Girish",
+          "lastName": "Sastry",
+          "creatorType": "author"
+        },
+        {
+          "firstName": "Amanda",
+          "lastName": "Askell",
+          "creatorType": "author"
+        },
+        {
+          "name": "others",
+          "creatorType": "author"
+        }
+      ],
+      "tags": [],
+      "collections": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:19:03Z",
+      "dateModified": "2026-11-05T18:19:03Z"
+    }
+  }
+]

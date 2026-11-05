@@ -1,0 +1,94 @@
+[
+  {
+    "key": "62TBRT7H",
+    "version": 11,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/62TBRT7H",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/RNBV2SQM",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "62TBRT7H",
+      "version": 11,
+      "itemType": "annotation",
+      "parentItem": "RNBV2SQM",
+      "annotationType": "highlight",
+      "annotationAuthorName": "",
+      "annotationText": "Recent work has demonstrated substantial gains on many NLP tasks and benchmarks by pre-training on a large corpus of text followed by fine-tuning on a specific task.",
+      "annotationComment": "Pre-training and scaling paradigm.",
+      "annotationColor": "#ffd400",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000000|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[95,500,450,520]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "YEZBH7HG",
+    "version": 12,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/YEZBH7HG",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/RNBV2SQM",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "YEZBH7HG",
+      "version": 12,
+      "itemType": "annotation",
+      "parentItem": "RNBV2SQM",
+      "annotationType": "underline",
+      "annotationAuthorName": "",
+      "annotationText": "Here we show that scaling up language models greatly improves task-agnostic, few-shot performance",
+      "annotationComment": "Few-shot emergence hypothesis.",
+      "annotationColor": "#a28ae5",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000001|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[95,430,440,445]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  }
+]

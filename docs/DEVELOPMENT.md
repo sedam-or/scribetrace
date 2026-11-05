@@ -43,7 +43,7 @@ cargo deny check && cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2024
 ./tools/check-gates.sh                      # layering and budget gates
 ```
 
-Run the app: `pnpm tauri dev` is not wired yet; start `cargo run -p scribetrace-shell` after `pnpm build`, or `pnpm dev` for the UI alone.
+Run the app: start `env WEBKIT_DISABLE_DMABUF_RENDERER=1 cargo run -p scribetrace-shell` after `pnpm build` (per [ADR 0014](adr/0014-linux-idle-memory-budget.md) for Linux WebKitGTK memory tuning), or `pnpm dev` for the UI alone.
 The rules a change must meet are in [DEFINITION-OF-DONE](DEFINITION-OF-DONE.md).
 
 ### Repository map
@@ -86,3 +86,34 @@ cargo build --release
 ./measure.sh
 ```
 Executes cold start and memory benchmarks against a 500-page / 50 MB PDF fixture.
+
+---
+
+## 4. Packaging & Linux Release
+
+ScribeTrace ships production-ready Linux bundles (`.deb` and standalone `.AppImage`):
+
+### Building Release Installers
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm tauri build -b deb,appimage
+```
+Bundles are generated under `target/release/bundle/`:
+- Debian package: `target/release/bundle/deb/ScribeTrace_0.1.0_amd64.deb` (~1.4 MB)
+- Standalone AppImage: `target/release/bundle/appimage/ScribeTrace_0.1.0_amd64.AppImage`
+
+Both packages are dramatically under the Stage 1 release budget ($\le 20$ MB).
+
+### Installing & Running
+- **Debian / Ubuntu / Pop!_OS:**
+  ```bash
+  sudo dpkg -i target/release/bundle/deb/ScribeTrace_0.1.0_amd64.deb
+  # Launches with WEBKIT_DISABLE_DMABUF_RENDERER=1 per ADR 0014
+  scribetrace
+  ```
+- **Any Linux distribution (AppImage):**
+  ```bash
+  chmod +x target/release/bundle/appimage/ScribeTrace_0.1.0_amd64.AppImage
+  ./target/release/bundle/appimage/ScribeTrace_0.1.0_amd64.AppImage
+  ```

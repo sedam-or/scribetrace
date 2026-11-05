@@ -1,0 +1,93 @@
+[
+  {
+    "key": "QYLASC88",
+    "version": 8,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/QYLASC88",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "QYLASC88",
+      "version": 8,
+      "itemType": "annotation",
+      "parentItem": "H3E7BPJW",
+      "annotationType": "note",
+      "annotationAuthorName": "",
+      "annotationComment": "Self-attention mechanism replaces recurrent layers entirely.",
+      "annotationColor": "#ff6666",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000001|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[108,550,200,570]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "JYRYDGDI",
+    "version": 7,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/JYRYDGDI",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "JYRYDGDI",
+      "version": 7,
+      "itemType": "annotation",
+      "parentItem": "H3E7BPJW",
+      "annotationType": "highlight",
+      "annotationAuthorName": "",
+      "annotationText": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks",
+      "annotationComment": "Background context on previous state of the art.",
+      "annotationColor": "#ffd400",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000000|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[108,620,486,632]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:18Z",
+      "dateModified": "2026-11-05T18:25:18Z"
+    }
+  }
+]

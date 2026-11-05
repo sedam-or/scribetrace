@@ -1,0 +1,89 @@
+{
+  "key": "6WG6QNHB",
+  "version": 1,
+  "library": {
+    "type": "user",
+    "id": 0,
+    "name": "My Library",
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0",
+        "type": "application/json"
+      }
+    }
+  },
+  "links": {
+    "self": {
+      "href": "http://localhost:23119/api/users/0/items/6WG6QNHB",
+      "type": "application/json"
+    },
+    "attachment": {
+      "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+      "type": "application/json",
+      "attachmentType": "application/pdf",
+      "attachmentSize": 2215244
+    }
+  },
+  "meta": {
+    "creatorSummary": "Vaswani et al.",
+    "parsedDate": "2017",
+    "numChildren": 1
+  },
+  "data": {
+    "key": "6WG6QNHB",
+    "version": 1,
+    "itemType": "journalArticle",
+    "title": "Attention is all you need",
+    "date": "2017",
+    "url": "https://arxiv.org/abs/1706.03762",
+    "volume": "30",
+    "publicationTitle": "Advances in neural information processing systems",
+    "creators": [
+      {
+        "firstName": "Ashish",
+        "lastName": "Vaswani",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Noam",
+        "lastName": "Shazeer",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Niki",
+        "lastName": "Parmar",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Jakob",
+        "lastName": "Uszkoreit",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Llion",
+        "lastName": "Jones",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Aidan N",
+        "lastName": "Gomez",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Łukasz",
+        "lastName": "Kaiser",
+        "creatorType": "author"
+      },
+      {
+        "firstName": "Illia",
+        "lastName": "Polosukhin",
+        "creatorType": "author"
+      }
+    ],
+    "tags": [],
+    "collections": [],
+    "relations": {},
+    "dateAdded": "2026-11-05T18:19:03Z",
+    "dateModified": "2026-11-05T18:19:03Z"
+  }
+}

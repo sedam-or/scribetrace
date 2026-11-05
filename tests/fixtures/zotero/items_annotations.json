@@ -1,0 +1,276 @@
+[
+  {
+    "key": "QYLASC88",
+    "version": 8,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/QYLASC88",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "QYLASC88",
+      "version": 8,
+      "itemType": "annotation",
+      "parentItem": "H3E7BPJW",
+      "annotationType": "note",
+      "annotationAuthorName": "",
+      "annotationComment": "Self-attention mechanism replaces recurrent layers entirely.",
+      "annotationColor": "#ff6666",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000001|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[108,550,200,570]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "WXSKNCEL",
+    "version": 9,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/WXSKNCEL",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/45Y8JGAU",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "WXSKNCEL",
+      "version": 9,
+      "itemType": "annotation",
+      "parentItem": "45Y8JGAU",
+      "annotationType": "highlight",
+      "annotationAuthorName": "",
+      "annotationText": "Deeper neural networks are more difficult to train. We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously.",
+      "annotationComment": "Residual learning core formulation.",
+      "annotationColor": "#5fb236",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000000|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[80,450,420,475]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "BLFU2RJI",
+    "version": 10,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/BLFU2RJI",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/45Y8JGAU",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "BLFU2RJI",
+      "version": 10,
+      "itemType": "annotation",
+      "parentItem": "45Y8JGAU",
+      "annotationType": "note",
+      "annotationAuthorName": "",
+      "annotationComment": "Solves degradation problem (accuracy saturates and then degrades rapidly).",
+      "annotationColor": "#2ea8e5",
+      "annotationPageLabel": "2",
+      "annotationSortIndex": "00001|000000|00000",
+      "annotationPosition": "{\"pageIndex\":1,\"rects\":[[80,300,250,320]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "62TBRT7H",
+    "version": 11,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/62TBRT7H",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/RNBV2SQM",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "62TBRT7H",
+      "version": 11,
+      "itemType": "annotation",
+      "parentItem": "RNBV2SQM",
+      "annotationType": "highlight",
+      "annotationAuthorName": "",
+      "annotationText": "Recent work has demonstrated substantial gains on many NLP tasks and benchmarks by pre-training on a large corpus of text followed by fine-tuning on a specific task.",
+      "annotationComment": "Pre-training and scaling paradigm.",
+      "annotationColor": "#ffd400",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000000|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[95,500,450,520]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "YEZBH7HG",
+    "version": 12,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/YEZBH7HG",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/RNBV2SQM",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "YEZBH7HG",
+      "version": 12,
+      "itemType": "annotation",
+      "parentItem": "RNBV2SQM",
+      "annotationType": "underline",
+      "annotationAuthorName": "",
+      "annotationText": "Here we show that scaling up language models greatly improves task-agnostic, few-shot performance",
+      "annotationComment": "Few-shot emergence hypothesis.",
+      "annotationColor": "#a28ae5",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000001|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[95,430,440,445]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:32Z",
+      "dateModified": "2026-11-05T18:25:32Z"
+    }
+  },
+  {
+    "key": "JYRYDGDI",
+    "version": 7,
+    "library": {
+      "type": "user",
+      "id": 0,
+      "name": "My Library",
+      "links": {
+        "self": {
+          "href": "http://localhost:23119/api/users/0",
+          "type": "application/json"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "http://localhost:23119/api/users/0/items/JYRYDGDI",
+        "type": "application/json"
+      },
+      "up": {
+        "href": "http://localhost:23119/api/users/0/items/H3E7BPJW",
+        "type": "application/json"
+      }
+    },
+    "meta": {
+      "numChildren": 0
+    },
+    "data": {
+      "key": "JYRYDGDI",
+      "version": 7,
+      "itemType": "annotation",
+      "parentItem": "H3E7BPJW",
+      "annotationType": "highlight",
+      "annotationAuthorName": "",
+      "annotationText": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks",
+      "annotationComment": "Background context on previous state of the art.",
+      "annotationColor": "#ffd400",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000000|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[108,620,486,632]]}",
+      "tags": [],
+      "relations": {},
+      "dateAdded": "2026-11-05T18:25:18Z",
+      "dateModified": "2026-11-05T18:25:18Z"
+    }
+  }
+]
