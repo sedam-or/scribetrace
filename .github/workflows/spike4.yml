@@ -1,0 +1,59 @@
+name: Spike 4 (Tauri WebView)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'spikes/tauri-webview/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tauri-spike:
+    name: Build & Benchmark Spike 4 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@9399c7bb15d4c7d47b27263d024f0a4978346ba4 # v1.11.0
+
+      - name: Linux system dependencies (WebKitGTK & Tauri build deps)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Build Tauri WebView spike
+        shell: bash
+        run: |
+          if [ -d "spikes/tauri-webview" ]; then
+            cd spikes/tauri-webview
+            cargo build --release
+          else
+            echo "spikes/tauri-webview directory does not exist yet; skipping build."
+          fi
+
+      - name: Run measurement / benchmark script
+        shell: bash
+        run: |
+          if [ -f "spikes/tauri-webview/measure.sh" ]; then
+            chmod +x spikes/tauri-webview/measure.sh
+            ./spikes/tauri-webview/measure.sh
+          elif [ -f "spikes/tauri-webview/measure.py" ]; then
+            python3 spikes/tauri-webview/measure.py
+          else
+            echo "No measurement script (measure.sh or measure.py) found yet in spikes/tauri-webview."
+          fi
