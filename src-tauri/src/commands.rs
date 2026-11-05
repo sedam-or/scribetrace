@@ -1,4 +1,6 @@
+use std::future::Future;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
 use scribetrace_core::adapters::{
@@ -11,16 +13,19 @@ use serde::Serialize;
 /// Port for folder selection. Production shell uses native OS dialog (rfd);
 /// integration tests inject a deterministic picker without UI.
 pub trait FolderPicker: Send + Sync {
-    fn pick_folder(&self) -> Option<PathBuf>;
+    fn pick_folder<'a>(&'a self) -> Pin<Box<dyn Future<Output = Option<PathBuf>> + Send + 'a>>;
 }
 
-/// Native OS folder dialog picker using the `rfd` crate.
+/// Native OS folder dialog picker using the `rfd` crate asynchronously on the main loop.
 #[derive(Debug)]
 pub struct RfdFolderPicker;
 
 impl FolderPicker for RfdFolderPicker {
-    fn pick_folder(&self) -> Option<PathBuf> {
-        rfd::FileDialog::new().pick_folder()
+    fn pick_folder<'a>(&'a self) -> Pin<Box<dyn Future<Output = Option<PathBuf>> + Send + 'a>> {
+        Box::pin(async move {
+            let handle = rfd::AsyncFileDialog::new().pick_folder().await;
+            handle.map(|h| h.path().to_path_buf())
+        })
     }
 }
 
@@ -109,8 +114,10 @@ fn err(e: impl std::fmt::Display) -> String {
 
 /// Opens the native OS folder chooser dialog. Confined by design: the UI never supplies a path (SEC-18).
 #[tauri::command]
-pub fn choose_folder(session: tauri::State<'_, Session>) -> Result<Option<WorkspaceInfo>, String> {
-    let picked = match session.picker.pick_folder() {
+pub async fn choose_folder(
+    session: tauri::State<'_, Session>,
+) -> Result<Option<WorkspaceInfo>, String> {
+    let picked = match session.picker.pick_folder().await {
         Some(p) => p,
         None => return Ok(None),
     };

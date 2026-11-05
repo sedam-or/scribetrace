@@ -9,8 +9,11 @@ use zotero_standin::StandIn;
 
 struct TestFolderPicker(std::path::PathBuf);
 impl scribetrace_shell::FolderPicker for TestFolderPicker {
-    fn pick_folder(&self) -> Option<std::path::PathBuf> {
-        Some(self.0.clone())
+    fn pick_folder<'a>(
+        &'a self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<std::path::PathBuf>> + Send + 'a>>
+    {
+        Box::pin(std::future::ready(Some(self.0.clone())))
     }
 }
 
@@ -61,6 +64,16 @@ fn import_then_read_round_trips_through_ipc() {
         serde_json::json!({"path":"/etc/passwd"})
     )
     .is_err());
+
+    // SEC-16/18 negative test: dialog plugin is not exposed, no dialog capabilities exist.
+    assert!(
+        call("plugin:dialog|open", serde_json::json!({})).is_err(),
+        "plugin:dialog must not exist on the IPC allowlist"
+    );
+    assert!(
+        call("dialog:open", serde_json::json!({})).is_err(),
+        "dialog:open must not exist on the IPC allowlist"
+    );
 
     // SEC-18 negative test: open_workspace accepting a raw path argument was REMOVED.
     assert!(
