@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use scribetrace_core::adapters::{
     FsDeviceStore, FsHistoryStore, SystemClock, UuidGenerator, ZoteroHttp,
@@ -8,30 +8,82 @@ use scribetrace_core::application::{DeviceStore, HistoryStore, ImportMarks, Impo
 use scribetrace_core::domain::{Event, PaperId};
 use serde::Serialize;
 
-/// The chosen project folder, app storage directory, and Zotero port; the only state the shell keeps.
+/// Port for folder selection. Production shell uses native OS dialog (rfd);
+/// integration tests inject a deterministic picker without UI.
+pub trait FolderPicker: Send + Sync {
+    fn pick_folder(&self) -> Option<PathBuf>;
+}
+
+/// Native OS folder dialog picker using the `rfd` crate.
 #[derive(Debug)]
+pub struct RfdFolderPicker;
+
+impl FolderPicker for RfdFolderPicker {
+    fn pick_folder(&self) -> Option<PathBuf> {
+        rfd::FileDialog::new().pick_folder()
+    }
+}
+
+/// The chosen project folder, app storage directory, and Zotero port; the only state the shell keeps.
 pub struct Session {
     workspace: Mutex<Option<PathBuf>>,
     app_storage_dir: Option<PathBuf>,
     zotero_port: u16,
+    picker: Arc<dyn FolderPicker>,
+}
+
+impl std::fmt::Debug for Session {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Session")
+            .field("workspace", &self.workspace)
+            .field("app_storage_dir", &self.app_storage_dir)
+            .field("zotero_port", &self.zotero_port)
+            .finish()
+    }
 }
 
 impl Session {
-    /// A session with no folder chosen yet and default app storage.
+    /// A session with no folder chosen yet and default native folder picker.
     pub fn new(zotero_port: u16) -> Self {
         Self {
             workspace: Mutex::new(None),
             app_storage_dir: None,
             zotero_port,
+            picker: Arc::new(RfdFolderPicker),
         }
     }
 
-    /// A session with explicit app storage directory (used in integration testing).
+    /// A session with an injected folder picker (used in headless integration testing).
+    pub fn with_picker(zotero_port: u16, picker: Arc<dyn FolderPicker>) -> Self {
+        Self {
+            workspace: Mutex::new(None),
+            app_storage_dir: None,
+            zotero_port,
+            picker,
+        }
+    }
+
+    /// A session with explicit app storage directory and default picker.
     pub fn with_app_storage(zotero_port: u16, app_storage_dir: PathBuf) -> Self {
         Self {
             workspace: Mutex::new(None),
             app_storage_dir: Some(app_storage_dir),
             zotero_port,
+            picker: Arc::new(RfdFolderPicker),
+        }
+    }
+
+    /// A session with explicit app storage directory and custom picker.
+    pub fn with_app_storage_and_picker(
+        zotero_port: u16,
+        app_storage_dir: PathBuf,
+        picker: Arc<dyn FolderPicker>,
+    ) -> Self {
+        Self {
+            workspace: Mutex::new(None),
+            app_storage_dir: Some(app_storage_dir),
+            zotero_port,
+            picker,
         }
     }
 
@@ -44,7 +96,7 @@ impl Session {
     }
 }
 
-/// Answer of `open_workspace`.
+/// Answer of `choose_folder` and `get_workspace`.
 #[derive(Debug, Clone, Serialize)]
 pub struct WorkspaceInfo {
     /// Canonical path of the folder.
@@ -55,13 +107,14 @@ fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
 
-/// Opens a project folder. Must be an existing directory; stored in canonical form.
+/// Opens the native OS folder chooser dialog. Confined by design: the UI never supplies a path (SEC-18).
 #[tauri::command]
-pub fn open_workspace(
-    session: tauri::State<'_, Session>,
-    path: String,
-) -> Result<WorkspaceInfo, String> {
-    let canonical = std::fs::canonicalize(&path).map_err(err)?;
+pub fn choose_folder(session: tauri::State<'_, Session>) -> Result<Option<WorkspaceInfo>, String> {
+    let picked = match session.picker.pick_folder() {
+        Some(p) => p,
+        None => return Ok(None),
+    };
+    let canonical = std::fs::canonicalize(&picked).map_err(err)?;
     if !canonical.is_dir() {
         return Err("That path is not a folder.".to_owned());
     }
@@ -72,7 +125,19 @@ pub fn open_workspace(
         .workspace
         .lock()
         .map_err(|_| "internal error".to_owned())? = Some(canonical);
-    Ok(info)
+    Ok(Some(info))
+}
+
+/// Returns the currently active workspace info, if any.
+#[tauri::command]
+pub fn get_workspace(session: tauri::State<'_, Session>) -> Result<Option<WorkspaceInfo>, String> {
+    let lock = session
+        .workspace
+        .lock()
+        .map_err(|_| "internal error".to_owned())?;
+    Ok(lock.as_ref().map(|p| WorkspaceInfo {
+        path: p.to_string_lossy().into_owned(),
+    }))
 }
 
 /// Imports the marks of one paper from Zotero. Runs only when the user clicks.

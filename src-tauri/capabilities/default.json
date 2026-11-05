@@ -3,5 +3,10 @@
   "identifier": "default",
   "description": "The main window may call exactly the ScribeTrace commands; no fs, shell or http plugin exists.",
   "windows": ["main"],
-  "permissions": ["allow-open-workspace", "allow-import-marks", "allow-read-history"]
+  "permissions": [
+    "allow-choose-folder",
+    "allow-get-workspace",
+    "allow-import-marks",
+    "allow-read-history"
+  ]
 }

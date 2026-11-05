@@ -1,5 +1,6 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 
+import { t } from "../strings.ts";
 import { Button } from "./Button.tsx";
 
 export interface PaperListRowProps {
@@ -59,7 +60,9 @@ export function PaperListRow({
         <span className="st-list-title">{title}</span>
         <span className="st-list-meta">
           {metaString && <span>{metaString}</span>}
-          {statusText && <span>· {statusText}</span>}
+          {statusText && (
+            <span title={t("papers.no_marks.help")}>· {statusText}</span>
+          )}
         </span>
       </div>
 

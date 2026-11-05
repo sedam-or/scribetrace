@@ -1,17 +1,84 @@
 import type { Rpc } from "./rpc.ts";
-import type { HistoryEvent, Mark } from "./types.ts";
+import {
+  type HistoryEvent,
+  type Mark,
+  type PaperItem,
+  type WorkspaceInfo,
+  type ZoteroErrorCode,
+  ZoteroError,
+} from "./types.ts";
+
+export interface MockRpcOptions {
+  initialWorkspace?: string | null;
+  chosenFolder?: string | null;
+  papers?: PaperItem[];
+  failZoteroCode?: ZoteroErrorCode | string | null;
+  zoteroDetail?: string;
+  zoteroSeconds?: number;
+}
+
+/** Standard fixture papers drawn from tests/fixtures/zotero/ */
+export const FIXTURE_PAPERS: PaperItem[] = [
+  {
+    id: "6WG6QNHB",
+    title: "Attention is all you need",
+    authors: "Vaswani et al.",
+    year: "2017",
+    marksCount: 3,
+    attachmentKey: "EFGH6789",
+  },
+  {
+    id: "KBPLWQT5",
+    title: "Deep residual learning for image recognition",
+    authors: "He et al.",
+    year: "2016",
+    marksCount: 2,
+    attachmentKey: "H3E7BPJW",
+  },
+  {
+    id: "HMIBIMH7",
+    title: "Language models are few-shot learners",
+    authors: "Brown et al.",
+    year: "2020",
+    marksCount: 0,
+    attachmentKey: "BROWN01",
+  },
+];
 
 /** In-memory Rpc for tests and for running the UI without the shell. */
-export function createMockRpc(marks: Mark[]): Rpc {
+export function createMockRpc(
+  marks: Mark[] = [],
+  options: MockRpcOptions = {},
+): Rpc {
   const history: HistoryEvent[] = [];
-  let open = false;
+  let currentWorkspace: string | null = options.initialWorkspace !== undefined ? options.initialWorkspace : "/mock/workspace";
+  const papers = options.papers ?? FIXTURE_PAPERS;
+
   return {
-    openWorkspace: (path) => {
-      open = true;
-      return Promise.resolve({ path });
+    chooseFolder: () => {
+      const selected = options.chosenFolder !== undefined ? options.chosenFolder : "/home/user/research";
+      currentWorkspace = selected;
+      return Promise.resolve(selected ? { path: selected } : null);
+    },
+    getWorkspace: () => {
+      return Promise.resolve(currentWorkspace ? { path: currentWorkspace } : null);
+    },
+    connectZotero: () => {
+      if (options.failZoteroCode) {
+        return Promise.reject(
+          new ZoteroError(
+            options.failZoteroCode,
+            options.zoteroDetail,
+            options.zoteroSeconds,
+          ),
+        );
+      }
+      return Promise.resolve([...papers]);
     },
     importMarks: (_paperId, _attachmentKey) => {
-      if (!open) return Promise.reject(new Error("No project folder is open."));
+      if (!currentWorkspace) {
+        return Promise.reject(new Error("No project folder is open."));
+      }
       for (const mark of marks) {
         history.push({
           v: 1,

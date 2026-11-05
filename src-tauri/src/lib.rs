@@ -3,21 +3,30 @@
 
 mod commands;
 
-pub use commands::{Session, WorkspaceInfo};
+pub use commands::{FolderPicker, RfdFolderPicker, Session, WorkspaceInfo};
 
 /// Zotero's local API port; the only network endpoint the app ever contacts, and only on click.
 pub const ZOTERO_PORT: u16 = 23119;
 
-/// Registers the session state and the three allowed commands on `builder`.
+/// Registers the session state and the allowed commands on `builder`.
 /// Shared by `run` and by the mock-context tests so both exercise the same wiring.
 pub fn register<R: tauri::Runtime>(
     builder: tauri::Builder<R>,
     zotero_port: u16,
 ) -> tauri::Builder<R> {
+    register_with_session(builder, Session::new(zotero_port))
+}
+
+/// Registers with a custom Session (used for tests injecting mock pickers).
+pub fn register_with_session<R: tauri::Runtime>(
+    builder: tauri::Builder<R>,
+    session: Session,
+) -> tauri::Builder<R> {
     builder
-        .manage(Session::new(zotero_port))
+        .manage(session)
         .invoke_handler(tauri::generate_handler![
-            commands::open_workspace,
+            commands::choose_folder,
+            commands::get_workspace,
             commands::import_marks,
             commands::read_history
         ])

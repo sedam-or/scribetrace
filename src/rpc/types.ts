@@ -29,3 +29,35 @@ export interface WorkspaceInfo {
 export interface ImportReport {
   imported: number;
 }
+
+export interface PaperItem {
+  id: string;
+  title: string;
+  authors?: string;
+  year?: string | number;
+  marksCount: number;
+  attachmentKey?: string;
+}
+
+export type ZoteroErrorCode =
+  | "refused"
+  | "forbidden"
+  | "timeout"
+  | "version"
+  | "too_large"
+  | "bad_answer"
+  | "internal";
+
+export class ZoteroError extends Error {
+  readonly code: ZoteroErrorCode | string;
+  readonly detail?: string;
+  readonly seconds?: number;
+
+  constructor(code: ZoteroErrorCode | string, detail?: string, seconds?: number) {
+    super(detail ? `${code}: ${detail}` : code);
+    this.name = "ZoteroError";
+    this.code = code;
+    this.detail = detail;
+    this.seconds = seconds;
+  }
+}

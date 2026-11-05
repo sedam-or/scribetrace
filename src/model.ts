@@ -10,12 +10,23 @@ export type ViewState =
   | { kind: "error"; message: string }
   | { kind: "done"; imported: number; events: HistoryEvent[] };
 
-/** Opens the folder, imports the marks, reads the history. Never throws: failures become state. */
-export async function importPaper(rpc: Rpc, folder: string): Promise<ViewState> {
+/** Imports marks and reads history for the selected paper. Never throws: failures become state. */
+export async function importPaper(
+  rpc: Rpc,
+  _folder?: string,
+  paperId: string = SLICE1_PAPER.paperId,
+  attachmentKey: string = SLICE1_PAPER.attachmentKey,
+): Promise<ViewState> {
   try {
-    await rpc.openWorkspace(folder);
-    const report = await rpc.importMarks(SLICE1_PAPER.paperId, SLICE1_PAPER.attachmentKey);
-    const events = await rpc.readHistory(SLICE1_PAPER.paperId);
+    const ws = await rpc.getWorkspace();
+    if (!ws) {
+      const chosen = await rpc.chooseFolder();
+      if (!chosen) {
+        return { kind: "error", message: "No project folder is open." };
+      }
+    }
+    const report = await rpc.importMarks(paperId, attachmentKey);
+    const events = await rpc.readHistory(paperId);
     return { kind: "done", imported: report.imported, events };
   } catch (e) {
     return { kind: "error", message: e instanceof Error ? e.message : String(e) };

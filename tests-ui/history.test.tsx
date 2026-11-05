@@ -40,8 +40,8 @@ test("hostile mark text is rendered inert", async () => {
 });
 
 test("a failing Rpc becomes an error state, not an exception", async () => {
-  const rpc = createMockRpc([mark]);
-  rpc.openWorkspace = () => Promise.reject(new Error("That path is not a folder."));
+  const rpc = createMockRpc([mark], { initialWorkspace: null });
+  rpc.chooseFolder = () => Promise.reject(new Error("That path is not a folder."));
   const state = await importPaper(rpc, "/nope");
   assert.deepEqual(state, { kind: "error", message: "That path is not a folder." });
   assert.match(renderToStaticMarkup(<HistoryPanel state={state} />), /role="alert"/);

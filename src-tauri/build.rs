@@ -1,7 +1,8 @@
 fn main() {
     // Only these commands exist for the UI; each gets an `allow-*` permission in capabilities/.
     let manifest = tauri_build::AppManifest::new().commands(&[
-        "open_workspace",
+        "choose_folder",
+        "get_workspace",
         "import_marks",
         "read_history",
     ]);

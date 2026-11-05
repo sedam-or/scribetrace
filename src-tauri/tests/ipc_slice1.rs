@@ -1,10 +1,18 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)] // integration tests are not shipped code
 //! Slice 1 acceptance (c): the commands (de)serialise through Tauri's mock context.
 
+use std::sync::Arc;
 use tauri::ipc::InvokeBody;
 use tauri::test::mock_builder;
 use tauri::webview::InvokeRequest;
 use zotero_standin::StandIn;
+
+struct TestFolderPicker(std::path::PathBuf);
+impl scribetrace_shell::FolderPicker for TestFolderPicker {
+    fn pick_folder(&self) -> Option<std::path::PathBuf> {
+        Some(self.0.clone())
+    }
+}
 
 fn request(cmd: &str, body: serde_json::Value) -> InvokeRequest {
     InvokeRequest {
@@ -32,7 +40,10 @@ fn import_then_read_round_trips_through_ipc() {
     let server = StandIn::start(fixtures, 0).unwrap();
     let workspace = tempfile::tempdir().unwrap();
 
-    let app = scribetrace_shell::register(mock_builder(), server.port())
+    let picker = Arc::new(TestFolderPicker(workspace.path().to_path_buf()));
+    let session = scribetrace_shell::Session::with_picker(server.port(), picker);
+
+    let app = scribetrace_shell::register_with_session(mock_builder(), session)
         .build(tauri::generate_context!())
         .unwrap();
     let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
@@ -44,26 +55,42 @@ fn import_then_read_round_trips_through_ipc() {
             .map(|r| r.deserialize::<serde_json::Value>().unwrap())
     };
 
-    // Anything outside the three allowed commands is refused by the capability file.
+    // SEC-16/18: Arbitrary filesystem access is denied.
     assert!(call(
         "plugin:fs|read_file",
         serde_json::json!({"path":"/etc/passwd"})
     )
     .is_err());
 
-    // No folder yet: a plain, typed error.
+    // SEC-18 negative test: open_workspace accepting a raw path argument was REMOVED.
+    assert!(
+        call(
+            "open_workspace",
+            serde_json::json!({"path": workspace.path()})
+        )
+        .is_err(),
+        "open_workspace must not exist on the IPC allowlist"
+    );
+
+    // No folder chosen yet: import_marks fails with a typed error.
     assert!(call(
         "import_marks",
         serde_json::json!({"paperId":"z_EFGH6789","attachmentKey":"EFGH6789"})
     )
     .is_err());
 
-    let opened = call(
-        "open_workspace",
-        serde_json::json!({"path": workspace.path()}),
-    )
-    .unwrap();
-    assert!(opened["path"].is_string());
+    // Initially get_workspace returns null/None.
+    let initial_ws = call("get_workspace", serde_json::json!({})).unwrap();
+    assert!(initial_ws.is_null());
+
+    // choose_folder opens via the port picker (no path argument accepted from UI).
+    let chosen = call("choose_folder", serde_json::json!({})).unwrap();
+    assert!(chosen.is_object());
+    assert!(chosen["path"].is_string());
+
+    // get_workspace now returns the configured folder.
+    let active_ws = call("get_workspace", serde_json::json!({})).unwrap();
+    assert_eq!(active_ws["path"], chosen["path"]);
 
     let report = call(
         "import_marks",
