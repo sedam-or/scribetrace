@@ -29,7 +29,7 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 
 ---
 
-## 2. Security Requirements Specification (SEC-1 through SEC-36)
+## 2. Security Requirements Specification (SEC-1 through SEC-38)
 
 ### 2.1 Principle 1: Secure & Deny by Default (Network, CSP & Navigation)
 
@@ -133,6 +133,16 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 * **EARS Pattern (Event-driven):** WHEN exporting document data (Markdown, W3C JSON-LD) THEN the system SHALL write files exclusively to paths explicitly selected by the user via native OS Save File dialog or within `<workspace>/.scribetrace/`.
 * **Threat Mitigation:** `THREAT-3.3` (Arbitrary file write / overwrite)
 * **Verification Method:** Integration test attempting export to system directories without dialog interaction; assert backend denies write.
+
+#### SEC-37: Workspace Chosen Only Through the Native Folder Dialog `[Enforced in Code]`
+* **EARS Pattern (Event-driven):** WHEN the user asks to choose a project folder THEN the shell SHALL open the native OS folder dialog itself, without blocking the UI thread, and SHALL accept no path from the webview; the IPC allowlist SHALL NOT contain a command that takes a workspace path or any generic dialog or opener permission.
+* **Threat Mitigation:** `THREAT-3.2`, `THREAT-3.3` (a compromised webview pointing the workspace at an arbitrary host folder)
+* **Verification Method:** Integration test with an injected picker (`choose_folder` returns the picked folder only); negative tests asserting `open_workspace`, `dialog:open` and `plugin:dialog|open` are rejected.
+
+#### SEC-38: Command-Line Tool Is Read-Only and Prints Only Sanitised Text `[Enforced in Code]`
+* **EARS Pattern (Ubiquitous):** The `scribetrace-cli` tool SHALL open no network connection, SHALL never create, change or delete a file in the project folder, and SHALL strip control characters and Unicode bidirectional overrides from, and escape Markdown markup in, every piece of text taken from a history file before printing it.
+* **Threat Mitigation:** `THREAT-4.2` (hostile sidecar files arriving by git or sync; terminal escape and Markdown injection)
+* **Verification Method:** `src-cli/tests/cli.rs`: folder snapshot before and after each command is identical; a fixture with ESC and U+202E in a mark prints neither; `<b>` appears escaped.
 
 ---
 
@@ -290,6 +300,8 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 | **SEC-34**| 7. User Privacy | `[Enforced in Code]` | `THREAT-2.6, 4.4` | `scribetrace-core::adapters` | Filesystem audit verifying `device.json` in OS app storage |
 | **SEC-35**| 7. User Privacy | `[Enforced in Code]` | `THREAT-4.4` | `scribetrace-core::domain` | Unit test verifying default author label is literal string `'Me'` |
 | **SEC-36**| 2. Least Privilege | `[Enforced in Code]` | `THREAT-3.3` | `scribetrace-core::adapters` | Integration test verifying marked subfolder overwrite rules |
+| **SEC-37**| 2. Least Privilege | `[Enforced in Code]` | `THREAT-3.2, 3.3` | `src-tauri/src/commands.rs` | Integration test with injected picker; allowlist negative tests |
+| **SEC-38**| 4. Boundary Validation | `[Enforced in Code]` | `THREAT-4.2` | `src-cli` | Folder snapshot unchanged; ESC/U+202E stripped; markup escaped |
 
 ---
 

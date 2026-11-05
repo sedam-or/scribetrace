@@ -7,7 +7,7 @@ This document governs the operating contract, boundaries, and conventions for AI
 All design decisions must align with:
 - `docs/ARCHITECTURE.md` (System design, layering rules, and component boundaries).
 - `docs/DECISION-LOG.md` (Ratified architectural decisions).
-- `docs/SECURITY-REQUIREMENTS.md` (Security constraints SEC-1 through SEC-32).
+- `docs/SECURITY-REQUIREMENTS.md` (Security constraints SEC-1 through SEC-38).
 
 ### Layering Rules
 1. **Core Storage & Engine (`src-core/`):** Pure, platform-agnostic Rust library (`scribetrace-core`). Zero UI dependencies. Interacts strictly with `.scribetrace/` sidecar storage.
