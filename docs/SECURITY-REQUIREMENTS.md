@@ -29,7 +29,7 @@ Every requirement is explicitly tagged with its enforcement mechanism:
 
 ---
 
-## 2. Security Requirements Specification (SEC-1 through SEC-38)
+## 2. Security Requirements Specification (SEC-1 through SEC-39)
 
 ### 2.1 Principle 1: Secure & Deny by Default (Network, CSP & Navigation)
 
