@@ -1,0 +1,29 @@
+name: Feature Request
+description: Propose a new feature, workflow improvement, or integration idea.
+title: "feat: [short feature summary]"
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please verify your idea aligns with ScribeTrace's core principles: local-first, offline, append-only, and non-destructive.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a specific problem or friction point in your scholarly workflow?
+      placeholder: "I'm always frustrated when I try to..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Workaround
+      description: Describe what you want to happen and how you envision the interaction.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: Have you considered any alternative solutions or features?

@@ -1,0 +1,30 @@
+name: Architectural Discussion / ADR Proposal
+description: Propose a change to architectural invariants, data storage formats, or technical boundaries.
+title: "arch: [architectural topic]"
+labels: ["architecture", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose changes to system architecture, storage schemas (`.scribetrace/`), or ADRs.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Problem
+      description: What architectural invariant or technical limitation is motivating this proposal?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Architectural Solution
+      description: Detailed technical design, component boundaries, and data flow.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Trade-offs & Consequences
+      description: What are the positive, negative, and neutral trade-offs?
+    validations:
+      required: true

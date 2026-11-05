@@ -1,0 +1,33 @@
+# Git attributes — ScribeTrace
+
+# Normalize line endings
+* text=auto
+
+# Documentation and config
+*.md text
+*.yaml text
+*.yml text
+*.json text
+*.toml text
+*.sh text eol=lf
+*.rs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.tar.gz binary
+*.zip binary
+*.ico binary
+
+# Diff markers for common artifacts
+*.lock linguist-generated
+Cargo.lock linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+package-lock.json linguist-generated=true

@@ -1,0 +1,52 @@
+# AgentsRoom and AI assistant runtime plumbing
+.agentsroom/
+.claude/
+.agents/
+.mcp.json
+.grok/
+.vibe/
+.kimi-code/
+.amp/
+.omp/
+.devin/
+.cursor/
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# Node.js dependencies and outputs
+node_modules/
+dist/
+build/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tauri bundle outputs
+src-tauri/target/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Large fixtures (fixtures > 1MB must not be committed)
+tests/fixtures/large/*.pdf
+spikes/**/fixtures/*.pdf
+*.pdf.large
+
+# Local environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
