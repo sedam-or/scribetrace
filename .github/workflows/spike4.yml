@@ -36,24 +36,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
+      - name: Setup Node and pnpm dependencies
+        shell: bash
+        run: |
+          cd spikes/tauri-webview
+          corepack enable
+          corepack prepare pnpm@9.15.9 --activate
+          pnpm install
+
       - name: Build Tauri WebView spike
         shell: bash
         run: |
-          if [ -d "spikes/tauri-webview" ]; then
+          if [ -d "spikes/tauri-webview" ] && [ -f "spikes/tauri-webview/Cargo.toml" ]; then
             cd spikes/tauri-webview
             cargo build --release
           else
-            echo "spikes/tauri-webview directory does not exist yet; skipping build."
+            echo "No Cargo.toml in spikes/tauri-webview; skipping Rust build."
           fi
 
       - name: Run measurement / benchmark script
         shell: bash
         run: |
-          if [ -f "spikes/tauri-webview/measure.sh" ]; then
-            chmod +x spikes/tauri-webview/measure.sh
-            ./spikes/tauri-webview/measure.sh
-          elif [ -f "spikes/tauri-webview/measure.py" ]; then
-            python3 spikes/tauri-webview/measure.py
-          else
-            echo "No measurement script (measure.sh or measure.py) found yet in spikes/tauri-webview."
-          fi
+          chmod +x spikes/tauri-webview/measure.sh spikes/tauri-webview/measure.py
+          ./spikes/tauri-webview/measure.sh
