@@ -56,19 +56,26 @@ To minimize contributor friction while securing legal provenance:
 
 ---
 
-## 4. Trademark Policy & Nominative Fair Use
+## 4. Trademark Policy, Nominative Fair Use & Third-Party Guidance
 
 Documented in detail in [TRADEMARK.md](../TRADEMARK.md):
 * **ScribeTrace Name & Logo:** Protected against confusing downstream branding and unauthorized commercial endorsement.
-* **Third-Party Naming:** Third-party trademarks (Zotero, Obsidian) must strictly use nominative phrasing (e.g., *"works with Zotero"*, *"export for Obsidian"*). Implied endorsement or leading naming (*"Zotero ScribeTrace"*) is prohibited.
-  * **Zotero Guidance:** Reviewed against official Zotero Trademark Policy ([https://www.zotero.org/support/terms/trademark](https://www.zotero.org/support/terms/trademark), Corporation for Digital Scholarship; checked: 2026-11-06).
-  * **Obsidian Guidance:** Reviewed against official Obsidian Brand Guidelines ([https://obsidian.md/brand](https://obsidian.md/brand)) and Developer Policies ([https://docs.obsidian.md/Developer+policies](https://docs.obsidian.md/Developer+policies)) (Dynalist Inc.; checked: 2026-11-06).
-* **Preliminary Trademark Clearance Screening (2026-11-06):**
-  * Screened in Nice Classes 9 (computer software) and 42 (research software services) across:
-    1. **WIPO Global Brand Database** ([https://branddb.wipo.int](https://branddb.wipo.int), checked: 2026-11-06) — 0 conflicting marks.
-    2. **EUIPO TMview** ([https://www.tmdn.org/tmview](https://www.tmdn.org/tmview), checked: 2026-11-06) — 0 conflicting marks.
-    3. **USPTO Search** ([https://tmsearch.uspto.gov](https://tmsearch.uspto.gov), checked: 2026-11-06) — 0 exact-match marks (Colony Labs' "Scribe" workflow tool is distinct).
-  * Technical agent limitations (portal CloudFront/WAF anti-bot measures) are noted in [TRADEMARK.md](../TRADEMARK.md); formal attorney clearance is advised prior to commercial registration.
+* **Third-Party Compatibility Statements & Fair Use:**
+  * *Legal Doctrine:* Descriptive referential use (e.g., *"a companion to Zotero"*, *"works with Zotero"*, *"exports to Obsidian"*) is legally grounded under **Nominative Fair Use** (U.S.) and **Article 14(1)(c) of EU Trade Mark Regulation 2017/1001** (referential use to indicate intended purpose or compatibility). It is lawful provided no likelihood of confusion or implied endorsement is created, plain text only is used, and prominent disclaimers are attached.
+  * *Published Policy Citations:*
+    * **Zotero:** The official [Zotero Trademark Policy](https://www.zotero.org/support/terms/trademark) (Corporation for Digital Scholarship; opened: 2026-11-06) prohibits use that causes user confusion or implies affiliation, but says nothing explicitly about compatibility statements.
+    * **Obsidian:** The official [Obsidian Brand Guidelines](https://obsidian.md/brand) and [Developer Policies](https://docs.obsidian.md/Developer+policies) (Dynalist Inc.; opened: 2026-11-06) prohibit logo distortion and require contact prior to commercial use.
+  * *Alignment with [BRAND.md §5](BRAND.md):* Because Zotero's published text does not explicitly specify compatibility safe harbors, ScribeTrace strictly adopts the **cautious form** defined in [BRAND.md §5](BRAND.md):
+    1. Plain text only: *"a companion to Zotero"*, *"works with Zotero"*, *"exports to Obsidian"*.
+    2. Never use leading branding (*"Zotero ScribeTrace"*), logos, icons, or brand colors.
+    3. Never claim to be *"official"*, *"certified"*, a *"partner"*, or a *"plugin"*.
+    4. First-mention disclaimer required: *"ScribeTrace is an independent project, not affiliated with or endorsed by Zotero or Obsidian."*
+* **Preliminary Trademark Clearance Status (2026-11-06):**
+  * Automated screening was attempted for "ScribeTrace" in Nice Classes 9 and 42 across official registries:
+    1. **WIPO Global Brand Database** ([https://branddb.wipo.int](https://branddb.wipo.int), checked: 2026-11-06): NOT CHECKED: Portal blocked automated access (CloudFront edge protection / dynamic SPA).
+    2. **EUIPO TMview** ([https://www.tmdn.org/tmview](https://www.tmdn.org/tmview), checked: 2026-11-06): NOT CHECKED: Portal blocked automated access (BigIP gateway / session-only interface).
+    3. **USPTO Search** ([https://tmsearch.uspto.gov](https://tmsearch.uspto.gov), checked: 2026-11-06): NOT CHECKED: Portal blocked automated access (AWS WAF / dynamic SPA).
+  * In accordance with [BRAND.md §5](BRAND.md), the name is **not officially cleared**; the repository owner must perform a manual clearance search prior to commercial launch or trademark registration.
 
 ---
 
@@ -85,12 +92,12 @@ Documented in detail in [PRIVACY.md](../PRIVACY.md):
 
 ---
 
-## 6. Deliverable & Compliance Verification Matrix
+## 6. Deliverables & Operational Cross-References
 
-| Acceptance Criterion | Governing File | Verification Method | Status |
-| :--- | :--- | :--- | :---: |
-| **1. License & DCO Reasoning** | [docs/LEGAL.md](LEGAL.md), [CONTRIBUTING.md](../CONTRIBUTING.md) | Architectural review; DCO 1.1 cited; not-legal-advice line | **PASSED** |
-| **2. Dependency Audit & Policy** | [deny.toml](../deny.toml), [NOTICE](../NOTICE) | `cargo-deny check licenses` passes on all spike crates | **PASSED** |
-| **3. Trademark Policy & Screening**| [TRADEMARK.md](../TRADEMARK.md) | Verified 3 registries; Zotero & Obsidian guidance cited | **PASSED** |
-| **4. Privacy Policy & GDPR** | [PRIVACY.md](../PRIVACY.md) | Aligned with SEC-1 loopback rule and Validation Protocol §4 | **PASSED** |
-| **5. Verified Working Links** | All files | All external URLs verified HTTP 200 on 2026-11-06 | **PASSED** |
+| Area | Governing Repository File | Operational Scope |
+| :--- | :--- | :--- |
+| **Outbound Licensing & DCO** | [docs/LEGAL.md](LEGAL.md), [CONTRIBUTING.md](../CONTRIBUTING.md) | Apache-2.0 rationale, DCO 1.1 commit sign-off (`-s`), no-CLA policy |
+| **Dependency Allow-List & Attribution** | [deny.toml](../deny.toml), [NOTICE](../NOTICE) | Automated `cargo-deny` enforcement; third-party attribution notices |
+| **Trademark Policy & Third-Party Use** | [TRADEMARK.md](../TRADEMARK.md) | Nominative compatibility rules; manual search requirement for owner |
+| **Data Privacy & User Research** | [PRIVACY.md](../PRIVACY.md) | Zero-telemetry architecture; GDPR diary study protocol compliance |
+| **Official Source URLs** | All governance files | Official external documentation links verified active (2026-11-06) |

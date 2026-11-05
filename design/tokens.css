@@ -70,7 +70,7 @@
   /* Typography Colors */
   --st-color-text-primary: #f8fafc;    /* Contrast 17.06:1 on #0f172a */
   --st-color-text-secondary: #94a3b8;  /* Contrast 6.96:1 on #0f172a */
-  --st-color-text-muted: #64748b;
+  --st-color-text-muted: #94a3b8;      /* QA fix: Contrast 6.96:1 on #0f172a */
   --st-color-text-inverse: #0f172a;
 
   /* Borders & Dividers */
@@ -100,7 +100,7 @@
 
   /* History State 3: Removed (Rose) */
   --st-mark-removed: #f87171;          /* Contrast 6.45:1 on #0f172a */
-  --st-mark-removed-bg: #7f1d1d;
+  --st-mark-removed-bg: #450a0a;       /* QA fix: Contrast 5.84:1 with #f87171 */
   --st-mark-removed-border: #b91c1c;
 
   /* Error & Warning */
@@ -124,7 +124,7 @@
 
     --st-color-text-primary: #f8fafc;
     --st-color-text-secondary: #94a3b8;
-    --st-color-text-muted: #64748b;
+    --st-color-text-muted: #94a3b8;
     --st-color-text-inverse: #0f172a;
 
     --st-color-border: #334155;
@@ -148,7 +148,7 @@
     --st-mark-edited-border: #b45309;
 
     --st-mark-removed: #f87171;
-    --st-mark-removed-bg: #7f1d1d;
+    --st-mark-removed-bg: #450a0a;
     --st-mark-removed-border: #b91c1c;
 
     --st-color-error-text: #f87171;

@@ -1,52 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48" fill="none">
   <!-- 
-    ScribeTrace Official Logo: Mark + Wordmark
+    ScribeTrace Official Logo (Light Theme)
     100% Original Vector Art (Not derived from any icon set / Lucide / Feather / FontAwesome)
     Motifs (BRAND.md §6): Strata / stacked reading layers, scholar's margin rule, and timeline trace.
-    Works at 16px and in pure monochrome (currentColor).
+    High contrast against light backgrounds (#ffffff / GitHub light mode).
   -->
   <style>
-    .st-stroke { stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-    .st-fill { fill: currentColor; }
-    .st-wordmark {
+    .st-stroke-light { stroke: #0f172a; stroke-linecap: round; stroke-linejoin: round; }
+    .st-wordmark-light {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 26px;
       font-weight: 600;
       letter-spacing: -0.035em;
-      fill: currentColor;
+      fill: #0f172a;
     }
-    .st-sub {
+    .st-sub-light {
       font-weight: 400;
-      opacity: 0.82;
+      fill: #475569;
     }
   </style>
 
-  <!-- Brand Mark: Strata Layers & Margin Trace (40x40 box: x=4, y=4, legible at 16px) -->
-  <g class="st-stroke" transform="translate(4, 4)">
+  <!-- Brand Mark: Strata Layers & Margin Trace (x=4, y=4, legible at 16px) -->
+  <g class="st-stroke-light" transform="translate(4, 4)">
     <!-- Scholar's Margin Guide Rule -->
-    <line x1="12" y1="6" x2="12" y2="34" stroke-width="1.75" opacity="0.4" />
+    <line x1="12" y1="6" x2="12" y2="34" stroke="#64748b" stroke-width="1.75" opacity="0.4" />
 
-    <!-- Three Horizontal Strata / Stacked Page Layers (Earliest to Current) -->
-    <!-- Stratum 1 (Top / Earlier reading layer, dashed/fading ink) -->
-    <line x1="18" y1="11" x2="36" y2="11" stroke-width="2.5" stroke-dasharray="2 3" opacity="0.55" />
+    <!-- Layer 1: Earliest Reading Layer (Fading ink / dashed) -->
+    <line x1="18" y1="11" x2="36" y2="11" stroke="#64748b" stroke-width="2.5" stroke-dasharray="2 3" opacity="0.6" />
 
-    <!-- Stratum 2 (Middle reading milestone) -->
-    <line x1="18" y1="20" x2="38" y2="20" stroke-width="2.5" opacity="0.8" />
+    <!-- Layer 2: Middle Milestone Reading Layer -->
+    <line x1="18" y1="20" x2="38" y2="20" stroke="#334155" stroke-width="2.5" opacity="0.85" />
 
-    <!-- Stratum 3 (Base / Current reading milestone) -->
-    <line x1="18" y1="29" x2="34" y2="29" stroke-width="2.75" />
+    <!-- Layer 3: Base / Current Reading Layer -->
+    <line x1="18" y1="29" x2="34" y2="29" stroke="#0f172a" stroke-width="2.75" />
 
-    <!-- The Scribe Trace (Continuous margin notation loop connecting the reading layers) -->
-    <path d="M7 11 C 7 7, 12 7, 12 11 L 12 24 C 12 29, 6 29, 6 33 C 6 36, 12 36, 15 33" stroke-width="2.5" />
+    <!-- The Scribe Margin Trace (Fluid marginalia loop connecting reading layers) -->
+    <path d="M7 11 C 7 7, 12 7, 12 11 L 12 24 C 12 29, 6 29, 6 33 C 6 36, 12 36, 15 33" stroke="#1d4ed8" stroke-width="2.5" />
     
     <!-- Active Milestone Trace Anchor (Terminal focus node) -->
-    <circle cx="18" cy="29" r="2.75" class="st-fill" stroke="none" />
+    <circle cx="18" cy="29" r="2.75" fill="#2563eb" stroke="none" />
     <!-- Secondary Milestone Node on Middle Layer -->
-    <circle cx="12" cy="20" r="2" class="st-fill" stroke="none" />
+    <circle cx="12" cy="20" r="2" fill="#1d4ed8" stroke="none" />
   </g>
 
-  <!-- Wordmark: ScribeTrace (Exact casing: ScribeTrace, one word) -->
+  <!-- Wordmark: ScribeTrace (High-contrast ink on light mode) -->
   <g transform="translate(56, 33)">
-    <text class="st-wordmark">Scribe<tspan class="st-sub">Trace</tspan></text>
+    <text class="st-wordmark-light">Scribe<tspan class="st-sub-light">Trace</tspan></text>
   </g>
 </svg>

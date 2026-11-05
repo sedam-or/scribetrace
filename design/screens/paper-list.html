@@ -127,8 +127,20 @@
     .paper-title {
       font-size: var(--st-font-size-base);
       font-weight: var(--st-font-weight-semibold);
-      color: var(--st-color-text-primary);
       margin-bottom: 2px;
+    }
+    .paper-title-link {
+      color: var(--st-color-text-primary);
+      text-decoration: none;
+      display: inline-block;
+    }
+    .paper-title-link:hover {
+      color: var(--st-color-primary);
+      text-decoration: underline;
+    }
+    .paper-title-link:focus-visible {
+      outline: 2px solid var(--st-color-focus-ring);
+      outline-offset: 2px;
     }
     .paper-meta {
       font-size: var(--st-font-size-sm);
@@ -197,7 +209,7 @@
 
     <!-- Filter & Action Toolbar -->
     <div class="toolbar">
-      <input type="text" class="search-input" placeholder="Filter papers, tags, or authors (Ctrl+K)...">
+      <input type="text" class="search-input" aria-label="Filter papers, tags, or authors" placeholder="Filter papers, tags, or authors (Ctrl+K)...">
       <div style="display: flex; gap: var(--st-space-2);">
         <button type="button" class="st-btn st-btn-secondary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
@@ -223,9 +235,11 @@
         </thead>
         <tbody>
           <!-- Paper 1 (Selected) -->
-          <tr class="paper-row selected" onclick="window.location.href='paper-timeline.html'">
+          <tr class="paper-row selected">
             <td>
-              <div class="paper-title">Attention Is All You Need</div>
+              <div class="paper-title">
+                <a href="paper-timeline.html" class="paper-title-link">Attention Is All You Need</a>
+              </div>
               <div class="paper-meta">
                 <span>Vaswani, Shazeer, Parmar, Uszkoreit et al.</span>
                 <span>•</span>
@@ -246,9 +260,11 @@
           </tr>
 
           <!-- Paper 2 -->
-          <tr class="paper-row" onclick="window.location.href='paper-timeline.html'">
+          <tr class="paper-row">
             <td>
-              <div class="paper-title">Deep Residual Learning for Image Recognition</div>
+              <div class="paper-title">
+                <a href="paper-timeline.html" class="paper-title-link">Deep Residual Learning for Image Recognition</a>
+              </div>
               <div class="paper-meta">
                 <span>He, Zhang, Ren, Sun</span>
                 <span>•</span>
@@ -269,9 +285,11 @@
           </tr>
 
           <!-- Paper 3 -->
-          <tr class="paper-row" onclick="window.location.href='paper-timeline.html'">
+          <tr class="paper-row">
             <td>
-              <div class="paper-title">Quantum Supremacy Using a Programmable Superconducting Processor</div>
+              <div class="paper-title">
+                <a href="paper-timeline.html" class="paper-title-link">Quantum Supremacy Using a Programmable Superconducting Processor</a>
+              </div>
               <div class="paper-meta">
                 <span>Arute, Arya, Babbush, Bacon et al.</span>
                 <span>•</span>
