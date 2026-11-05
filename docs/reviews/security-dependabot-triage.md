@@ -58,7 +58,8 @@ A security audit triaged all 16 open Dependabot alerts on `main`:
 2. **Core Boundary (SEC-1, SEC-2, SEC-15):** `scribetrace-core` has zero UI/GTK/Tauri dependencies (`cargo tree -p scribetrace-core -i glib` is empty).
 3. **Application Shell:** `scribetrace-shell` uses Tauri strictly as an IPC broker (`open_workspace`, `import_marks`, `read_history`). Neither our code nor Tauri's window initialization invokes `VariantStrIter::impl_get` or iterates over GVariant string arrays.
 4. **Upstream Fix Feasibility:** `gtk-rs` introduced the fix in version 0.20.0, which contains breaking API changes and is not adopted by the current Tauri v2 Linux GTK3 backend. No 0.18 backport exists.
-5. **CI Policy:** Ignored strictly in `deny.toml` under `[advisories.ignore]` and in `ci.yml` (`cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2024-0429`). Any new unpatched high/critical vulnerability will immediately fail CI.
+5. **CI Policy & Revisit Trigger:** Ignored strictly in `deny.toml` under `[advisories.ignore]` and in `ci.yml` (`cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2024-0429`). Revisit trigger: when Tauri's Linux backend moves to `gtk-rs >= 0.20` or when ScribeTrace calls any `glib::Variant` API. Any new unpatched high/critical vulnerability will immediately fail CI.
+6. **Stage 2 Note:** When Stage 2 introduces PDF rendering, `pdfjs-dist` must be pinned to `>= 4.2.67` (or latest) with `isEvalSupported: false` per CVE-2024-4367 mitigation guidelines.
 
 ---
 

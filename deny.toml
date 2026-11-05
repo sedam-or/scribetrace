@@ -52,7 +52,7 @@ deny = []
 # ourselves and neither is reachable from scribetrace-core.
 ignore = [
     { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained; build-time macro of gtk3-macros, ships no runtime code" },
-    { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter unsound; we never call it, and the gtk3 line gets no fix" },
+    { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter unsound; we never call it, and the gtk3 line gets no fix. Revisit when Tauri's Linux backend moves to gtk-rs >= 0.20 or when we call any glib::Variant API" },
 ]
 
 [sources]
