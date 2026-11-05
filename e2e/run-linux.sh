@@ -14,6 +14,11 @@ done
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+# Environment tuning for headless WebKitGTK under Xvfb (ADR 0014)
+export NO_AT_BRIDGE=1
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
+export LIBGL_ALWAYS_SOFTWARE=1
+
 echo "=== ScribeTrace Linux End-to-End Test Runner ==="
 echo "Working directory: $ROOT_DIR"
 echo "Build Profile: $PROFILE"

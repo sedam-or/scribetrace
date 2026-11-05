@@ -94,7 +94,13 @@ export class HarnessManager {
 
     console.log(`[Harness] Spawning tauri-driver on port ${this.driverPort}...`);
     this.driverProc = spawn('tauri-driver', ['--port', String(this.driverPort)], {
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        NO_AT_BRIDGE: '1',
+        WEBKIT_DISABLE_DMABUF_RENDERER: '1',
+        LIBGL_ALWAYS_SOFTWARE: '1'
+      }
     });
 
     this.driverProc.on('error', err => {

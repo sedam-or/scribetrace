@@ -87,7 +87,30 @@ async function main() {
 
     // 5. Wait for UI initialization
     console.log('[E2E] Waiting for initial application window DOM to mount...');
+    try {
+      const handles = await driver._request('GET', `/session/${driver.sessionId}/window/handles`);
+      console.log(`[E2E] Active window handles: ${JSON.stringify(handles)}`);
+      if (handles && handles.length > 0) {
+        await driver._request('POST', `/session/${driver.sessionId}/window`, { handle: handles[0] });
+      }
+    } catch (e) {
+      console.log(`[E2E] Window handles check: ${e.message}`);
+    }
+
     await driver.waitForElement('body', 10000);
+
+    // Diagnostic DOM check
+    try {
+      const url = await driver.executeScript('return window.location.href;');
+      const rootHtml = await driver.executeScript('return document.getElementById("root")?.innerHTML || document.body.innerHTML;');
+      console.log(`[E2E] Current URL: ${url}`);
+      console.log(`[E2E] Root DOM length: ${rootHtml?.length} chars`);
+      if (!rootHtml || rootHtml.length < 50) {
+        console.log(`[E2E] Root DOM content: "${rootHtml}"`);
+      }
+    } catch (e) {
+      console.log(`[E2E] DOM inspection note: ${e.message}`);
+    }
 
     // 6. Settle and measure whole-process tree idle memory
     console.log('[E2E] Waiting 10s settling window for memory measurement...');
@@ -167,6 +190,10 @@ async function main() {
 
   } catch (err) {
     console.error(`\n[E2E FATAL ERROR] ${err.message}`);
+    try {
+      const html = await driver.executeScript('return document.body.innerHTML;');
+      console.error(`[E2E ERROR DOM SNAPSHOT]: ${html}`);
+    } catch {}
     try {
       const screenshot = await driver.takeScreenshot();
       if (screenshot) {
