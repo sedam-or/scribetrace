@@ -66,8 +66,11 @@
     },
     "milestone_restore": {
       "type": "object",
-      "required": ["milestone"],
-      "properties": { "milestone": { "type": "string" } }
+      "required": ["milestone", "seen"],
+      "properties": {
+        "milestone": { "type": "string" },
+        "seen": { "$ref": "#/$defs/cut" }
+      }
     }
   }
 }
