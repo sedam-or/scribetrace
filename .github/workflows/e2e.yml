@@ -11,12 +11,13 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   e2e-linux:
     name: Linux E2E Real Window under Xvfb
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -28,8 +29,9 @@ jobs:
 
       - name: Install Linux system dependencies (WebKitGTK, WebKitWebDriver, Xvfb)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev webkit2gtk-driver xvfb build-essential curl libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          export DEBIAN_FRONTEND=noninteractive
+          sudo -E apt-get update
+          sudo -E apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev webkit2gtk-driver xvfb build-essential curl libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Cache tauri-driver binary
         id: cache-tauri-driver
