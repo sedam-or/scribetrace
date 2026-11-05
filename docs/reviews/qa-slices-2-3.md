@@ -4,7 +4,7 @@
 **Commits Verified:** [`23cc932`](https://github.com/sedam-or/scribetrace/commit/23cc932) (Core implementation), [`697bd6c`](https://github.com/sedam-or/scribetrace/commit/697bd6c) (Spec vectors & line classifier), [`008465c`](https://github.com/sedam-or/scribetrace/commit/008465c) (FORMAT §4 tie-breaker alignment)  
 **Target Specification:** [`docs/BUILD-PLAN.md`](../BUILD-PLAN.md) (Slices 2 & 3), [`docs/DEFINITION-OF-DONE.md`](../DEFINITION-OF-DONE.md), [`spec/FORMAT.md`](../../spec/FORMAT.md)  
 **Date:** 2026-11-06  
-**Overall Verdict:** **VERIFIED & FULLY APPROVED**
+**Overall Verdict:** **RE-OPENED (PENDING BACKEND FOLLOW-UP ON 3 STORE-LEVEL SPEC CASES)**
 
 ---
 
@@ -70,15 +70,17 @@
 3. **Recovery After Crashed Write:**
    The `append()` method inspects existing file endings and automatically writes a newline delimiter if a prior crash left an unterminated line. This guarantees that crash-truncated events do not contaminate subsequent valid event appends.
 
+4. **Tech Lead Review Findings & Re-Opened Action Items (Follow-up for Backend & QA):**
+   - **(a) Unknown/Future Types Kept:** In `FsHistoryStore::read_report` / `scan_file`, a well-formed line with an unknown or forward-compatible `type` (e.g. `milestone`, `mark_update`, `milestone_rename`, or external extension) must be kept and **not** counted in `skipped_lines` (`spec/FORMAT.md §3`). Currently, direct serde deserialization to fixed `Event` fails and treats unknown types as bad lines.
+   - **(b) Exact Boundary Handling:** A line of exactly 1,048,576 bytes without `\n` must be judged on content (not `too_long`); only lines > 1,048,576 bytes are `too_long`.
+   - **(c) Monotonic Sequence Tracking with Unknown Types:** If a device file's last line is an unknown type with `seq = N`, subsequent appends must receive `seq = N + 1`, never `N`.
+   - **(d) Device ID Mismatch Validation:** If an event line's `device` field does not match the filename `<device>.jsonl`, it must be classified as `bad_value` and counted as skipped.
+   - **(e) Store-Level Vector Conformance Suite:** Add an automated test feeding every vector file in `spec/vectors/` through `FsHistoryStore::read_report` and assert against `manifest.json`.
+
 ---
 
 ## 4. Final Sign-Off Recommendation
 
-Slices 2 and 3 implement the foundational synchronization, safety, and persistence guarantees of ScribeTrace:
-- Flawless fault tolerance under simulated byte truncation ($k \in [1..N]$).
-- Provably commutative and idempotent multi-device union merging across 10,000 randomized test cases.
-- Robust purge filtering under clock skew and arbitrary re-ordering across 10,000 permutations.
-- Fast replay performance ($320\text{ ms} \le 500\text{ ms}$ for 10,000 events).
-- Core test coverage of **92.27%**.
+While the core multi-device merge, proptests, crash simulation, and collision logic are thoroughly verified, the store reader requires alignment with `spec/FORMAT.md` for unknown event types, byte boundaries, and filename/device matching.
 
-**Verdict:** **VERIFIED & FULLY APPROVED.** Slices 2 & 3 are ready for dependent feature slices (Slice 4 Real Import & Refresh, Slice 5 Setup, and Slice 11 Forget/Purge).
+**Verdict:** **RE-OPENED (PENDING BACKEND FOLLOW-UP).** Once Backend delivers the store reader updates integrating `classify_line` and device-filename validation, QA will execute the comprehensive store-level vector suite and re-evaluate for final approval.
