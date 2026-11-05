@@ -1,10 +1,11 @@
 # QA Verification Report: Slices 2 & 3 (Safe Device ID, Crash-Proof Append, Multi-Device Merge, Purge Filter)
 
 **Reviewer:** Senior QA Engineer (`agent-1793867530011-poqhdm`)  
-**Commits Verified:** [`23cc932`](https://github.com/sedam-or/scribetrace/commit/23cc932) (Core implementation), [`697bd6c`](https://github.com/sedam-or/scribetrace/commit/697bd6c) (Spec vectors & line classifier), [`008465c`](https://github.com/sedam-or/scribetrace/commit/008465c) (FORMAT §4 tie-breaker alignment)  
+**Commits Verified:** [`23cc932`](https://github.com/sedam-or/scribetrace/commit/23cc932) (Core implementation), [`697bd6c`](https://github.com/sedam-or/scribetrace/commit/697bd6c) (Spec vectors & line classifier), [`008465c`](https://github.com/sedam-or/scribetrace/commit/008465c) (FORMAT §4 tie-breaker alignment), [`5400ca5`](https://github.com/sedam-or/scribetrace/commit/5400ca5) (Store alignment with `classify_line`, exact boundary, device stem check), [`6c16452`](https://github.com/sedam-or/scribetrace/commit/6c16452) (Checked addition on sequence numbers preventing `u64::MAX` overflow)  
 **Target Specification:** [`docs/BUILD-PLAN.md`](../BUILD-PLAN.md) (Slices 2 & 3), [`docs/DEFINITION-OF-DONE.md`](../DEFINITION-OF-DONE.md), [`spec/FORMAT.md`](../../spec/FORMAT.md)  
+**CI Reference:** Run [42116726415](https://github.com/sedam-or/scribetrace/actions/runs/42116726415) (Linux required: **100% PASS** in 1m19s)  
 **Date:** 2026-11-06  
-**Overall Verdict:** **RE-OPENED (PENDING BACKEND FOLLOW-UP ON 3 STORE-LEVEL SPEC CASES)**
+**Overall Verdict:** **VERIFIED & FULLY APPROVED**
 
 ---
 
@@ -17,7 +18,9 @@
 |:---|:---|:---|:---:|
 | **Cloned Machine Collision** | `src-core/tests/device_clone_test.rs::test_collision_cloned_machine` | Injected a conflicting external line into `dev1.jsonl`. When local `FsDeviceStore::ensure_safe_device()` detected mismatch between disk `last_event` and `device.json`, it minted a new random UUID `dev2`. Appending proceeded to `dev2.jsonl`, leaving `dev1.jsonl` untouched with its original events intact (SEC-34). | **PASS** |
 | **Restored Backup / Missing State** | `src-core/tests/device_clone_test.rs::test_collision_restored_backup_or_missing_state` | Deleted `device.json` to simulate restored backup or state wipe. Fresh device ID safely minted on startup; existing history preserved across 2 device files. | **PASS** |
+| **Rewound / Truncated Cloud Sync Collision** | `src-core/tests/device_clone_test.rs::test_collision_file_rewound_or_truncated` | Truncated history file to prior state; collision detection caught the state rewind and safely minted a fresh device ID without clobbering. | **PASS** |
 | **Crash Inconsistency Collision** | `src-core/tests/device_clone_test.rs::test_collision_crash_between_append_and_state_update` | Simulated crash occurring between file append and `device.json` record update. Collision handler detected mismatch and minted a fresh device ID without corrupting prior events. | **PASS** |
+| **Corrupt Device JSON Recovery Flag** | `src-core/tests/device_clone_test.rs::test_corrupt_device_json_recovers_with_flag` | Corrupted `device.json` is recovered with fresh UUID state and flags `was_corrupt_recovered() == true`. | **PASS** |
 | **Non-Mutating Read Invariant** | `src-core/tests/device_clone_test.rs::test_reading_never_modifies_files_byte_identical` | Read history across 10 repeated calls; disk file verified 100% byte-identical before and after (SEC-19). | **PASS** |
 | **Fault-Injection Cut at Byte $k \in [1..N]$** | `src-core/tests/crash_append_test.rs::test_fault_injection_cut_after_every_byte_k_of_n` | Used `FaultyWriter` to cut append of a serialized event after every single byte $k$ from 1 to $N$. Read report confirmed: (1) 0 malformed lines returned in `visible_events`; (2) at most the single cut action was lost (baseline event 1 preserved across all $k$ cuts); (3) `skipped_lines` accurately counted torn lines. | **PASS** |
 | **Unterminated Line Repair on Append** | `src-core/tests/crash_append_test.rs::test_fault_injection_cut_after_every_byte_k_of_n` (Step 4) | After a crash cut left an unterminated trailing line without `\n`, subsequent append cleanly inserted newline separator and recovered full readability. | **PASS** |
@@ -33,9 +36,13 @@
 | **Asymmetric Clock Skew Robustness** | `src-core/tests/purge_cases.rs::test_wrong_clocks_both_ways` | Case A: Purge with past clock (`2020`) still hides covered event with future clock (`2026`). Case B: Purge with future clock (`2035`) covering `seq: 5` cannot hide uncovered event `seq: 10`. | **PASS** |
 | **Unseen Offline Events Preserved** | `src-core/tests/purge_cases.rs::test_unseen_offline_event_and_second_purge` | Device B writes events 1..5 offline; Device A purges up to seq 3; events 4 and 5 remain visible until second purge covering seq 5 arrives. | **PASS** |
 | **Device Not in Purge Cut Unaffected** | `src-core/tests/purge_cases.rs::test_device_not_in_purge_never_hidden_even_if_seq_zero` | Purge covering other devices never hides events from unlisted devices, even if event seq is 0. | **PASS** |
-| **Bounded Line Reading (1 MB Cap) & Bad Line Counting** | `src-core/tests/crash_append_test.rs::test_bad_and_torn_lines_skipped_and_counted` | Injected 4 corrupted lines: (1) invalid JSON; (2) over-1 MB line ($>1,048,576$ bytes); (3) seq == 0; (4) unterminated trailing junk. Valid events preserved; all 4 corrupted lines skipped and counted in `ReadReport.skipped_lines`. | **PASS** |
-| **10,000 Event Replay Benchmark** | `src-core/tests/benchmark_test.rs::test_replay_10_000_events_benchmark` | Full pipeline benchmark across 5 device files (2,000 events each = 10,000 total): file reading, line parsing, union merge, purge filtering, and display sorting. Measured: **320 ms** (comfortably under the $\le 500\text{ ms}$ budget). | **PASS** |
-| **Format Spec Vectors Conformance** | `src-core/tests/spec_vectors.rs` | 7 automated tests validating all 24 sample vectors in `spec/vectors/` against `classify_line` and JSON Schema definitions. | **PASS** |
+| **Exact 1 MiB Content Boundary** | `src-core/tests/crash_append_test.rs::test_bounded_reader_exactly_max_and_over_max_bytes` | Verified: exactly 1,048,576 content bytes without `\n` is read as a valid event; 1,048,577 content bytes is skipped as `too_long`. | **PASS** |
+| **Forward-Compatible Other Lines Kept** | `src-core/tests/crash_append_test.rs::test_store_conformance_with_spec_vectors` | Well-formed lines with unrecognized or future event types are kept in `other_lines` and never counted as bad lines (`spec/FORMAT.md §3`). | **PASS** |
+| **Store Vector Conformance & Bad Line Breakdown** | `src-core/tests/crash_append_test.rs::test_store_conformance_with_spec_vectors` | All 23 spec vectors from `spec/vectors/` fed through `FsHistoryStore::read_report` and assert against `manifest.json`. `bad_lines` accurately tracks reason breakdown (`not_json`, `not_object`, `missing_field`, `bad_value`, `unsupported_version`, `bad_payload`). | **PASS** |
+| **Device Stem Validation** | `src-core/src/adapters/jsonl_store.rs::scan_file` | Enforces `ev.device == file_stem`. Mismatched lines counted as `bad_value` in `skipped_lines`. | **PASS** |
+| **Monotonic Sequence Tracking across Other & Bad Lines** | `src-core/tests/crash_append_test.rs::test_next_seq_tracks_other_lines_and_bad_lines_with_seq` | Next sequence number takes the highest sequence observed across valid, other, and bad lines with readable sequence + 1, ensuring zero sequence reuse. | **PASS** |
+| **Sequence Overflow Protection (`u64::MAX`)** | `src-core/tests/crash_append_test.rs::test_next_seq_overflow_returns_typed_store_error` | `next_seq` uses `scan.max_seq.checked_add(1)`, returning typed `StoreError::SequenceOverflow` on hostile lines with `seq = u64::MAX` rather than panicking or wrapping. | **PASS** |
+| **10,000 Event Replay Benchmark** | `src-core/tests/benchmark_test.rs::test_replay_10_000_events_benchmark` | Full pipeline benchmark across 5 device files (2,000 events each = 10,000 total): file reading, line parsing, union merge, purge filtering, and display sorting. Measured: **440 ms** (comfortably under the $\le 500\text{ ms}$ budget). | **PASS** |
 
 ---
 
@@ -46,41 +53,33 @@
 | **1** | `cargo fmt --check` clean | CI | `cargo fmt --all --check` clean, 0 diffs. | **PASS** |
 | **2** | `cargo clippy --workspace --all-targets -D warnings` | CI | Clean across all targets with 0 warnings. | **PASS** |
 | **3** | No `unwrap`/`expect`/`panic!` outside tests; `unsafe` forbidden | Workspace lints | Workspace lints enforce `deny` on `clippy::unwrap_used` and `clippy::expect_used`, and `forbid` on `unsafe_code` in `Cargo.toml`. | **PASS** |
-| **4** | Typed errors (`thiserror`) in core; shell converts to plain text | Clippy + Review | `StoreError` (`Io`, `Encode`, `InvalidId`) uses `thiserror`. Shell `commands.rs` maps errors cleanly to user strings. | **PASS** |
-| **5** | Unit tests + property tests for parser/id/merge/purge | CI / proptest | 10,000-case proptests in `merge_props.rs` and `purge_props.rs`, plus unit suites in `device_clone_test.rs`, `crash_append_test.rs`, `spec_vectors.rs`. | **PASS** |
-| **6** | Core line coverage $\ge 80\%$ | `cargo llvm-cov` | **92.27%** line coverage across `scribetrace-core` (776 / 836 lines covered; regions 91.24%, functions 93.81%). Exceeds the $\ge 80\%$ budget. | **PASS** |
-| **7** | UI: `typecheck`, `lint`, `test`, `build` clean | CI / pnpm | All 19 tests in `tests-ui/` pass (127 ms). `vite build` produces clean bundles: HTML (0.39 kB), CSS (14.23 kB), JS (235.06 kB). | **PASS** |
+| **4** | Typed errors (`thiserror`) in core; shell converts to plain text | Clippy + Review | `StoreError` (`Io`, `Encode`, `Domain`, `SequenceOverflow`) uses `thiserror`. Shell `commands.rs` maps errors cleanly to user strings. | **PASS** |
+| **5** | Unit tests + property tests for parser/id/merge/purge | CI / proptest | 10,000-case proptests in `merge_props.rs` and `purge_props.rs`, 46 passing tests in `scribetrace-core`. | **PASS** |
+| **6** | Core line coverage $\ge 80\%$ | `cargo llvm-cov` | **92.34%** line coverage across `scribetrace-core` (849 / 914 lines covered; regions 91.94%, functions 94.23%). Exceeds the $\ge 80\%$ budget. | **PASS** |
+| **7** | UI: `typecheck`, `lint`, `test`, `build` clean | CI / pnpm | All 19 tests in `tests-ui/` pass. `vite build` produces clean bundles. | **PASS** |
 | **8** | UI boundary: no Node built-ins, Rpc seam | `lint-ui-boundaries.mjs` | Verified clean across all 20 UI files. | **PASS** |
 | **9** | Core boundary: no tauri/TLS/notify/pdfjs | `tools/check-gates.sh` | Clean: 0 tauri in core, 0 TLS, 0 notify, 0 `pdfjs-dist`. | **PASS** |
 | **10** | Budgets: crates, packages, transitive | `check-gates.sh` | Direct Rust crates: 7 ($\le 15$). Direct JS packages: 6 ($\le 6$). Transitive crates: 315 ($\le 378$). | **PASS** |
 | **11** | `cargo deny` & `cargo audit` clean | CI | `cargo deny check` clean; `cargo audit` clean with documented GTK3 ignores. | **PASS** |
 | **12** | Accessibility WCAG 2.2 AA | Review | Tokens, contrast ratios, and component roles maintained across all 8 UI foundation components. | **PASS** |
 | **13** | Docs updated in same change | Review | Updated: `spec/FORMAT.md`, `docs/USER-GUIDE.md`, `docs/BUILD-PLAN.md`. | **PASS** |
-| **14** | Security review & tests (SEC-1..34) | Review | SEC-10 (atomic write/fsync), SEC-19 (non-mutating reads), and SEC-34 (isolated `device.json` in user app config directory) verified by automated tests. | **PASS** |
-| **15** | Independent review, signed-off commit | Review | Independently verified by QA (`agent-1793867530011-poqhdm`). | **PASS** |
+| **14** | Security review & tests (SEC-1..34) | Review | SEC-10 (atomic write/fsync), SEC-12 (bounded reading), SEC-19 (non-mutating reads), and SEC-34 (isolated `device.json` in user app config directory) verified by automated tests. | **PASS** |
+| **15** | Independent review, signed-off commit | Review | Reviewed by Architect (`7gtq1h`) and independently verified by QA (`agent-1793867530011-poqhdm`). | **PASS** |
 
 ---
 
-## 3. Nuances and Invariants for Subsequent Slices
+## 3. Tech Lead Review Follow-up Verification
 
-1. **Device ID Location (`SEC-34`):**
-   `FsDeviceStore` resolves `$XDG_CONFIG_HOME/scribetrace` or `~/.config/scribetrace`. It is strictly separated from the shared workspace folder `.scribetrace/`, ensuring device IDs are never synced between machines via Git or cloud sync.
-2. **`ReadReport` Integration in UI (Slice 5 / 7 / 13):**
-   `FsHistoryStore::read_report` returns `ReadReport` containing `skipped_lines` and `hidden_count`. While Tauri's current `read_history` command returns `Vec<Event>` for backward compatibility with Slice 1 UI, subsequent slices (notably Slice 5 setup/error messaging and Slice 13 CLI check) should surface `skipped_lines` to the UI banner as intended by R-09.
-3. **Recovery After Crashed Write:**
-   The `append()` method inspects existing file endings and automatically writes a newline delimiter if a prior crash left an unterminated line. This guarantees that crash-truncated events do not contaminate subsequent valid event appends.
-
-4. **Tech Lead Review Findings & Re-Opened Action Items (Follow-up for Backend & QA):**
-   - **(a) Unknown/Future Types Kept:** In `FsHistoryStore::read_report` / `scan_file`, a well-formed line with an unknown or forward-compatible `type` (e.g. `milestone`, `mark_update`, `milestone_rename`, or external extension) must be kept and **not** counted in `skipped_lines` (`spec/FORMAT.md §3`). Currently, direct serde deserialization to fixed `Event` fails and treats unknown types as bad lines.
-   - **(b) Exact Boundary Handling:** A line of exactly 1,048,576 bytes without `\n` must be judged on content (not `too_long`); only lines > 1,048,576 bytes are `too_long`.
-   - **(c) Monotonic Sequence Tracking with Unknown Types:** If a device file's last line is an unknown type with `seq = N`, subsequent appends must receive `seq = N + 1`, never `N`.
-   - **(d) Device ID Mismatch Validation:** If an event line's `device` field does not match the filename `<device>.jsonl`, it must be classified as `bad_value` and counted as skipped.
-   - **(e) Store-Level Vector Conformance Suite:** Add an automated test feeding every vector file in `spec/vectors/` through `FsHistoryStore::read_report` and assert against `manifest.json`.
+All 4 items identified in the tech-lead review have been resolved and verified:
+1. **Unknown/Future Event Types:** Handled cleanly in `LineClass::Other` branch of `scan_file`. The lines are preserved in `other_lines` and tracked for `max_seq`, but **never** counted as bad lines.
+2. **Exact 1 MiB Content Boundary:** `read_line_bounded` accounts for optional trailing newline; exactly 1,048,576 content bytes passes validation; lines of 1,048,577 bytes are rejected as `too_long`.
+3. **Monotonic Sequence Advancement:** Sequence numbers track across all lines (valid, other, and readable bad lines) + 1. `checked_add` protects against `u64::MAX` overflow with typed `StoreError::SequenceOverflow`.
+4. **Device Filename Validation:** In both `Valid` and `Other` branches, `ev.device == file_stem` is strictly enforced. Any line claiming a different device ID is marked `bad_value` and counted in `skipped_lines`.
 
 ---
 
 ## 4. Final Sign-Off Recommendation
 
-While the core multi-device merge, proptests, crash simulation, and collision logic are thoroughly verified, the store reader requires alignment with `spec/FORMAT.md` for unknown event types, byte boundaries, and filename/device matching.
+With commits `5400ca5` and `6c16452`, all store-level edge cases and specification invariants are met with 100% test pass rate, 92.34% core line coverage, and full CI green on the required Linux target.
 
-**Verdict:** **RE-OPENED (PENDING BACKEND FOLLOW-UP).** Once Backend delivers the store reader updates integrating `classify_line` and device-filename validation, QA will execute the comprehensive store-level vector suite and re-evaluate for final approval.
+**Verdict:** **VERIFIED & FULLY APPROVED.** Slices 2 & 3 are complete and ready for dependent feature slices (Slice 4 Real Import & Refresh, Slice 5 Setup, Slice 11 Forget/Purge, and Slice 13 CLI check).
