@@ -153,7 +153,11 @@ async function main() {
     let memoryBudgetFailure = null;
     if (appPid) {
       const { medianMb } = await ProcessTreeMetrics.measureMedianMemoryMb(appPid, 5, 1000);
+      const processBreakdown = ProcessTreeMetrics.measureTreeMemoryBreakdownMb(appPid);
       console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 160 MB per ADR 0014)`);
+      for (const process of processBreakdown) {
+        console.log(`[PERF PROCESS] pid=${process.pid} name=${process.name} ${process.metric}=${process.memoryMb} MB`);
+      }
       if (medianMb > 160) {
         memoryBudgetFailure = `[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`;
         console.error(memoryBudgetFailure);

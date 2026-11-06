@@ -14,6 +14,8 @@ Slice 4 implements the Zotero loopback broker (`ZoteroHttp`), bounded multi-page
 
 All acceptance criteria set forth in `BUILD-PLAN.md`, the Slice 4 verification request, and Architect's review of `cb6c748` have been verified independently on the final Slice 4 SHA, `d296c8f`. The follow-up corrects pagination for annotation pages containing malformed items: the offset now advances by the raw response item count, not only the parsed mark count. `cargo test -p scribetrace-core --test pagination_test` passed all 6 tests on this SHA, including the malformed-item regression case.
 
+**Linux E2E status:** Run [42178784890](https://github.com/sedam-or/scribetrace/actions/runs/42178784890) on `d296c8f` was canceled before the E2E step completed. There is no green Linux E2E result on this SHA; the pagination test result above is a targeted Rust test only.
+
 | Acceptance Criterion | Verification Method | Status | Notes |
 | :--- | :--- | :---: | :--- |
 | **Strict Broker Path Allowlist** | `src-core/tests/broker_refusal_test.rs::test_refuse_off_allowlist_paths` | **PASS** | Validates allowlist: `/connector/ping`, `/api/users/0/items`, `/api/users/0/items/top`, `/api/users/0/items/<key>/children` (with optional `start=<u32>&limit=<1..=100>` query params). Disallowed paths return `SourceErrorCode::BadAnswer` (SEC-33). |

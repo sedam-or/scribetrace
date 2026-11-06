@@ -82,6 +82,57 @@ export class ProcessTreeMetrics {
   }
 
   /**
+   * Reports a point-in-time memory breakdown for every process in the app tree.
+   * On Linux this uses PSS per process, matching the aggregate metric above.
+   * @param {number} rootPid
+   * @returns {Array<{pid: number, name: string, memoryMb: number, metric: string}>}
+   */
+  static measureTreeMemoryBreakdownMb(rootPid) {
+    const pids = this.getProcessTreePids(rootPid);
+    const breakdown = [];
+
+    for (const pid of pids) {
+      let name = `pid-${pid}`;
+      let memoryKb = 0;
+      let metric = process.platform === 'linux' ? 'PSS' : 'RSS';
+
+      if (process.platform === 'linux') {
+        try {
+          name = readFileSync(`/proc/${pid}/comm`, 'utf-8').trim() || name;
+          const content = readFileSync(`/proc/${pid}/smaps_rollup`, 'utf-8');
+          const match = content.match(/Pss:\s+(\d+)\s+kB/);
+          if (match) memoryKb = parseInt(match[1], 10);
+        } catch {
+          metric = 'unavailable';
+        }
+      } else {
+        try {
+          const stdout = execSync(`ps -o comm=,rss= -p ${pid}`, {
+            encoding: 'utf-8',
+            stdio: ['pipe', 'pipe', 'ignore']
+          }).trim();
+          const match = stdout.match(/^(.*?)\s+(\d+)$/);
+          if (match) {
+            name = match[1].trim();
+            memoryKb = parseInt(match[2], 10);
+          }
+        } catch {
+          metric = 'unavailable';
+        }
+      }
+
+      breakdown.push({
+        pid,
+        name,
+        memoryMb: Math.round((memoryKb / 1024) * 100) / 100,
+        metric
+      });
+    }
+
+    return breakdown.sort((a, b) => b.memoryMb - a.memoryMb);
+  }
+
+  /**
    * Executes the standardized 5-sample 1-second median measurement.
    * @param {number} rootPid
    * @param {number} samples Number of samples (default 5).
