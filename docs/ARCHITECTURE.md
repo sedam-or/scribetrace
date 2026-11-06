@@ -75,7 +75,7 @@ pm's targets from [debate/08](debate/08-links-and-3-step.md) Part C, adopted as 
 | Item | Budget | Check |
 |---|---|---|
 | Installer size | Stage 1 ≤ 20 MB, Stage 2 ≤ 35 MB per system (Electron's runtime alone is 121 to 158 MB zipped) | CI artifact size |
-| Idle memory, window open | Target ≤ 120 MB; gate per OS (empty shell): Linux ≤ 160 MB, Windows ≤ 140 MB, macOS provisional ≤ 140 MB ([ADR 0014](adr/0014-linux-idle-memory-budget.md)); ≤ 250 MB with a 200-page PDF open (Stage 2) | SPIKE-4, release check |
+| Idle memory, window open | Target ≤ 120 MB; gate per OS (empty shell): Linux ≤ 200 MB (amended 2026-11-06), Windows ≤ 140 MB, macOS provisional ≤ 140 MB ([ADR 0014](adr/0014-linux-idle-memory-budget.md)); ≤ 250 MB with a 200-page PDF open (Stage 2) | SPIKE-4, release check |
 | Cold start to usable window | ≤ 2 s on 4 cores, 8 GB | SPIKE-4 |
 | Paper list / timeline / refresh of 200 marks | ≤ 2 s / ≤ 1 s / ≤ 5 s | Replay and import benchmarks (SPIKE-1, 3) |
 | First page of a 50 MB PDF (Stage 2) | ≤ 1.5 s, hard ceiling 2.0 s | SPIKE-4 |
