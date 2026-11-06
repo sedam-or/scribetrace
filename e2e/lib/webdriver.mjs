@@ -123,7 +123,7 @@ export class WebDriverClient {
    */
   async click(elementId) {
     if (!this.sessionId) throw new Error('No active WebDriver session.');
-    return this._request('POST', `/session/${this.sessionId}/element/${elementId}/click`);
+    return this._request('POST', `/session/${this.sessionId}/element/${elementId}/click`, {});
   }
 
   /**
