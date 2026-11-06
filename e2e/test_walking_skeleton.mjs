@@ -14,10 +14,29 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { WebDriverClient } from './lib/webdriver.mjs';
 import { HarnessManager } from './lib/harness.mjs';
 import { ProcessTreeMetrics } from './lib/process_tree.mjs';
+
+async function waitForNativeFolderDialog(timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const windowIds = execFileSync(
+        'xdotool',
+        ['search', '--onlyvisible', '--name', 'Select.*Folder'],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+      ).trim();
+      if (windowIds) return windowIds.split(/\s+/);
+    } catch {
+      // The native dialog has not appeared yet.
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  throw new Error('Native GTK folder chooser did not appear within 5 seconds.');
+}
 
 async function main() {
   console.log('===============================================================');
@@ -131,13 +150,19 @@ async function main() {
       } catch {}
     }
 
+    let memoryBudgetFailure = null;
     if (appPid) {
       const { medianMb } = await ProcessTreeMetrics.measureMedianMemoryMb(appPid, 5, 1000);
       console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 160 MB per ADR 0014)`);
       if (medianMb > 160) {
-        throw new Error(`[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`);
+        memoryBudgetFailure = `[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`;
+        console.error(memoryBudgetFailure);
+      } else {
+        console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
       }
-      console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
+    } else {
+      memoryBudgetFailure = '[PERF FAILURE] Could not identify the ScribeTrace PID; idle memory was not measured.';
+      console.error(memoryBudgetFailure);
     }
 
     // 7. Verify Real Window UI: 3-Step Setup Flow (Slice 5)
@@ -178,12 +203,16 @@ async function main() {
     // via the injected `FolderPicker` test seam.
     console.log('[E2E] Clicking choose-folder-btn to verify native GTK folder dialog opens without freezing...');
     await driver.clickElement(chooseFolderBtn);
-    await new Promise(r => setTimeout(r, 500));
+    const dialogWindowIds = await waitForNativeFolderDialog();
+    console.log(`[E2E PASS] Native GTK folder chooser is visible (X11 window IDs: ${dialogWindowIds.join(', ')}).`);
     const readyState = await driver.executeScript('return document.readyState;');
     if (readyState !== 'complete') {
       throw new Error(`Expected webview document.readyState === "complete" after opening native folder dialog, got "${readyState}"`);
     }
     console.log('[E2E PASS] Native folder dialog invoked via choose-folder-btn; webview remained responsive (non-freezing).');
+    execFileSync('xdotool', ['key', 'Escape']);
+    await driver.waitForElement('body', 5000);
+    if (memoryBudgetFailure) throw new Error(memoryBudgetFailure);
     console.log('[E2E PASS] Real window, cold start, idle memory, setup-view, and non-freezing dialog proof verified successfully!');
 
     console.log('===============================================================');

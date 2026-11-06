@@ -31,7 +31,7 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           sudo -E apt-get update
-          sudo -E apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev webkit2gtk-driver xvfb build-essential curl libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo -E apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev webkit2gtk-driver xvfb xdotool build-essential curl libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Cache tauri-driver binary
         id: cache-tauri-driver
