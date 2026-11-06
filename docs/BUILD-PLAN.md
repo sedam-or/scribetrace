@@ -1,7 +1,7 @@
 # ScribeTrace: Stage 1 build plan
 
 **Date:** 2026-11-06 · **Author:** architect · **Inputs:** [REQUIREMENTS](REQUIREMENTS.md) R-01..R-23, [ARCHITECTURE](ARCHITECTURE.md), [TECH-OPTIMIZATION](TECH-OPTIMIZATION.md)
-**Rules:** one slice = one user-visible capability, shipped through all layers (domain → application → adapter → shell → UI) with its test; no slice without a requirement ID. Size: S ≤1 day, M ≈2–3 days, L ≈1 week of agent work. **Who:** *Agent* = an AI agent builds it alone and CI is the review; *Review* = a person must read the result (data loss, security, or product wording).
+**Rules:** one slice = one user-visible capability, shipped through all layers (domain → application → adapter → shell → UI) with its test; no slice without a requirement ID. Size: S ≤1 day, M ≈2–3 days, L ≈1 week of agent work. **Who:** *Agent* = an AI agent builds it alone and CI is the review; *Review* = high-risk result (data loss, security, or product wording): merged only after a second-agent code review plus qa verification of its acceptance test, per [DECISION-LOG](DECISION-LOG.md) row u (no person reads it before merge; the owner checks the release candidate).
 
 | # | Slice (what the user can do) | Req | Depends | Size | Who | Acceptance test (must be automated unless marked) |
 |---|---|---|---|---|---|---|
@@ -29,5 +29,5 @@
 ## Order and risk
 - 1 → 2/3 → 4 is the spine. Slices 6–13 can be built in parallel by several agents once 4 lands, except 10 (after 7) and 12 (after 9).
 - Slice 4 is the only one blocked by an outside fact: SPIKE-3 (a live check against real Zotero). Slices 1–3 use the stand-in server and are not blocked.
-- Slices 1, 2, 4, 5, 9, 11, 12 need a human reader; 7 of 14 slices can be built and merged by agents alone. A Review slice is merged only after a second-agent code review plus qa verification of its acceptance test, per [DECISION-LOG](DECISION-LOG.md) row u (this replaces the earlier "a person reads it" rule; the owner still checks the release candidate).
+- Slices 1, 2, 4, 5, 9, 11, 12 are Review slices; 7 of 14 slices need no second-agent review. A Review slice is merged only after a second-agent code review plus qa verification of its acceptance test, per [DECISION-LOG](DECISION-LOG.md) row u (this replaces the earlier "a person reads it" rule; the owner still checks the release candidate).
 - Not planned in Stage 1: PDF reading, anchoring, side-by-side compare, reading sessions, W3C export, CLI `merge` (R-30..R-34, [ARCHITECTURE Later](ARCHITECTURE.md)).
