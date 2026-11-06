@@ -20,7 +20,6 @@ name = "scribetrace"
 path = "src/main.rs"
 
 [features]
-default = ["custom-protocol"]
 # Set by `tauri build`; embeds the UI instead of loading the dev server.
 custom-protocol = ["tauri/custom-protocol"]
 

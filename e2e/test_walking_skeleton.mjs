@@ -75,7 +75,7 @@ async function main() {
     // 4. Measure Cold Start Time
     console.log('[E2E] Launching ScribeTrace via WebDriver...');
     const t0 = performance.now();
-    await driver.startSession(binaryPath, ['--project-dir', testProjectDir]);
+    await driver.startSession(binaryPath);
     const coldStartMs = Math.round(performance.now() - t0);
 
     console.log(`[E2E] Window session created in ${coldStartMs} ms.`);
@@ -135,10 +135,9 @@ async function main() {
       const { medianMb } = await ProcessTreeMetrics.measureMedianMemoryMb(appPid, 5, 1000);
       console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 160 MB per ADR 0014)`);
       if (medianMb > 160) {
-        console.warn(`[PERF WARNING] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`);
-      } else {
-        console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
+        throw new Error(`[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`);
       }
+      console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
     }
 
     // 7. Verify Real Window UI: 3-Step Setup Flow (Slice 5)
@@ -170,12 +169,22 @@ async function main() {
     if (!step3 || !connectBtn || !connStatus) throw new Error('Expected Step 3, connect-btn, or connection-status not found.');
     console.log('[E2E PASS] Step 3 card, connect-btn, and connection-status verified.');
 
-    // Note on native file dialog:
-    // In headless Xvfb automated testing, we intentionally skip triggering choose-folder-btn
-    // because rfd opens a blocking native GTK dialog requiring human input.
-    // The IPC contract and dialog interactions are independently verified by integration tests.
-    console.log('[E2E NOTE] Skipping native GTK folder dialog click in headless automated test.');
-    console.log('[E2E PASS] Real window, cold start, idle memory, and setup-view verified successfully!');
+    // 8. Native folder dialog non-freezing proof & SEC-37 documentation:
+    // Per SEC-37, the release binary has zero CLI (--project-dir) or env (SCRIBETRACE_TEST_WORKSPACE)
+    // bypasses; workspace selection strictly requires the native folder dialog via `rfd::AsyncFileDialog`.
+    // Here we click `choose-folder-btn` in the real window to verify that invoking `choose_folder`
+    // opens the native GTK dialog asynchronously without freezing the WebKitGTK webview or main thread,
+    // while full workspace selection & confinement transitions are verified in `src-tauri/tests/ipc_slice1.rs`
+    // via the injected `FolderPicker` test seam.
+    console.log('[E2E] Clicking choose-folder-btn to verify native GTK folder dialog opens without freezing...');
+    await driver.clickElement(chooseFolderBtn);
+    await new Promise(r => setTimeout(r, 500));
+    const readyState = await driver.executeScript('return document.readyState;');
+    if (readyState !== 'complete') {
+      throw new Error(`Expected webview document.readyState === "complete" after opening native folder dialog, got "${readyState}"`);
+    }
+    console.log('[E2E PASS] Native folder dialog invoked via choose-folder-btn; webview remained responsive (non-freezing).');
+    console.log('[E2E PASS] Real window, cold start, idle memory, setup-view, and non-freezing dialog proof verified successfully!');
 
     console.log('===============================================================');
     console.log('   WALKING SKELETON E2E TEST: ALL ASSERTIONS PASSED!           ');

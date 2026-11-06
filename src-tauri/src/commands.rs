@@ -26,13 +26,6 @@ pub struct RfdFolderPicker;
 impl FolderPicker for RfdFolderPicker {
     fn pick_folder<'a>(&'a self) -> Pin<Box<dyn Future<Output = Option<PathBuf>> + Send + 'a>> {
         Box::pin(async move {
-            if let Ok(dir) = std::env::var("SCRIBETRACE_TEST_WORKSPACE") {
-                if let Ok(c) = std::fs::canonicalize(&dir) {
-                    if c.is_dir() {
-                        return Some(c);
-                    }
-                }
-            }
             let handle = rfd::AsyncFileDialog::new().pick_folder().await;
             handle.map(|h| h.path().to_path_buf())
         })
@@ -60,30 +53,8 @@ impl std::fmt::Debug for Session {
 impl Session {
     /// A new session with the given loopback port.
     pub fn new(zotero_port: u16) -> Self {
-        let mut initial_ws = None;
-        let mut args = std::env::args().skip(1);
-        while let Some(arg) = args.next() {
-            if arg == "--project-dir" {
-                if let Some(val) = args.next() {
-                    if let Ok(c) = std::fs::canonicalize(&val) {
-                        if c.is_dir() {
-                            initial_ws = Some(c);
-                        }
-                    }
-                }
-            }
-        }
-        if initial_ws.is_none() {
-            if let Ok(dir) = std::env::var("SCRIBETRACE_TEST_WORKSPACE") {
-                if let Ok(c) = std::fs::canonicalize(&dir) {
-                    if c.is_dir() {
-                        initial_ws = Some(c);
-                    }
-                }
-            }
-        }
         Self {
-            workspace: Mutex::new(initial_ws),
+            workspace: Mutex::new(None),
             app_storage_dir: None,
             zotero_port,
             picker: Arc::new(RfdFolderPicker),

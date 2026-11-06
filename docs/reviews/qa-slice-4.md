@@ -1,8 +1,8 @@
 # QA Verification Report: Slice 4 (Zotero Loopback Broker, Replay & Refusals)
 
 **Verifier:** QA Lead (`agent-1793867530011-poqhdm`)  
-**Commit:** `cb6c748`  
-**Target:** `src-core/src/adapters/zotero_http.rs`, `src-core/src/application/ports.rs`, `src-tauri/src/commands.rs`, `src-tauri/capabilities/default.json`, `test-support/zotero-standin/`  
+**Commit:** `9cfbf92` (follows `cb6c748`)  
+**Target:** `src-core/src/adapters/zotero_http.rs`, `src-core/src/application/ports.rs`, `src-tauri/src/commands.rs`, `src-tauri/capabilities/default.json`, `test-support/zotero-standin/`, `src-core/tests/pagination_test.rs`  
 **Verdict:** **APPROVED (Unconditional Pass)**  
 **Date:** 2026-11-06  
 
@@ -10,19 +10,20 @@
 
 ## 1. Executive Summary & Acceptance Verification
 
-Slice 4 implements the Zotero loopback broker (`ZoteroHttp`), typed machine-readable `SourceErrorCode` contracts across the IPC boundary, and test replay against recorded stand-in fixtures, as defined in `docs/BUILD-PLAN.md` (Row 11), `docs/SECURITY-REQUIREMENTS.md` (SEC-1, SEC-16, SEC-19, SEC-33, SEC-39), and `docs/DECISION-LOG.md`.
+Slice 4 implements the Zotero loopback broker (`ZoteroHttp`), bounded multi-page pagination (`limit=100`, up to `MAX_PAGES = 100`), typed machine-readable `SourceErrorCode` contracts across the IPC boundary, and test replay against recorded stand-in fixtures, as defined in `docs/BUILD-PLAN.md` (Row 11), `docs/SECURITY-REQUIREMENTS.md` (SEC-1, SEC-16, SEC-19, SEC-33, SEC-39), and `docs/DECISION-LOG.md`.
 
-All acceptance criteria set forth in `BUILD-PLAN.md` and the Slice 4 verification request have been verified independently:
+All acceptance criteria set forth in `BUILD-PLAN.md`, the Slice 4 verification request, and Architect's review of `cb6c748` have been verified independently on `9cfbf92`:
 
 | Acceptance Criterion | Verification Method | Status | Notes |
 | :--- | :--- | :---: | :--- |
-| **Strict Broker Path Allowlist** | `src-core/tests/broker_refusal_test.rs::test_refuse_off_allowlist_paths` | **PASS** | Validates allowlist: `/connector/ping`, `/api/users/0/items`, `/api/users/0/items/top`, `/api/users/0/items/<key>/children`. Disallowed paths return `SourceErrorCode::BadAnswer` (SEC-33). |
-| **Broker Refusal Suite (7 Error Codes)** | `src-core/tests/broker_refusal_test.rs` (8 tests) | **PASS** | Refusals tested against `StandInMode`: redirect (`302`), timeout (`>5s`), body cap (`>15 MB`), version mismatch (`!= "3"`), forbidden (`403`), and connection refused (SEC-33). |
+| **Strict Broker Path Allowlist** | `src-core/tests/broker_refusal_test.rs::test_refuse_off_allowlist_paths` | **PASS** | Validates allowlist: `/connector/ping`, `/api/users/0/items`, `/api/users/0/items/top`, `/api/users/0/items/<key>/children` (with optional `start=<u32>&limit=<1..=100>` query params). Disallowed paths return `SourceErrorCode::BadAnswer` (SEC-33). |
+| **Bounded Multi-Page Pagination** | `src-core/tests/pagination_test.rs` (6 tests) | **PASS** | Pages `list_papers` and `fetch_marks` past 100 items in stable order without duplicates; malformed annotation items do not end paging early; endless pages hit `MAX_PAGES` (100) as `SourceErrorCode::TooLarge` rather than silent truncation. |
+| **Broker Refusal Suite (7 Error Codes)** | `src-core/tests/broker_refusal_test.rs` & `pagination_test.rs` | **PASS** | Refusals tested against `StandInMode`: redirect (`302`), timeout (`>5s`), body cap (`>15 MB` both via `Content-Length` and streaming `ureq::Error::BodyExceedsLimit`), version mismatch (`!= "3"`), forbidden (`403`), and connection refused (SEC-33). |
 | **Error Code Serialization Contract** | `src-core/tests/broker_refusal_test.rs::test_error_code_serialization_contract` | **PASS** | Exact snake_case strings verified: `refused`, `forbidden`, `timeout`, `version`, `too_large`, `bad_answer`, `internal` (R-04). |
 | **Fixture Replay Import & Refresh** | `src-core/tests/standin_replay_test.rs::test_import_and_refresh_marks_through_slices_2_3_store` | **PASS** | Replays 3 arXiv papers (Vaswani, He, Brown); initial import of 2 marks with metadata; refresh appends next sequences (`seq 3` and `seq 4`) monotonically without deletion. |
 | **Zero Source Mutation (SEC-19)** | `src-core/tests/standin_replay_test.rs` | **PASS** | Original source fixtures verified 100% byte-identical before and after import and refresh runs. |
 | **Hostile Text Inertness (R-20)** | `src-core/tests/hostile_text_test.rs::test_hostile_annotation_text_stays_inert_in_storage` | **PASS** | XSS payloads (`<script>`, `<img>`), Unicode bidirectional overrides, ANSI terminal escapes, and markdown injection stored and retrieved as inert strings. |
-| **IPC Command & Error Encapsulation** | `src-tauri/tests/ipc_slice1.rs` | **PASS** | `list_zotero_papers` wired via `capabilities/default.json` (`allow-list-zotero-papers`). Returns `{ "code": "<code>" }` on error; zero OS error text leaked to webview (SEC-16, SEC-39). |
+| **IPC Command & Error Encapsulation** | `src-tauri/tests/ipc_slice1.rs` | **PASS** | `list_zotero_papers` wired via `capabilities/default.json` (`allow-list-zotero-papers`). Domain/FS errors map to `SourceErrorCode::Internal`; returns `{ "code": "<code>" }` with zero OS error text leaked to webview (SEC-16, SEC-39). |
 | **No Network Without Click** | Architecture review of `ZoteroHttp` and `Session` | **PASS** | Zero background polling or timers; network calls occur exclusively on explicit user click to loopback `127.0.0.1:23119` (SEC-1). |
 
 ---
@@ -30,7 +31,7 @@ All acceptance criteria set forth in `BUILD-PLAN.md` and the Slice 4 verificatio
 ## 2. Test Execution & Coverage Audit
 
 ### 2.1 Test Suite Results
-All 58 workspace unit and integration tests pass cleanly:
+All 64 workspace unit and integration tests pass cleanly:
 ```bash
 cargo test --workspace
 ```
@@ -43,6 +44,12 @@ Key Slice 4 test results:
 - `broker_refusal_test::test_refuse_forbidden_api_disabled`: **PASSED**
 - `broker_refusal_test::test_refuse_too_large`: **PASSED**
 - `broker_refusal_test::test_refuse_timeout`: **PASSED**
+- `pagination_test::exactly_100_items_ends_after_an_empty_second_page`: **PASSED**
+- `pagination_test::fetch_marks_pages_past_100_annotations_on_one_attachment`: **PASSED**
+- `pagination_test::malformed_annotation_items_do_not_end_paging_early`: **PASSED**
+- `pagination_test::list_papers_pages_past_100_items_in_stable_order_without_duplicates`: **PASSED**
+- `pagination_test::body_over_limit_without_content_length_is_too_large`: **PASSED**
+- `pagination_test::endless_pages_hit_the_page_cap_as_too_large_not_truncation`: **PASSED**
 - `hostile_text_test::test_hostile_annotation_text_stays_inert_in_storage`: **PASSED**
 - `standin_replay_test::test_list_papers_from_standin_fixtures`: **PASSED**
 - `standin_replay_test::test_import_and_refresh_marks_through_slices_2_3_store`: **PASSED**

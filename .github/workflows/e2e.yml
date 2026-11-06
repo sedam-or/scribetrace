@@ -62,10 +62,18 @@ jobs:
         run: |
           if [ -f "src-tauri/Cargo.toml" ] || [ -f "Cargo.toml" ]; then
             cargo build --release -p scribetrace-shell --features custom-protocol
+            if strings target/release/scribetrace | grep -E "SCRIBETRACE_TEST_WORKSPACE|--project-dir"; then
+              echo "ERROR: Release binary contains SEC-37 bypass strings (SCRIBETRACE_TEST_WORKSPACE or --project-dir)"
+              exit 1
+            fi
           fi
 
       - name: Run Linux E2E Test Suite under Xvfb
         shell: bash
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+          NO_AT_BRIDGE: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
           chmod +x e2e/run-linux.sh
           ./e2e/run-linux.sh --release
