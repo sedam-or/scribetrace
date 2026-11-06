@@ -1,7 +1,7 @@
 # QA Verification Report: Slice 4 (Zotero Loopback Broker, Replay & Refusals)
 
 **Verifier:** QA Lead (`agent-1793867530011-poqhdm`)  
-**Commit:** `9cfbf92` (follows `cb6c748`)  
+**Final Commit:** `d296c8f` (follow-up fix on `9cfbf92`, which follows `cb6c748`)
 **Target:** `src-core/src/adapters/zotero_http.rs`, `src-core/src/application/ports.rs`, `src-tauri/src/commands.rs`, `src-tauri/capabilities/default.json`, `test-support/zotero-standin/`, `src-core/tests/pagination_test.rs`  
 **Verdict:** **APPROVED (Unconditional Pass)**  
 **Date:** 2026-11-06  
@@ -12,7 +12,7 @@
 
 Slice 4 implements the Zotero loopback broker (`ZoteroHttp`), bounded multi-page pagination (`limit=100`, up to `MAX_PAGES = 100`), typed machine-readable `SourceErrorCode` contracts across the IPC boundary, and test replay against recorded stand-in fixtures, as defined in `docs/BUILD-PLAN.md` (Row 11), `docs/SECURITY-REQUIREMENTS.md` (SEC-1, SEC-16, SEC-19, SEC-33, SEC-39), and `docs/DECISION-LOG.md`.
 
-All acceptance criteria set forth in `BUILD-PLAN.md`, the Slice 4 verification request, and Architect's review of `cb6c748` have been verified independently on `9cfbf92`:
+All acceptance criteria set forth in `BUILD-PLAN.md`, the Slice 4 verification request, and Architect's review of `cb6c748` have been verified independently on the final Slice 4 SHA, `d296c8f`. The follow-up corrects pagination for annotation pages containing malformed items: the offset now advances by the raw response item count, not only the parsed mark count. `cargo test -p scribetrace-core --test pagination_test` passed all 6 tests on this SHA, including the malformed-item regression case.
 
 | Acceptance Criterion | Verification Method | Status | Notes |
 | :--- | :--- | :---: | :--- |
