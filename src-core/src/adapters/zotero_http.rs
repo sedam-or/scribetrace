@@ -175,6 +175,11 @@ impl ZoteroHttp {
 }
 
 impl ZoteroSource for ZoteroHttp {
+    /// Lists all top-level papers, paging through the local API.
+    ///
+    /// The budget is one 5 s window for the whole listing; revisit (e.g. 30 s total, 5 s per
+    /// request) once SPIKE-3 live timings exist. Without a `Total-Results` header a library of
+    /// exactly `MAX_PAGES * 100` items ends in `too_large`, because one more page is requested.
     fn list_papers(&self) -> Result<Vec<PaperItem>, SourceError> {
         let start_time = std::time::Instant::now();
         let mut all_items: Vec<Value> = Vec::new();
@@ -243,9 +248,8 @@ impl ZoteroSource for ZoteroHttp {
                 "/api/users/0/items/{attachment_key}/children?itemType=annotation&format=json&limit=100&start={start}"
             );
             let (body, total_results) = self.get_with_total(&path)?;
-            let page_marks = parse_marks(&body)?;
+            let (page_marks, count) = parse_marks_page(&body)?;
 
-            let count = page_marks.len();
             for mark in page_marks {
                 if seen_keys.insert(mark.key.clone()) {
                     all_marks.push(mark);
@@ -411,8 +415,18 @@ pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, Source
 
 /// Parses annotation items from Zotero child items JSON.
 pub fn parse_marks(body: &str) -> Result<Vec<Mark>, SourceError> {
+    parse_marks_page(body).map(|(marks, _)| marks)
+}
+
+/// Parses one page of annotation items and also returns the RAW item count of the page.
+///
+/// Paging must advance by the raw count: items without a key or annotation type are skipped as
+/// marks but still occupy a slot in the page, and counting only parsed marks would end the loop
+/// early and silently lose every later page.
+fn parse_marks_page(body: &str) -> Result<(Vec<Mark>, usize), SourceError> {
     let items: Vec<Value> =
         serde_json::from_str(body).map_err(|e| SourceError::BadAnswer(e.to_string()))?;
+    let raw_count = items.len();
     let mut marks = Vec::new();
     for item in &items {
         let Some(data) = item.get("data") else {
@@ -439,7 +453,7 @@ pub fn parse_marks(body: &str) -> Result<Vec<Mark>, SourceError> {
             modified: text(data, "dateModified"),
         });
     }
-    Ok(marks)
+    Ok((marks, raw_count))
 }
 
 #[cfg(test)]

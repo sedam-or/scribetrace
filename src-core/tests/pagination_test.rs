@@ -127,3 +127,35 @@ fn endless_pages_hit_the_page_cap_as_too_large_not_truncation() {
     let err = ZoteroHttp::new(server.port()).list_papers().unwrap_err();
     assert_eq!(err.code(), SourceErrorCode::TooLarge);
 }
+
+#[test]
+fn malformed_annotation_items_do_not_end_paging_early() {
+    // Each full page of 100 raw items holds one malformed item in the middle. Paging must advance
+    // by the raw count, so marks on pages 2 and 3 are not silently lost.
+    let dir = tempfile::tempdir().unwrap();
+    let mut items: Vec<Value> = Vec::new();
+    let mut valid = Vec::new();
+    for i in 0..300 {
+        if i % 100 == 50 {
+            items.push(json!({"key": format!("BAD{i:04}"), "data": {"key": format!("BAD{i:04}")}}));
+        } else {
+            valid.push(format!("A{i:07}"));
+            items.push(annotation(i, "ATTBIG01"));
+        }
+    }
+    write_json(
+        dir.path(),
+        "api/users/0/items/ATTBIG01/children.json",
+        &Value::Array(items),
+    );
+
+    let server = StandIn::start(dir.path(), 0).unwrap();
+    let marks = ZoteroHttp::new(server.port())
+        .fetch_marks("ATTBIG01")
+        .unwrap();
+    let keys: Vec<String> = marks.iter().map(|m| m.key.clone()).collect();
+    assert_eq!(
+        keys, valid,
+        "all valid marks from all three pages, in order"
+    );
+}
