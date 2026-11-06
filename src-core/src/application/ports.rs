@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::{DeviceId, DeviceState, DomainError, Event, Mark, PaperId};
 
-/// Machine-readable error code contract shared across the IPC boundary with the frontend (Slice 4 / SEC-7, SEC-9).
+/// Machine-readable error code contract shared across the IPC boundary with the frontend (Slice 4 / SEC-39).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SourceErrorCode {

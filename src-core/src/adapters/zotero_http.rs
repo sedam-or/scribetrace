@@ -8,6 +8,7 @@ use crate::domain::Mark;
 
 const MAX_BODY: u64 = 15 * 1024 * 1024; // 15 MB body cap (SEC-33)
 const TIMEOUT: Duration = Duration::from_secs(5); // 5 s timeout budget (SEC-33)
+const MAX_PAGES: usize = 100; // Cap pagination to 100 pages (10,000 items) (SEC-33)
 
 /// Validates that `path_and_query` matches the strict broker allow-list (SEC-33).
 pub fn validate_allowed_path(path_and_query: &str) -> Result<(), SourceError> {
@@ -55,8 +56,11 @@ impl ZoteroHttp {
         Ok(())
     }
 
-    /// Sends a strictly GET request to the local Zotero broker.
-    pub fn get(&self, path_and_query: &str) -> Result<String, SourceError> {
+    /// Sends a strictly GET request to the local Zotero broker, returning body and optional Total-Results count.
+    pub fn get_with_total(
+        &self,
+        path_and_query: &str,
+    ) -> Result<(String, Option<usize>), SourceError> {
         validate_allowed_path(path_and_query)?;
 
         let url = format!("http://127.0.0.1:{}{path_and_query}", self.port);
@@ -78,14 +82,10 @@ impl ZoteroHttp {
             }
             Err(ureq::Error::Io(io_err)) => {
                 let msg = io_err.to_string();
-                if io_err.kind() == std::io::ErrorKind::TimedOut || msg.contains("timed out") {
-                    return Err(SourceError::Timeout(msg));
+                match io_err.kind() {
+                    std::io::ErrorKind::TimedOut => return Err(SourceError::Timeout(msg)),
+                    _ => return Err(SourceError::Refused(msg)),
                 }
-                if io_err.kind() == std::io::ErrorKind::ConnectionRefused || msg.contains("refused")
-                {
-                    return Err(SourceError::Refused(msg));
-                }
-                return Err(SourceError::Refused(msg));
             }
             Err(ureq::Error::ConnectionFailed) | Err(ureq::Error::HostNotFound) => {
                 return Err(SourceError::Refused(
@@ -127,6 +127,12 @@ impl ZoteroHttp {
             }
         }
 
+        let total_results = resp
+            .headers()
+            .get("Total-Results")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse::<usize>().ok());
+
         // Response size protection: check Content-Length header if present
         if let Some(cl) = resp
             .headers()
@@ -142,43 +148,123 @@ impl ZoteroHttp {
         }
 
         // Bounded stream read capped at MAX_BODY (15 MB)
-        match resp
+        let body = match resp
             .body_mut()
             .with_config()
             .limit(MAX_BODY)
             .read_to_string()
         {
-            Ok(body) => Ok(body),
-            Err(e) => {
-                let msg = e.to_string();
-                if msg.contains("limit") || msg.contains("exceed") {
-                    Err(SourceError::TooLarge(format!(
-                        "response body exceeded 15 MB limit: {msg}"
-                    )))
-                } else {
-                    Err(SourceError::BadAnswer(format!(
-                        "failed to read body: {msg}"
-                    )))
-                }
+            Ok(body) => body,
+            Err(ureq::Error::BodyExceedsLimit(limit)) => {
+                return Err(SourceError::TooLarge(format!(
+                    "response body exceeded {limit} bytes limit"
+                )));
             }
-        }
+            Err(e) => {
+                return Err(SourceError::BadAnswer(format!("failed to read body: {e}")));
+            }
+        };
+
+        Ok((body, total_results))
+    }
+
+    /// Sends a strictly GET request to the local Zotero broker.
+    pub fn get(&self, path_and_query: &str) -> Result<String, SourceError> {
+        self.get_with_total(path_and_query).map(|(body, _)| body)
     }
 }
 
 impl ZoteroSource for ZoteroHttp {
     fn list_papers(&self) -> Result<Vec<PaperItem>, SourceError> {
-        let body = self.get("/api/users/0/items")?;
-        parse_papers(&body)
+        let start_time = std::time::Instant::now();
+        let mut all_items: Vec<Value> = Vec::new();
+        let mut start = 0;
+        let mut page_count = 0;
+
+        loop {
+            if page_count >= MAX_PAGES {
+                return Err(SourceError::TooLarge(
+                    "library exceeds maximum pagination limit of 100 pages".to_owned(),
+                ));
+            }
+            if start_time.elapsed() >= TIMEOUT {
+                return Err(SourceError::Timeout(
+                    "library pagination exceeded 5 s time budget".to_owned(),
+                ));
+            }
+
+            let path = format!("/api/users/0/items?limit=100&start={start}");
+            let (body, total_results) = self.get_with_total(&path)?;
+            let page_items: Vec<Value> = serde_json::from_str(&body)
+                .map_err(|e| SourceError::BadAnswer(format!("invalid JSON in items page: {e}")))?;
+
+            let count = page_items.len();
+            all_items.extend(page_items);
+            page_count += 1;
+            start += count;
+
+            if count < 100 {
+                break;
+            }
+            if let Some(total) = total_results {
+                if start >= total {
+                    break;
+                }
+            }
+        }
+
+        parse_papers_from_items(&all_items)
     }
 
     fn fetch_marks(&self, attachment_key: &str) -> Result<Vec<Mark>, SourceError> {
         if attachment_key.is_empty() || !attachment_key.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err(SourceError::BadAnswer("invalid attachment key".to_owned()));
         }
-        let body = self.get(&format!(
-            "/api/users/0/items/{attachment_key}/children?itemType=annotation&format=json&limit=100"
-        ))?;
-        parse_marks(&body)
+
+        let start_time = std::time::Instant::now();
+        let mut all_marks: Vec<Mark> = Vec::new();
+        let mut seen_keys = std::collections::HashSet::new();
+        let mut start = 0;
+        let mut page_count = 0;
+
+        loop {
+            if page_count >= MAX_PAGES {
+                return Err(SourceError::TooLarge(
+                    "annotations exceed maximum pagination limit of 100 pages".to_owned(),
+                ));
+            }
+            if start_time.elapsed() >= TIMEOUT {
+                return Err(SourceError::Timeout(
+                    "annotations pagination exceeded 5 s time budget".to_owned(),
+                ));
+            }
+
+            let path = format!(
+                "/api/users/0/items/{attachment_key}/children?itemType=annotation&format=json&limit=100&start={start}"
+            );
+            let (body, total_results) = self.get_with_total(&path)?;
+            let page_marks = parse_marks(&body)?;
+
+            let count = page_marks.len();
+            for mark in page_marks {
+                if seen_keys.insert(mark.key.clone()) {
+                    all_marks.push(mark);
+                }
+            }
+            page_count += 1;
+            start += count;
+
+            if count < 100 {
+                break;
+            }
+            if let Some(total) = total_results {
+                if start >= total {
+                    break;
+                }
+            }
+        }
+
+        Ok(all_marks)
     }
 }
 
@@ -227,11 +313,17 @@ fn extract_year(date: Option<&str>) -> Option<String> {
 pub fn parse_papers(body: &str) -> Result<Vec<PaperItem>, SourceError> {
     let items: Vec<Value> =
         serde_json::from_str(body).map_err(|e| SourceError::BadAnswer(e.to_string()))?;
+    parse_papers_from_items(&items)
+}
 
+/// Parses top-level papers, links, and annotation counts from a slice of item JSON values.
+pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, SourceError> {
     let mut annotation_counts: HashMap<String, usize> = HashMap::new();
     let mut paper_to_attachment: HashMap<String, String> = HashMap::new();
+    let mut seen_annotation_keys: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
 
-    for item in &items {
+    for item in items {
         let Some(data) = item.get("data") else {
             continue;
         };
@@ -241,7 +333,9 @@ pub fn parse_papers(body: &str) -> Result<Vec<PaperItem>, SourceError> {
 
         if item_type == "annotation" {
             if let Some(parent_key) = parent {
-                *annotation_counts.entry(parent_key).or_insert(0) += 1;
+                if !key.is_empty() && seen_annotation_keys.insert(key) {
+                    *annotation_counts.entry(parent_key).or_insert(0) += 1;
+                }
             }
         } else if item_type == "attachment" {
             if let Some(paper_key) = parent {
@@ -253,7 +347,9 @@ pub fn parse_papers(body: &str) -> Result<Vec<PaperItem>, SourceError> {
     }
 
     let mut papers = Vec::new();
-    for item in &items {
+    let mut seen_paper_keys = std::collections::HashSet::new();
+
+    for item in items {
         let Some(data) = item.get("data") else {
             continue;
         };
@@ -264,6 +360,9 @@ pub fn parse_papers(body: &str) -> Result<Vec<PaperItem>, SourceError> {
         let Some(key) = text(data, "key") else {
             continue;
         };
+        if !seen_paper_keys.insert(key.clone()) {
+            continue;
+        }
         let title = text(data, "title").unwrap_or_else(|| key.clone());
 
         let attachment_key = item

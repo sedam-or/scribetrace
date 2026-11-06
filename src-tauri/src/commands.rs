@@ -140,7 +140,7 @@ pub struct WorkspaceInfo {
     pub path: String,
 }
 
-/// Typed error returned across the IPC seam (SEC-7, SEC-9).
+/// Typed error returned across the IPC seam (SEC-39).
 /// Contains only the machine-readable error code; details are recorded to local process logs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandError {
@@ -194,7 +194,7 @@ impl From<DomainError> for CommandError {
     fn from(e: DomainError) -> Self {
         eprintln!("Domain error: {e}");
         Self {
-            code: SourceErrorCode::BadAnswer,
+            code: SourceErrorCode::Internal,
         }
     }
 }
@@ -222,7 +222,7 @@ pub async fn choose_folder(
         CommandError::new(SourceErrorCode::Internal)
     })?;
     if !canonical.is_dir() {
-        return Err(CommandError::new(SourceErrorCode::BadAnswer));
+        return Err(CommandError::new(SourceErrorCode::Internal));
     }
     let info = WorkspaceInfo {
         path: canonical.to_string_lossy().into_owned(),

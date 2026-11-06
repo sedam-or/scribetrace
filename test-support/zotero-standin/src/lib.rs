@@ -24,12 +24,16 @@ pub enum StandInMode {
     Redirect,
     /// Simulates request timeout (>5 s delay).
     Timeout,
-    /// Simulates response payload exceeding 15 MB limit.
+    /// Simulates response payload exceeding 15 MB limit via Content-Length.
     TooLarge,
+    /// Simulates response payload exceeding 15 MB limit via streaming body without Content-Length.
+    TooLargeChunked,
     /// Simulates API version mismatch header ("2").
     WrongVersion,
     /// Simulates HTTP 403 Forbidden ("Local API is not enabled").
     Forbidden,
+    /// A broken server that ignores `start` and returns the first page forever.
+    IgnoreStart,
 }
 
 /// A running stand-in server. Dropping it stops the server.
@@ -141,7 +145,7 @@ fn handle_connection(stream: TcpStream, dir: &Path, mode: StandInMode) -> std::i
         }
         StandInMode::TooLarge => {
             let mut out = stream;
-            // 16 MB oversized payload (>15 MB limit)
+            // 16 MB oversized payload (>15 MB limit) with Content-Length
             let size = 16 * 1024 * 1024;
             write!(
                 out,
@@ -154,36 +158,107 @@ fn handle_connection(stream: TcpStream, dir: &Path, mode: StandInMode) -> std::i
             out.flush()?;
             return out.shutdown(Shutdown::Both);
         }
-        StandInMode::Normal => {}
+        StandInMode::TooLargeChunked => {
+            let mut out = stream;
+            // Oversized payload (>15 MB limit) without Content-Length
+            let size = 16 * 1024 * 1024;
+            write!(
+                out,
+                "HTTP/1.1 200 OK\r\nZotero-API-Version: 3\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"
+            )?;
+            let chunk = vec![b' '; 64 * 1024];
+            for _ in 0..(size / chunk.len()) {
+                out.write_all(&chunk)?;
+            }
+            out.flush()?;
+            return out.shutdown(Shutdown::Both);
+        }
+        StandInMode::Normal | StandInMode::IgnoreStart => {}
     }
 
     let mut parts = request_line.split_whitespace();
     let method = parts.next().unwrap_or("");
     let target = parts.next().unwrap_or("/");
-    let (status, body, content_type) = if method != "GET" {
+    let (status, body, content_type, total_results) = if method != "GET" {
         (
             405,
             String::from("{\"error\":\"method not allowed\"}"),
             "application/json",
+            None,
         )
     } else {
         match fixture_for(dir, target) {
-            Some((body, ct)) => (200, body, ct),
+            Some((content, ct)) => {
+                if ct == "application/json" && target.contains('?') {
+                    let (paginated, total) = paginate_json_if_requested(&content, target, mode);
+                    (200, paginated, ct, total)
+                } else {
+                    (200, content, ct, None)
+                }
+            }
             None => (
                 404,
                 String::from("{\"error\":\"no fixture\"}"),
                 "application/json",
+                None,
             ),
         }
     };
     let mut out = stream;
+    let total_header = match total_results {
+        Some(total) => format!("Total-Results: {total}\r\n"),
+        None => String::new(),
+    };
     write!(
         out,
-        "HTTP/1.1 {status} OK\r\nZotero-API-Version: 3\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        "HTTP/1.1 {status} OK\r\nZotero-API-Version: 3\r\nContent-Type: {content_type}\r\n{total_header}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
     )?;
     out.flush()?;
     out.shutdown(Shutdown::Both)
+}
+
+fn parse_query_param(target: &str, param: &str) -> Option<usize> {
+    let query = target.split('?').nth(1)?;
+    for pair in query.split('&') {
+        let mut kv = pair.split('=');
+        if kv.next() == Some(param) {
+            return kv.next().and_then(|v| v.parse::<usize>().ok());
+        }
+    }
+    None
+}
+
+fn paginate_json_if_requested(
+    body: &str,
+    target: &str,
+    mode: StandInMode,
+) -> (String, Option<usize>) {
+    let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(body) else {
+        return (body.to_owned(), None);
+    };
+
+    let total = items.len();
+    let start = if mode == StandInMode::IgnoreStart {
+        0
+    } else {
+        parse_query_param(target, "start").unwrap_or(0)
+    };
+    let limit = parse_query_param(target, "limit").unwrap_or(25);
+
+    let end = std::cmp::min(total, start.saturating_add(limit));
+    let slice = if start < total {
+        &items[start..end]
+    } else {
+        &[]
+    };
+    let paginated_body = match serde_json::to_string(slice) {
+        Ok(s) => s,
+        Err(_) => return (body.to_owned(), Some(total)),
+    };
+    // The broken IgnoreStart server also omits Total-Results, so only the page cap can stop a client.
+    let total_header = (mode != StandInMode::IgnoreStart).then_some(total);
+    (paginated_body, total_header)
 }
 
 fn fixture_for(dir: &Path, target: &str) -> Option<(String, &'static str)> {
