@@ -13,6 +13,12 @@ pub enum DomainError {
         /// Maximum length.
         max: usize,
     },
+    /// A milestone name longer than the spec allows (`spec/FORMAT.md` §3).
+    #[error("milestone name must be at most {max} characters")]
+    LabelTooLong {
+        /// Maximum length, in characters.
+        max: usize,
+    },
 }
 
 const MAX_ID_LEN: usize = 128;

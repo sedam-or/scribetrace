@@ -3,7 +3,10 @@
 
 use serde_json::{Map, Value};
 
-use super::{DeviceId, Event, EventBody, FORMAT_VERSION, MAX_LINE_BYTES};
+use super::{
+    DeviceId, Event, EventBody, MilestonePayload, MilestoneRenamePayload, FORMAT_VERSION,
+    MAX_LABEL_CHARS, MAX_LINE_BYTES,
+};
 
 /// Why a line was refused. [`BadLine::code`] is the stable word the spec and the vectors use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,7 +117,10 @@ fn check_envelope(obj: &mut Map<String, Value>) -> Result<String, BadLine> {
 
 fn typed(obj: Map<String, Value>, event_type: String) -> LineClass {
     // Only the types with a typed payload are checked here; the others join as their slices land.
-    if !matches!(event_type.as_str(), "mark_import" | "purge") {
+    if !matches!(
+        event_type.as_str(),
+        "mark_import" | "purge" | "milestone" | "milestone_rename"
+    ) {
         return LineClass::Other { event_type };
     }
     match serde_json::from_value::<Event>(Value::Object(obj)) {
@@ -122,10 +128,31 @@ fn typed(obj: Map<String, Value>, event_type: String) -> LineClass {
             EventBody::MarkImport(mark) if mark.validate().is_err() => {
                 LineClass::Bad(BadLine::BadPayload)
             }
+            EventBody::Milestone(p) if !milestone_payload_ok(p) => {
+                LineClass::Bad(BadLine::BadPayload)
+            }
+            EventBody::MilestoneRename(r) if !rename_payload_ok(r) => {
+                LineClass::Bad(BadLine::BadPayload)
+            }
             _ => LineClass::Valid(Box::new(event)),
         },
         Err(_) => LineClass::Bad(BadLine::BadPayload),
     }
+}
+
+/// `spec/FORMAT.md` §3 and §7: every `upto` entry is at least 1; a label is at most
+/// [`MAX_LABEL_CHARS`](super::MAX_LABEL_CHARS) characters.
+fn milestone_payload_ok(p: &MilestonePayload) -> bool {
+    p.upto.values().all(|&seq| seq >= 1) && label_ok(p.label.as_deref())
+}
+
+/// `spec/FORMAT.md` §3: the renamed milestone is named by its UUID `id`.
+fn rename_payload_ok(r: &MilestoneRenamePayload) -> bool {
+    is_uuid(&r.milestone) && label_ok(r.label.as_deref())
+}
+
+fn label_ok(label: Option<&str>) -> bool {
+    label.is_none_or(|l| l.chars().count() <= MAX_LABEL_CHARS)
 }
 
 fn text<'a>(obj: &'a Map<String, Value>, key: &'static str) -> Result<&'a str, BadLine> {

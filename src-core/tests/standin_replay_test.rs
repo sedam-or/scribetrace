@@ -89,7 +89,8 @@ fn test_import_and_refresh_marks_through_slices_2_3_store() {
     let read_report = store.read_report(&paper).unwrap();
     assert_eq!(read_report.files_scanned, 1);
     assert_eq!(read_report.skipped_lines, 0);
-    assert_eq!(read_report.visible_events.len(), 2);
+    // Two mark_import lines plus the first milestone (reason import).
+    assert_eq!(read_report.visible_events.len(), 3);
 
     let mut keys: Vec<String> = read_report
         .visible_events
@@ -152,15 +153,16 @@ fn test_import_and_refresh_marks_through_slices_2_3_store() {
     )
     .run(&paper, "H3E7BPJW")
     .unwrap();
-    assert_eq!(refresh_report.imported, 2);
+    // Unchanged Zotero data: nothing new is recorded and no milestone is made (R-11).
+    assert_eq!(refresh_report.imported, 0);
+    assert_eq!(refresh_report.milestone, None);
 
     let read_report_after = store.read_report(&paper).unwrap();
-    // 4 raw events across 2 imports
-    assert_eq!(read_report_after.raw_events.len(), 4);
+    // 3 raw lines after the first import (2 marks + 1 milestone); the refresh adds none.
+    assert_eq!(read_report_after.raw_events.len(), 3);
     assert_eq!(read_report_after.raw_events[0].seq, 1);
     assert_eq!(read_report_after.raw_events[1].seq, 2);
     assert_eq!(read_report_after.raw_events[2].seq, 3);
-    assert_eq!(read_report_after.raw_events[3].seq, 4);
 
     // SEC-19: Source documents in workspace remain byte-identical
     let after_pdf = fs::read(&pdf_path).unwrap();

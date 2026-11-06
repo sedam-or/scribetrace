@@ -152,8 +152,11 @@ fn import_then_read_round_trips_through_ipc() {
 
     let history = call("read_history", serde_json::json!({"paperId":"z_EFGH6789"})).unwrap();
     let events = history.as_array().unwrap();
-    assert_eq!(events.len(), 1);
+    // The mark, then the first milestone of the paper (reason import, R-11).
+    assert_eq!(events.len(), 2);
     assert_eq!(events[0]["type"], "mark_import");
     assert_eq!(events[0]["author"], "Me");
     assert_eq!(events[0]["payload"]["key"], "WXYZ2345");
+    assert_eq!(events[1]["type"], "milestone");
+    assert_eq!(events[1]["payload"]["reason"], "import");
 }

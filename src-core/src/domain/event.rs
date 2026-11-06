@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +12,45 @@ pub const MAX_LINE_BYTES: usize = 1_048_576;
 
 /// Default author for local events.
 pub const DEFAULT_AUTHOR: &str = "Me";
+
+/// Longest milestone label, in characters (`spec/FORMAT.md` §3). Same bound as `author`.
+pub const MAX_LABEL_CHARS: usize = 200;
+
+/// Why a milestone was made (`spec/FORMAT.md` §3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MilestoneReason {
+    /// The first import of a paper that has marks.
+    Import,
+    /// A later import or refresh that found something new.
+    Refresh,
+    /// A work session in which notes changed ended.
+    Session,
+    /// The user named a point on purpose.
+    Manual,
+    /// Written just before a restore, so the restore can be undone.
+    BeforeRestore,
+}
+
+/// Payload for a `milestone` event: a named cut through the history (`spec/FORMAT.md` §7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MilestonePayload {
+    /// The name given when the milestone was made, or `None`.
+    pub label: Option<String>,
+    /// Why the milestone was made.
+    pub reason: MilestoneReason,
+    /// For each device with events at this point, the highest `seq` in the state. Never 0.
+    pub upto: BTreeMap<DeviceId, u64>,
+}
+
+/// Payload for a `milestone_rename` event (`spec/FORMAT.md` §7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MilestoneRenamePayload {
+    /// The `id` of the milestone line being renamed.
+    pub milestone: String,
+    /// The new name, or `None` to clear it.
+    pub label: Option<String>,
+}
 
 fn default_author() -> String {
     DEFAULT_AUTHOR.to_string()
@@ -32,6 +71,10 @@ pub enum EventBody {
     MarkImport(Mark),
     /// Forgetting history up to specific sequence numbers across devices (ADR 0007).
     Purge(PurgePayload),
+    /// A named point in the history (slice 6, R-11).
+    Milestone(MilestonePayload),
+    /// Gives or changes a milestone's name; adds a line, edits none (slice 6, R-11).
+    MilestoneRename(MilestoneRenamePayload),
 }
 
 /// One line of a per-device history file (ADR 0007).
