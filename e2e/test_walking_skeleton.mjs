@@ -202,7 +202,7 @@ async function main() {
     // while full workspace selection & confinement transitions are verified in `src-tauri/tests/ipc_slice1.rs`
     // via the injected `FolderPicker` test seam.
     console.log('[E2E] Clicking choose-folder-btn to verify native GTK folder dialog opens without freezing...');
-    await driver.clickElement(chooseFolderBtn);
+    await driver.click(chooseFolderBtn);
     const dialogWindowIds = await waitForNativeFolderDialog();
     console.log(`[E2E PASS] Native GTK folder chooser is visible (X11 window IDs: ${dialogWindowIds.join(', ')}).`);
     const readyState = await driver.executeScript('return document.readyState;');
