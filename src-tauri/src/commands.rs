@@ -12,7 +12,7 @@ use scribetrace_core::application::{
     ExternalLinkError, ExternalTarget, HistoryStore, ImportMarks, ImportReport, PaperItem,
     SourceError, SourceErrorCode, StoreError, ZoteroSource,
 };
-use scribetrace_core::domain::{DomainError, Event, PaperId, PaperMetadataPayload};
+use scribetrace_core::domain::{DomainError, Event, EventBody, PaperId, PaperMetadataPayload};
 use serde::{Deserialize, Serialize};
 use tauri::Runtime;
 use tauri_plugin_opener::OpenerExt;
@@ -119,11 +119,17 @@ impl Session {
     }
 
     fn workspace(&self) -> Result<PathBuf, CommandError> {
-        self.workspace
+        self.workspace_if_configured()?
+            .ok_or_else(|| CommandError::new(SourceErrorCode::Internal))
+    }
+
+    fn workspace_if_configured(&self) -> Result<Option<PathBuf>, CommandError> {
+        let workspace = self
+            .workspace
             .lock()
             .map_err(|_| CommandError::new(SourceErrorCode::Internal))?
-            .clone()
-            .ok_or_else(|| CommandError::new(SourceErrorCode::Internal))
+            .clone();
+        Ok(workspace)
     }
 
     fn cache_papers(&self, papers: &[PaperItem]) -> Result<(), CommandError> {
@@ -167,6 +173,41 @@ pub struct WorkspaceInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandError {
     pub code: SourceErrorCode,
+}
+
+/// The result of a confirmed external-link action.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExternalOpenOutcome {
+    Opened,
+    Cancelled,
+}
+
+fn build_external_uri_from_history_or_cache(
+    target: ExternalTarget,
+    paper: &PaperId,
+    visible_events: &[Event],
+    cached: Option<PaperMetadataPayload>,
+) -> Result<String, ExternalLinkError> {
+    let metadata = if matches!(target, ExternalTarget::Item) {
+        empty_paper_metadata()
+    } else if visible_events
+        .iter()
+        .any(|event| matches!(&event.body, EventBody::PaperMetadata(_)))
+    {
+        effective_paper_metadata(visible_events)
+    } else {
+        cached.unwrap_or_else(empty_paper_metadata)
+    };
+
+    build_external_uri(target, paper, &metadata)
+}
+
+fn empty_paper_metadata() -> PaperMetadataPayload {
+    PaperMetadataPayload {
+        doi: None,
+        pdf_key: None,
+    }
 }
 
 impl CommandError {
@@ -345,24 +386,31 @@ pub async fn open_external<R: Runtime>(
     session: tauri::State<'_, Session>,
     target: ExternalTarget,
     paper_id: String,
-) -> Result<(), CommandError> {
+) -> Result<ExternalOpenOutcome, CommandError> {
     let paper = PaperId::new(paper_id.clone()).map_err(CommandError::from)?;
-    let metadata = if let Some(cached) = session.cached_paper(&paper_id)? {
-        cached.metadata
-    } else if matches!(target, ExternalTarget::Item) {
-        PaperMetadataPayload {
-            doi: None,
-            pdf_key: None,
-        }
+    let visible = if matches!(target, ExternalTarget::Item) {
+        Vec::new()
     } else {
-        let workspace = session.workspace()?;
-        let visible = FsHistoryStore::new(workspace)
-            .read(&paper)
-            .map_err(CommandError::from)?;
-        effective_paper_metadata(&visible)
+        match session.workspace_if_configured()? {
+            Some(workspace) => FsHistoryStore::new(workspace)
+                .read(&paper)
+                .map_err(CommandError::from)?,
+            None => Vec::new(),
+        }
+    };
+    let cached = if matches!(target, ExternalTarget::Item)
+        || visible
+            .iter()
+            .any(|event| matches!(&event.body, EventBody::PaperMetadata(_)))
+    {
+        None
+    } else {
+        session
+            .cached_paper(&paper_id)?
+            .map(|cached| cached.metadata)
     };
 
-    let uri = build_external_uri(target, &paper, &metadata)
+    let uri = build_external_uri_from_history_or_cache(target, &paper, &visible, cached)
         .map_err(|error: ExternalLinkError| CommandError::new(error.code()))?;
     if !is_allowed_external_uri(&uri) {
         return Err(CommandError::new(SourceErrorCode::BadAnswer));
@@ -380,12 +428,82 @@ pub async fn open_external<R: Runtime>(
         .await;
 
     if confirmation != rfd::MessageDialogResult::Yes {
-        return Ok(());
+        return Ok(ExternalOpenOutcome::Cancelled);
     }
 
     app.opener()
         .open_url(uri, None::<&str>)
-        .map_err(|_| CommandError::new(SourceErrorCode::Internal))
+        .map_err(|_| CommandError::new(SourceErrorCode::Internal))?;
+    Ok(ExternalOpenOutcome::Opened)
+}
+
+#[cfg(test)]
+mod external_link_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+    use super::*;
+    use scribetrace_core::domain::{DeviceId, FORMAT_VERSION};
+
+    fn paper() -> PaperId {
+        PaperId::from_zotero("PAPER001").unwrap()
+    }
+
+    fn metadata(doi: Option<&str>, pdf_key: Option<&str>) -> PaperMetadataPayload {
+        PaperMetadataPayload {
+            doi: doi.map(str::to_owned),
+            pdf_key: pdf_key.map(str::to_owned),
+        }
+    }
+
+    fn metadata_event(value: PaperMetadataPayload) -> Event {
+        Event {
+            v: FORMAT_VERSION,
+            id: "00000000-0000-4000-8000-000000000001".to_owned(),
+            device: DeviceId::new("dev-a").unwrap(),
+            seq: 1,
+            ts: "2026-11-07T00:00:00Z".to_owned(),
+            author: "Me".to_owned(),
+            body: EventBody::PaperMetadata(value),
+        }
+    }
+
+    #[test]
+    fn visible_null_metadata_takes_precedence_over_cached_source_metadata() {
+        let visible = [metadata_event(metadata(None, None))];
+
+        let result = build_external_uri_from_history_or_cache(
+            ExternalTarget::Pdf,
+            &paper(),
+            &visible,
+            Some(metadata(Some("10.12345/cached"), Some("PDFKEY01"))),
+        );
+
+        assert_eq!(result, Err(ExternalLinkError::NoPdf));
+    }
+
+    #[test]
+    fn cached_metadata_is_used_when_history_has_no_visible_snapshot() {
+        let result = build_external_uri_from_history_or_cache(
+            ExternalTarget::Pdf,
+            &paper(),
+            &[],
+            Some(metadata(None, Some("PDFKEY01"))),
+        );
+
+        assert_eq!(result.unwrap(), "zotero://open-pdf/library/items/PDFKEY01");
+    }
+
+    #[test]
+    fn open_outcome_serializes_cancelled_distinctly_from_opened() {
+        assert_eq!(
+            serde_json::to_value(ExternalOpenOutcome::Cancelled).unwrap(),
+            "cancelled"
+        );
+        assert_eq!(
+            serde_json::to_value(ExternalOpenOutcome::Opened).unwrap(),
+            "opened"
+        );
+    }
 }
 
 /// Reads the history of one paper across all devices.
