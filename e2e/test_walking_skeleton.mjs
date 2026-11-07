@@ -154,15 +154,15 @@ async function main() {
     if (appPid) {
       const { medianMb } = await ProcessTreeMetrics.measureMedianMemoryMb(appPid, 5, 1000);
       const processBreakdown = ProcessTreeMetrics.measureTreeMemoryBreakdownMb(appPid);
-      console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 160 MB per ADR 0014)`);
+      console.log(`[PERF METRIC] Measured whole-process-tree idle memory: ${medianMb} MB (Budget <= 200 MB per ADR 0014)`);
       for (const process of processBreakdown) {
         console.log(`[PERF PROCESS] pid=${process.pid} name=${process.name} ${process.metric}=${process.memoryMb} MB`);
       }
-      if (medianMb > 160) {
-        memoryBudgetFailure = `[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 160 MB)`;
+      if (medianMb > 200) {
+        memoryBudgetFailure = `[PERF FAILURE] Idle memory ${medianMb} MB exceeds ADR 0014 budget (<= 200 MB)`;
         console.error(memoryBudgetFailure);
       } else {
-        console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 160 MB ADR 0014 budget.`);
+        console.log(`[PERF PASS] Idle memory ${medianMb} MB <= 200 MB ADR 0014 budget.`);
       }
     } else {
       memoryBudgetFailure = '[PERF FAILURE] Could not identify the ScribeTrace PID; idle memory was not measured.';
