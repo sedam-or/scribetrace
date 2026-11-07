@@ -33,7 +33,7 @@ ScribeTrace remembers how your reading of a paper changed. It copies your marks 
 2. Check the file: `sha256sum -c SHA256SUMS --ignore-missing`. It must print `OK`.
 3. Make it runnable and start it: `chmod +x ScribeTrace_<version>_amd64.AppImage`, then double-click it or run `./ScribeTrace_<version>_amd64.AppImage`.
 
-The AppImage needs the WebKitGTK 4.1 library on your system. On Debian and Ubuntu: `sudo apt install libwebkit2gtk-4.1-0`. A `.deb` package is also offered and installs the library for you ([user guide](USER-GUIDE.md) §2).
+The AppImage needs the host WebKitGTK 4.1 runtime. Fedora: `sudo dnf install webkit2gtk4.1`. Debian and Ubuntu: `sudo apt install libwebkit2gtk-4.1-0`. The AppImage's desktop launcher sets `WEBKIT_DISABLE_DMABUF_RENDERER=1`. If FUSE is not available, run it with `APPIMAGE_EXTRACT_AND_RUN=1`. A `.deb` package is also offered and installs the library for you ([user guide](USER-GUIDE.md) §2).
 
 Report problems at <https://github.com/sedam-or/scribetrace/issues>. Do not paste paper text or notes you want to keep private.
 
@@ -50,7 +50,7 @@ Replace the status line with the release status, and the **Install** step with:
 2. Check the download: `sha256sum -c SHA256SUMS --ignore-missing` must print `OK`.
 3. Make it runnable and start it: `chmod +x ScribeTrace_<version>_amd64.AppImage`, then double-click it or run `./ScribeTrace_<version>_amd64.AppImage`.
 
-Needs a 64-bit system and the WebKitGTK 4.1 library (`sudo apt install libwebkit2gtk-4.1-0` on Debian and Ubuntu). No account. Full steps: [user guide](docs/USER-GUIDE.md).
+Needs a 64-bit system and the host WebKitGTK 4.1 runtime: `sudo dnf install webkit2gtk4.1` on Fedora, `sudo apt install libwebkit2gtk-4.1-0` on Debian and Ubuntu. The launcher sets `WEBKIT_DISABLE_DMABUF_RENDERER=1`. If FUSE is not available, run with `APPIMAGE_EXTRACT_AND_RUN=1`. No account. Full steps: [user guide](docs/USER-GUIDE.md).
 ```
 
 ---
