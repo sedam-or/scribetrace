@@ -36,6 +36,7 @@ Source tags: **U** user decision · **D1/D3/D7/D8** [debate 01](debate/01-propos
 | R-21 | The default author label SHALL be "Me"; nothing from the computer or its user name SHALL be written into the files. | M | Share a folder without leaking my identity | History | 35 | D7-7 |
 | R-22 | WHEN the user clicks "Check for updates", the system SHALL show the installed version and open the fixed release page in the default browser, and SHALL make no request itself. | S | Know when a fix exists | Lightness | 28 | D7-3, U |
 | R-23 | The system SHALL meet the lightness and journey targets in §4, each published only after the prototype measures it. | M | A light, fast tool | Lightness | 1, 2 | D8-C, U |
+| R-35 | WHEN the user asks to open a paper's DOI page, its PDF in Zotero or its item in Zotero, THEN the system SHALL build the link only from that paper's stored DOI or Zotero item key, SHALL show the complete destination URI in a native confirmation dialog, and SHALL open it only after the user approves, through the operating system's default handler. IF the paper has no DOI or key, THEN the system SHALL disable that action and say why. The system SHALL NEVER open any other scheme or host (`http://` included) and SHALL NEVER show the destination inside the app's webview. | M | Read the paper's source without copying links | Open paper | 23, 24 | #30, THREAT-5.2 |
 
 ## 3. Stage 2 and later (only after the product gate)
 
