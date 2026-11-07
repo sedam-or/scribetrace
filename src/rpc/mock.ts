@@ -110,11 +110,56 @@ const MILESTONE_NOTES: Record<string, string> = {
 
 export const FIXTURE_MILESTONES: Milestone[] = [
   { id: "milestone-import", ts: "2026-10-01T09:00:00Z", reason: "import", label: null, upto: { "mock-device": 180 } },
-  { id: "milestone-refresh", ts: "2026-10-08T14:30:00Z", reason: "refresh", label: "Second reading", upto: { "mock-device": 188 } },
-  { id: "milestone-session", ts: "2026-10-14T16:15:00Z", reason: "session", label: null, upto: { "mock-device": 194 } },
-  { id: "milestone-manual", ts: "2026-10-21T11:20:00Z", reason: "manual", label: "Rebuttal notes", upto: { "mock-device": 200 } },
-  { id: "milestone-latest", ts: "2026-11-01T10:05:00Z", reason: "refresh", label: null, upto: { "mock-device": 212 } },
+  { id: "milestone-refresh", ts: "2026-10-08T14:30:00Z", reason: "refresh", label: "Second reading", upto: { "mock-device": 189 } },
+  { id: "milestone-session", ts: "2026-10-14T16:15:00Z", reason: "session", label: null, upto: { "mock-device": 195 } },
+  { id: "milestone-manual", ts: "2026-10-21T11:20:00Z", reason: "manual", label: "Rebuttal notes", upto: { "mock-device": 198 } },
+  { id: "milestone-latest", ts: "2026-11-01T10:05:00Z", reason: "refresh", label: null, upto: { "mock-device": 204 } },
 ];
+
+export const FIXTURE_VISIBLE_HISTORY: HistoryEvent[] = [
+  ...BASE_MILESTONE_MARKS.map((mark, index) => ({
+    v: 1,
+    id: `fixture-mark-${String(index + 1).padStart(3, "0")}`,
+    device: "mock-device",
+    seq: fixtureMarkSequence(index + 1),
+    ts: mark.added ?? "2026-10-01T09:00:00Z",
+    author: "Me",
+    type: "mark_import" as const,
+    payload: mark,
+  })),
+  ...FIXTURE_MILESTONES.map((milestone) => ({
+    v: 1,
+    id: milestone.id,
+    device: "mock-device",
+    seq: (milestone.upto["mock-device"] ?? 0) + 1,
+    ts: milestone.ts,
+    author: "Me",
+    type: "milestone" as const,
+    payload: {
+      label: milestone.label,
+      reason: milestone.reason,
+      upto: milestone.upto,
+    },
+  })),
+  {
+    v: 1,
+    id: "fixture-rename-second-reading",
+    device: "mock-device",
+    seq: 206,
+    ts: "2026-11-02T10:05:00Z",
+    author: "Me",
+    type: "milestone_rename" as const,
+    payload: { milestone: "milestone-refresh", label: "Second reading" },
+  },
+].sort((left, right) => left.ts.localeCompare(right.ts) || left.seq - right.seq);
+
+function fixtureMarkSequence(markNumber: number): number {
+  if (markNumber <= 180) return markNumber;
+  if (markNumber <= 188) return markNumber + 1;
+  if (markNumber <= 193) return markNumber + 2;
+  if (markNumber <= 195) return markNumber + 3;
+  return markNumber + 4;
+}
 
 function diffMilestoneMarks(fromId: string, toId: string, before: Mark[], after: Mark[]): MilestoneDiff {
   const beforeByKey = new Map(before.map((mark) => [mark.key, mark]));
@@ -241,7 +286,11 @@ export function createMockRpc(
       }
       return Promise.resolve({ imported: marks.length, milestone: marks.length ? "mock-milestone" : null });
     },
-    readHistory: () => Promise.resolve([...history]),
+    readHistory: (paperId) => Promise.resolve(
+      paperId === FIXTURE_PAPERS[0]?.id
+        ? [...FIXTURE_VISIBLE_HISTORY, ...history].sort((left, right) => left.ts.localeCompare(right.ts) || left.seq - right.seq)
+        : [...history],
+    ),
     list_milestones: () => Promise.resolve(FIXTURE_MILESTONES.map((milestone) => ({ ...milestone, upto: { ...milestone.upto } }))),
     milestone_diff: (_paperId, fromId, toId) => {
       const before = MILESTONE_SNAPSHOTS[fromId];

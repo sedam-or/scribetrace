@@ -27,7 +27,21 @@ test("imported mark and its history line are shown", async () => {
   assert.match(html, /Append-only logs make history trustworthy\./);
   assert.match(html, /mark_import/);
   assert.match(html, /Me/);
-  assert.match(html, /Imported 1 mark/);
+  assert.match(html, /All events/);
+});
+
+test("raw history view lists only visible events, including milestones and renames", async () => {
+  const rpc = createMockRpc();
+  const events = await rpc.readHistory("6WG6QNHB");
+  const html = renderToStaticMarkup(
+    <HistoryPanel state={{ kind: "done", imported: 0, events }} />,
+  );
+
+  assert.equal(events.length, 206);
+  assert.doesNotMatch(JSON.stringify(events), /"type":"purge"/);
+  assert.equal(new Set(events.map((event) => event.seq)).size, events.length);
+  assert.match(html, /milestone_rename/);
+  assert.match(html, /fixture-rename-second-reading/);
 });
 
 test("hostile mark text is rendered inert", async () => {

@@ -14,33 +14,22 @@ export function HistoryPanel({ state }: { state: ViewState }) {
         />
       );
     case "busy":
-      return <p role="status">Importing…</p>;
+      return <p role="status">{t("history.events.loading")}</p>;
     case "error":
       return (
         <ErrorBanner
-          title="Error"
-          body={state.message}
+          title={t("paper.error.title")}
+          body={t("error.generic", { detail: state.message })}
         />
       );
     case "done":
       return (
-        <section aria-labelledby="history-title">
-          <h2 id="history-title">History</h2>
-          <p role="status">Imported {state.imported} mark(s).</p>
-          <ol className="st-timeline">
-            {state.events.map((e) => (
-              <li key={e.id} className="st-timeline-item">
-                <div className="st-timeline-track" aria-hidden="true">
-                  <div className="st-timeline-node" />
-                  <div className="st-timeline-rule" />
-                </div>
-                <div className="st-timeline-content">
-                  <div className="meta">
-                    {e.ts} · {e.author} · {e.type}
-                  </div>
-                  <blockquote>{e.payload.text ?? "(no text)"}</blockquote>
-                  {e.payload.comment !== null && <p>{e.payload.comment}</p>}
-                </div>
+        <section aria-labelledby="history-events-title" data-testid="history-events">
+          <h2 id="history-events-title">{t("history.events.title")}</h2>
+          <ol className="st-raw-event-list">
+            {state.events.map((event) => (
+              <li key={event.id}>
+                <pre>{JSON.stringify(event)}</pre>
               </li>
             ))}
           </ol>

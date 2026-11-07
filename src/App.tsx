@@ -5,6 +5,7 @@ import { Button } from "./components/Button.tsx";
 import { EmptyState } from "./components/EmptyState.tsx";
 import { PaperListRow } from "./components/PaperListRow.tsx";
 import { SetupView } from "./components/SetupView.tsx";
+import { HistoryPanel } from "./HistoryPanel.tsx";
 import { PaperPage, type PaperPageError } from "./components/PaperPage.tsx";
 import { MilestoneTimeline } from "./components/MilestoneTimeline.tsx";
 import { importPaper, type ViewState } from "./model.ts";
@@ -43,6 +44,7 @@ export function App({ rpc, initialSetupState }: AppProps) {
   const [selectedPaperId, setSelectedPaperId] = useState<string | null>(null);
   const [historyState, setHistoryState] = useState<ViewState>({ kind: "idle" });
   const [showHistory, setShowHistory] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false);
   const [paperError, setPaperError] = useState<PaperPageError | null>(null);
 
   useEffect(() => {
@@ -138,9 +140,26 @@ export function App({ rpc, initialSetupState }: AppProps) {
     }
   };
 
-  const handleShowHistory = async (paperId: string) => {
+  const handleShowHistory = (paperId: string) => {
     setSelectedPaperId(paperId);
     setShowHistory(true);
+    setShowAllEvents(false);
+  };
+
+  const handleShowAllEvents = async (paperId: string) => {
+    if (showAllEvents) {
+      setShowAllEvents(false);
+      return;
+    }
+
+    setShowAllEvents(true);
+    setHistoryState({ kind: "busy" });
+    try {
+      const events = await rpc.readHistory(paperId);
+      setHistoryState({ kind: "done", imported: 0, events });
+    } catch (e) {
+      setHistoryState({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+    }
   };
 
   const isConnected = setupState.kind === "connected";
@@ -180,6 +199,7 @@ export function App({ rpc, initialSetupState }: AppProps) {
                 onSelect={(id) => {
                   setSelectedPaperId(id);
                   setShowHistory(false);
+                  setShowAllEvents(false);
                   setPaperError(null);
                 }}
                 onRefresh={
@@ -233,8 +253,13 @@ export function App({ rpc, initialSetupState }: AppProps) {
                 <Button variant="ghost" size="small" onClick={() => setShowHistory(false)}>
                   {activePaper.title}
                 </Button>
+                <Button variant="secondary" size="small" onClick={() => void handleShowAllEvents(activePaper.id)}>
+                  {showAllEvents ? t("history.timeline.open") : t("history.events.open")}
+                </Button>
               </div>
-              <MilestoneTimeline rpc={rpc} paperId={activePaper.id} />
+              {showAllEvents
+                ? <HistoryPanel state={historyState} />
+                : <MilestoneTimeline rpc={rpc} paperId={activePaper.id} />}
             </>
           ) : null}
         </div>

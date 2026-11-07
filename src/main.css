@@ -813,6 +813,29 @@ body {
   box-sizing: border-box;
 }
 
+.st-raw-event-list {
+  display: grid;
+  gap: var(--st-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.st-raw-event-list pre {
+  max-height: 12rem;
+  overflow: auto;
+  margin: 0;
+  padding: var(--st-space-3);
+  border: 1px solid var(--st-color-border-subtle);
+  border-radius: var(--st-radius-sm);
+  background: var(--st-color-bg-subtle);
+  color: var(--st-color-text-secondary);
+  font-family: var(--st-font-mono);
+  font-size: var(--st-font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .st-milestone-timeline > h2 {
   margin: 0 0 var(--st-space-5);
   font-size: var(--st-font-size-lg);

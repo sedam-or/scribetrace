@@ -11,15 +11,29 @@ export interface Mark {
   modified: string | null;
 }
 
-export interface HistoryEvent {
+interface HistoryEventBase {
   v: number;
   id: string;
   device: string;
   seq: number;
   ts: string;
   author: string;
-  type: "mark_import";
-  payload: Mark;
+}
+
+export type HistoryEvent =
+  | (HistoryEventBase & { type: "mark_import"; payload: Mark })
+  | (HistoryEventBase & { type: "milestone"; payload: MilestoneEventPayload })
+  | (HistoryEventBase & { type: "milestone_rename"; payload: MilestoneRenameEventPayload });
+
+export interface MilestoneEventPayload {
+  label: string | null;
+  reason: MilestoneReason;
+  upto: Record<string, number>;
+}
+
+export interface MilestoneRenameEventPayload {
+  milestone: string;
+  label: string | null;
 }
 
 export interface WorkspaceInfo {
