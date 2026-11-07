@@ -32,6 +32,16 @@ export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, e
     const dialog = dialogRef.current;
     if (pendingLink && dialog && !dialog.open) dialog.showModal();
     if (!pendingLink && dialog?.open) dialog.close();
+
+    if (!pendingLink) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setPendingLink(null);
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
   }, [pendingLink]);
 
   const requestLink = async (kind: PaperLinkKind) => {

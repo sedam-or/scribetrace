@@ -8,6 +8,9 @@ test("mock paper_link returns full DOI and Zotero URIs without UI assembly", asy
   const rpc = createMockRpc();
   const paperId = FIXTURE_PAPERS[0]!.id;
 
+  assert.equal("attachmentKey" in FIXTURE_PAPERS[0]!, false);
+  assert.equal("zotero_key" in FIXTURE_PAPERS[0]!, false);
+
   assert.deepEqual(await rpc.paper_link?.({ paperId, target: "doi" }), {
     uri: "https://doi.org/10.48550/arXiv.1706.03762",
   });
