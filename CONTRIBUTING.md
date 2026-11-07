@@ -51,12 +51,69 @@ We explicitly **do not require a Contributor License Agreement (CLA)**. Copyrigh
 
 ## 3. Development Setup
 
-*(Detailed build commands will be expanded as spikes graduate into the main workspace)*
-
 ### Prerequisites
-- **Rust Toolchain:** Stable Rust (1.80+) via `rustup`.
-- **Node.js:** Node.js 20+ with `pnpm` (or `npm`).
-- **OS Dependencies (Linux):** `libwebkit2gtk-4.1-dev`, `build-essential`, `curl`, `wget`, `file`, `libxdo-dev`, `libssl-dev`, `libayatana-appindicator3-dev`.
+
+All platforms need Git, Rust stable via [rustup](https://www.rust-lang.org/tools/install), Node.js 22 or later, and pnpm 9.15.9. Enable Corepack once:
+
+```sh
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
+```
+
+Install the native Tauri dependencies for your operating system before building the desktop app:
+
+- **Ubuntu/Debian:** `sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev`
+- **Fedora:** `sudo dnf install webkit2gtk4.1-devel openssl-devel curl wget file libappindicator-gtk3-devel librsvg2-devel libxdo-devel gcc gcc-c++ make`
+- **macOS:** install Xcode Command Line Tools with `xcode-select --install`.
+- **Windows:** install Visual Studio Build Tools with the **Desktop development with C++** workload. WebView2 is included on Windows 10 (1803+) and later; install the Evergreen WebView2 Runtime on older supported systems.
+
+See the [official Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for other Linux distributions and current platform details.
+
+### Clone, build, and test
+
+```sh
+git clone https://github.com/sedam-or/scribetrace.git
+cd scribetrace
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm test
+pnpm build
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+```
+
+Run the desktop app on Linux after `pnpm build`:
+
+```sh
+WEBKIT_DISABLE_DMABUF_RENDERER=1 cargo run -p scribetrace-shell --features custom-protocol
+```
+
+On macOS or Windows, run `cargo run -p scribetrace-shell --features custom-protocol` after `pnpm build`.
+
+The real-window E2E harness is Linux-only. Install its additional dependencies and `tauri-driver`, then build and run it:
+
+```sh
+sudo apt-get install -y xvfb webkit2gtk-driver xdotool
+cargo install tauri-driver --locked
+pnpm build
+cargo build --release -p scribetrace-shell --features custom-protocol
+./e2e/run-linux.sh --release
+```
+
+The runner uses Xvfb automatically when no display is available. It also sets the WebKitGTK environment required for the test. See [e2e/README.md](e2e/README.md) for details.
+
+### Your first PR
+
+1. Find an open issue labelled [`good first issue`](https://github.com/sedam-or/scribetrace/labels/good%20first%20issue) and comment that you plan to work on it.
+2. Create a branch, for example `fix/42-short-description` or `docs/contributor-setup`.
+3. Make focused commits with `git commit -s`; each commit needs a `Signed-off-by:` line.
+4. Run `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`, `pnpm lint`, `pnpm test`, and `pnpm build`.
+5. Push your branch and open a pull request against `main`. Describe the change, link the issue (for example, `Closes #42`), and include the checks you ran.
+
+Contributors should use a fork and pull request. Maintainers may merge changes after required CI and DCO checks pass. Main-branch protection allows maintainer administrators to bypass the pull-request requirement for operational pushes.
 
 ---
 
@@ -67,11 +124,7 @@ We explicitly **do not require a Contributor License Agreement (CLA)**. Copyrigh
    - Bug fixes: `fix/<issue-number>-<description>`
    - Documentation: `docs/<topic>`
 2. **Commit Messages & DCO Sign-off:** Follow `COMMIT-PROTOCOL.md` (Conventional Commits) and ensure every commit includes `-s` / `Signed-off-by:`.
-3. **Pre-PR Verification:**
-   - Ensure `cargo fmt --check` and `cargo clippy -- -D warnings` pass.
-   - Run tests: `cargo test`.
-   - Ensure `cargo-deny --config deny.toml check licenses` passes.
-   - Ensure no secrets or temporary files are included.
+3. **Pre-PR Verification:** Follow the full clean-clone build and test commands in Section 3. At minimum, run Rust formatting, clippy, workspace tests, UI lint and tests, and the UI build. Ensure no secrets or temporary files are included.
 4. **Link Issues:** Reference related issues in the PR description (e.g., `Closes #42`).
 
 ---
@@ -87,7 +140,7 @@ We explicitly **do not require a Contributor License Agreement (CLA)**. Copyrigh
 
 ## 6. Security Vulnerabilities
 
-Please **do not report security vulnerabilities in public issues**. Refer to `SECURITY.md` for our coordinated disclosure process via GitHub Private Vulnerability Reporting or encrypted email.
+Please **do not report security vulnerabilities in public issues**. Use GitHub's private vulnerability reporting for this repository.
 
 ---
 

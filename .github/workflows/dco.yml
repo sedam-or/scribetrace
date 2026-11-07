@@ -1,0 +1,32 @@
+name: DCO
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dco:
+    name: DCO Sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout commits to check
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check every commit has a sign-off
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            ./tools/check-dco.sh "${{ github.event.pull_request.base.sha }}" "${GITHUB_SHA}"
+          else
+            ./tools/check-dco.sh "${{ github.event.before }}" "${GITHUB_SHA}"
+          fi

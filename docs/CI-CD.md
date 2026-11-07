@@ -13,6 +13,10 @@
 
 ScribeTrace is an open-source, local-first research paper reader built with a Tauri v2 desktop shell, a memory-safe Rust core engine (`scribetrace-core`), and a lightweight React/TypeScript presentation layer.
 
+## Main branch contribution policy
+
+Contributors open pull requests from a fork; main requires a pull request for non-admin contributors. Required checks are `Linux tests, lint, and gates`, `Cross-platform tests (windows-latest)`, `Cross-platform tests (macos-latest)`, and `DCO / DCO Sign-off`. The Linux job runs Rust and pnpm lint/tests/build. The Windows and macOS jobs run pnpm tests/build and Rust workspace tests. Force pushes and branch deletion are disabled. Maintainer administrators can bypass these rules for operational pushes. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor workflow.
+
 The continuous integration and continuous delivery (CI/CD) infrastructure serves as the automated enforcement mechanism for ScribeTrace's core architectural and security invariants:
 1. **Deterministic & Immutable Builds:** All compilation steps strictly consume cryptographic lockfiles (`Cargo.lock`, `pnpm-lock.yaml`) with `--locked` and `--frozen-lockfile` flags. Dependencies are pinned to exact versions; builds are reproducible bit-for-bit across clean runners.
 2. **Least-Privilege Execution (SEC-27):** All GitHub Actions workflows enforce a top-level `permissions: contents: read` baseline. Write permissions (asset publishing, provenance attestation) are isolated to dedicated, single-purpose release jobs protected by GitHub Environment approval gates.

@@ -86,7 +86,7 @@ jobs:
 
   # ---- The real workspace (src-core, src-tauri, src, test-support). Rules: docs/DEFINITION-OF-DONE.md ----
   workspace:
-    name: Workspace gates (Linux, required)
+    name: Linux tests, lint, and gates
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -141,9 +141,8 @@ jobs:
         run: ./tools/check-gates.sh
 
   workspace-other-os:
-    name: Workspace build and test (${{ matrix.os }}, informative)
+    name: Cross-platform tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
