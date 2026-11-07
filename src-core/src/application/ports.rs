@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use super::external_links::PaperLinkAvailability;
 use crate::domain::{DeviceId, DeviceState, DomainError, Event, Mark, PaperId};
 
 /// Machine-readable error code contract shared across the IPC boundary with the frontend (Slice 4 / SEC-39).
@@ -20,6 +21,14 @@ pub enum SourceErrorCode {
     TooLarge,
     /// Non-200 HTTP status, malformed JSON, off-list path, or redirect refused by broker.
     BadAnswer,
+    /// The paper has no DOI accepted by the link contract.
+    NoDoi,
+    /// The paper has no valid Zotero PDF attachment key.
+    NoPdf,
+    /// The paper id does not identify a Zotero item.
+    NoZoteroKey,
+    /// No current Zotero paper/attachment metadata is available for the paper id.
+    AttachmentUnresolved,
     /// Internal store or IO failure.
     Internal,
 }
@@ -34,6 +43,10 @@ impl SourceErrorCode {
             Self::Version => "version",
             Self::TooLarge => "too_large",
             Self::BadAnswer => "bad_answer",
+            Self::NoDoi => "no_doi",
+            Self::NoPdf => "no_pdf",
+            Self::NoZoteroKey => "no_zotero_key",
+            Self::AttachmentUnresolved => "attachment_unresolved",
             Self::Internal => "internal",
         }
     }
@@ -96,15 +109,17 @@ pub struct PaperItem {
     /// Publication year.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub year: Option<String>,
+    /// Validated DOI shown as inert display text; link availability is carried separately.
+    #[serde(rename = "doiDisplay")]
+    pub doi_display: Option<String>,
+    /// Backend-computed availability codes for each supported external link.
+    #[serde(rename = "linkAvailability", default)]
+    pub link_availability: PaperLinkAvailability,
     /// Total number of marks/annotations attached to this paper.
     #[serde(rename = "marksCount")]
     pub marks_count: usize,
-    /// Attachment key of the primary PDF enclosure in Zotero.
-    #[serde(
-        rename = "attachmentKey",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
+    /// Attachment key of the primary PDF enclosure in Zotero, backend-only.
+    #[serde(default, skip_serializing, skip_deserializing)]
     pub attachment_key: Option<String>,
 }
 

@@ -72,9 +72,10 @@ fn import_then_read_round_trips_through_ipc() {
             "allow-get-workspace",
             "allow-list-zotero-papers",
             "allow-import-marks",
-            "allow-read-history"
+            "allow-read-history",
+            "allow-open-external"
         ],
-        "Capabilities allowlist must strictly match the 5 allowed commands"
+        "Capabilities allowlist must strictly match the 6 allowed commands"
     );
 
     // SEC-16/18: Arbitrary filesystem access is denied.
@@ -93,6 +94,14 @@ fn import_then_read_round_trips_through_ipc() {
         call("dialog:open", serde_json::json!({})).is_err(),
         "dialog:open must not exist on the IPC allowlist"
     );
+    assert!(
+        call(
+            "plugin:opener|open_url",
+            serde_json::json!({"url":"file:///etc/passwd"})
+        )
+        .is_err(),
+        "the webview must not receive the opener plugin permission"
+    );
 
     // SEC-18 negative test: open_workspace accepting a raw path argument was REMOVED.
     assert!(
@@ -107,10 +116,7 @@ fn import_then_read_round_trips_through_ipc() {
     // No folder chosen yet: import_marks fails with a typed error contract { "code": "<code>" }.
     let err_resp = tauri::test::get_ipc_response(
         &webview,
-        request(
-            "import_marks",
-            serde_json::json!({"paperId":"z_EFGH6789","attachmentKey":"EFGH6789"}),
-        ),
+        request("import_marks", serde_json::json!({"paperId":"z_6WG6QNHB"})),
     )
     .unwrap_err();
     assert_eq!(
@@ -129,6 +135,11 @@ fn import_then_read_round_trips_through_ipc() {
     assert!(papers_arr
         .iter()
         .any(|p| p["id"] == "z_6WG6QNHB" && p["marksCount"] == 2));
+    let paper_summary = papers_arr.iter().find(|p| p["id"] == "z_6WG6QNHB").unwrap();
+    assert!(paper_summary.get("attachmentKey").is_none());
+    assert!(paper_summary.get("attachment_key").is_none());
+    assert!(paper_summary.get("pdf_key").is_none());
+    assert!(paper_summary["linkAvailability"].is_object());
 
     // Initially get_workspace returns null/None.
     let initial_ws = call("get_workspace", serde_json::json!({})).unwrap();
@@ -143,20 +154,28 @@ fn import_then_read_round_trips_through_ipc() {
     let active_ws = call("get_workspace", serde_json::json!({})).unwrap();
     assert_eq!(active_ws["path"], chosen["path"]);
 
-    let report = call(
-        "import_marks",
-        serde_json::json!({"paperId":"z_EFGH6789","attachmentKey":"EFGH6789"}),
+    let unresolved = tauri::test::get_ipc_response(
+        &webview,
+        request("import_marks", serde_json::json!({"paperId":"z_NOPE1234"})),
     )
-    .unwrap();
-    assert_eq!(report["imported"], 1);
+    .unwrap_err();
+    assert_eq!(
+        unresolved["code"], "attachment_unresolved",
+        "import must resolve a paper attachment from the backend cache"
+    );
 
-    let history = call("read_history", serde_json::json!({"paperId":"z_EFGH6789"})).unwrap();
+    let report = call("import_marks", serde_json::json!({"paperId":"z_6WG6QNHB"})).unwrap();
+    assert_eq!(report["imported"], 2);
+
+    let history = call("read_history", serde_json::json!({"paperId":"z_6WG6QNHB"})).unwrap();
     let events = history.as_array().unwrap();
-    // The mark, then the first milestone of the paper (reason import, R-11).
-    assert_eq!(events.len(), 2);
+    // Two marks, one backend-only metadata snapshot, then the first milestone (R-11).
+    assert_eq!(events.len(), 4);
     assert_eq!(events[0]["type"], "mark_import");
     assert_eq!(events[0]["author"], "Me");
-    assert_eq!(events[0]["payload"]["key"], "WXYZ2345");
-    assert_eq!(events[1]["type"], "milestone");
-    assert_eq!(events[1]["payload"]["reason"], "import");
+    assert_eq!(events[1]["type"], "mark_import");
+    assert_eq!(events[2]["type"], "paper_metadata");
+    assert_eq!(events[2]["payload"]["pdf_key"], "H3E7BPJW");
+    assert_eq!(events[3]["type"], "milestone");
+    assert_eq!(events[3]["payload"]["reason"], "import");
 }

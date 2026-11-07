@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -7,11 +8,14 @@ use scribetrace_core::adapters::{
     FsDeviceStore, FsHistoryStore, SystemClock, UuidGenerator, ZoteroHttp,
 };
 use scribetrace_core::application::{
-    AppError, DeviceStore, HistoryStore, ImportMarks, ImportReport, PaperItem, SourceError,
-    SourceErrorCode, StoreError, ZoteroSource,
+    build_external_uri, effective_paper_metadata, is_allowed_external_uri, AppError, DeviceStore,
+    ExternalLinkError, ExternalTarget, HistoryStore, ImportMarks, ImportReport, PaperItem,
+    SourceError, SourceErrorCode, StoreError, ZoteroSource,
 };
-use scribetrace_core::domain::{DomainError, Event, PaperId};
+use scribetrace_core::domain::{DomainError, Event, PaperId, PaperMetadataPayload};
 use serde::{Deserialize, Serialize};
+use tauri::Runtime;
+use tauri_plugin_opener::OpenerExt;
 
 /// Port for folder selection. Production shell uses native OS dialog (rfd);
 /// integration tests inject a deterministic picker without UI.
@@ -32,12 +36,19 @@ impl FolderPicker for RfdFolderPicker {
     }
 }
 
-/// The chosen project folder, app storage directory, and Zotero port; the only state the shell keeps.
+#[derive(Debug, Clone)]
+struct CachedPaperSource {
+    attachment_key: Option<String>,
+    metadata: PaperMetadataPayload,
+}
+
+/// The chosen project folder, app storage directory, Zotero port, picker and current paper cache.
 pub struct Session {
     workspace: Mutex<Option<PathBuf>>,
     app_storage_dir: Option<PathBuf>,
     zotero_port: u16,
     picker: Arc<dyn FolderPicker>,
+    paper_cache: Mutex<HashMap<String, CachedPaperSource>>,
 }
 
 impl std::fmt::Debug for Session {
@@ -46,6 +57,14 @@ impl std::fmt::Debug for Session {
             .field("workspace", &self.workspace)
             .field("app_storage_dir", &self.app_storage_dir)
             .field("zotero_port", &self.zotero_port)
+            .field(
+                "cached_papers",
+                &self
+                    .paper_cache
+                    .lock()
+                    .map(|cache| cache.len())
+                    .unwrap_or(0),
+            )
             .finish()
     }
 }
@@ -58,6 +77,7 @@ impl Session {
             app_storage_dir: None,
             zotero_port,
             picker: Arc::new(RfdFolderPicker),
+            paper_cache: Mutex::new(HashMap::new()),
         }
     }
 
@@ -68,6 +88,7 @@ impl Session {
             app_storage_dir: Some(app_storage_dir),
             zotero_port,
             picker: Arc::new(RfdFolderPicker),
+            paper_cache: Mutex::new(HashMap::new()),
         }
     }
 
@@ -78,6 +99,7 @@ impl Session {
             app_storage_dir: None,
             zotero_port,
             picker,
+            paper_cache: Mutex::new(HashMap::new()),
         }
     }
 
@@ -92,6 +114,7 @@ impl Session {
             app_storage_dir: Some(app_storage_dir),
             zotero_port,
             picker,
+            paper_cache: Mutex::new(HashMap::new()),
         }
     }
 
@@ -101,6 +124,34 @@ impl Session {
             .map_err(|_| CommandError::new(SourceErrorCode::Internal))?
             .clone()
             .ok_or_else(|| CommandError::new(SourceErrorCode::Internal))
+    }
+
+    fn cache_papers(&self, papers: &[PaperItem]) -> Result<(), CommandError> {
+        let mut cache = self
+            .paper_cache
+            .lock()
+            .map_err(|_| CommandError::new(SourceErrorCode::Internal))?;
+        cache.clear();
+        for paper in papers {
+            cache.insert(
+                paper.id.clone(),
+                CachedPaperSource {
+                    attachment_key: paper.attachment_key.clone(),
+                    metadata: PaperMetadataPayload {
+                        doi: paper.doi_display.clone(),
+                        pdf_key: paper.attachment_key.clone(),
+                    },
+                },
+            );
+        }
+        Ok(())
+    }
+
+    fn cached_paper(&self, paper_id: &str) -> Result<Option<CachedPaperSource>, CommandError> {
+        self.paper_cache
+            .lock()
+            .map(|cache| cache.get(paper_id).cloned())
+            .map_err(|_| CommandError::new(SourceErrorCode::Internal))
     }
 }
 
@@ -225,7 +276,9 @@ pub fn list_zotero_papers(
     session: tauri::State<'_, Session>,
 ) -> Result<Vec<PaperItem>, CommandError> {
     let zotero = ZoteroHttp::new(session.zotero_port);
-    zotero.list_papers().map_err(CommandError::from)
+    let papers = zotero.list_papers().map_err(CommandError::from)?;
+    session.cache_papers(&papers)?;
+    Ok(papers)
 }
 
 /// Imports the marks of one paper from Zotero. Runs only when the user clicks.
@@ -233,10 +286,15 @@ pub fn list_zotero_papers(
 pub fn import_marks(
     session: tauri::State<'_, Session>,
     paper_id: String,
-    attachment_key: String,
 ) -> Result<ImportReport, CommandError> {
     let workspace = session.workspace()?;
-    let paper = PaperId::new(paper_id).map_err(CommandError::from)?;
+    let paper = PaperId::new(paper_id.clone()).map_err(CommandError::from)?;
+    let source = session
+        .cached_paper(&paper_id)?
+        .ok_or_else(|| CommandError::new(SourceErrorCode::AttachmentUnresolved))?;
+    let attachment_key = source
+        .attachment_key
+        .ok_or_else(|| CommandError::new(SourceErrorCode::NoPdf))?;
 
     let app_dir = session
         .app_storage_dir
@@ -263,7 +321,7 @@ pub fn import_marks(
         &UuidGenerator,
         device.clone(),
     )
-    .run(&paper, &attachment_key)
+    .run_with_metadata(&paper, &attachment_key, source.metadata)
     .map_err(CommandError::from)?;
 
     let scan_after = store
@@ -276,6 +334,58 @@ pub fn import_marks(
     }
 
     Ok(report)
+}
+
+/// Opens a typed external link only after native confirmation (R-35, SEC-23/24).
+/// The UI supplies a target and paper id, never a URL.
+#[tauri::command]
+pub async fn open_external<R: Runtime>(
+    app: tauri::AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
+    session: tauri::State<'_, Session>,
+    target: ExternalTarget,
+    paper_id: String,
+) -> Result<(), CommandError> {
+    let paper = PaperId::new(paper_id.clone()).map_err(CommandError::from)?;
+    let metadata = if let Some(cached) = session.cached_paper(&paper_id)? {
+        cached.metadata
+    } else if matches!(target, ExternalTarget::Item) {
+        PaperMetadataPayload {
+            doi: None,
+            pdf_key: None,
+        }
+    } else {
+        let workspace = session.workspace()?;
+        let visible = FsHistoryStore::new(workspace)
+            .read(&paper)
+            .map_err(CommandError::from)?;
+        effective_paper_metadata(&visible)
+    };
+
+    let uri = build_external_uri(target, &paper, &metadata)
+        .map_err(|error: ExternalLinkError| CommandError::new(error.code()))?;
+    if !is_allowed_external_uri(&uri) {
+        return Err(CommandError::new(SourceErrorCode::BadAnswer));
+    }
+
+    let confirmation = rfd::AsyncMessageDialog::new()
+        .set_title("Open external link?")
+        .set_description(format!(
+            "ScribeTrace will open this destination only after you confirm:\n\n{uri}"
+        ))
+        .set_level(rfd::MessageLevel::Warning)
+        .set_buttons(rfd::MessageButtons::YesNo)
+        .set_parent(&window)
+        .show()
+        .await;
+
+    if confirmation != rfd::MessageDialogResult::Yes {
+        return Ok(());
+    }
+
+    app.opener()
+        .open_url(uri, None::<&str>)
+        .map_err(|_| CommandError::new(SourceErrorCode::Internal))
 }
 
 /// Reads the history of one paper across all devices.

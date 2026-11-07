@@ -2,10 +2,11 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
-use super::ports::{AppError, Clock, HistoryStore, IdGenerator, ZoteroSource};
+use super::external_links::{is_valid_doi, is_valid_zotero_key};
+use super::ports::{AppError, Clock, HistoryStore, IdGenerator, SourceError, ZoteroSource};
 use crate::domain::{
     changed_since_last, cut_of, milestones, DeviceId, Event, EventBody, Mark, MilestonePayload,
-    MilestoneReason, PaperId, FORMAT_VERSION,
+    MilestoneReason, PaperId, PaperMetadataPayload, FORMAT_VERSION,
 };
 
 /// What an import did.
@@ -50,8 +51,33 @@ where
     ///
     /// A mark is recorded once (`spec/FORMAT.md` §3: "seen for the first time"). Its key is
     /// checked against every line on disk, purged ones included, so a forgotten mark does not
-    /// come back on refresh. Then one milestone is written if the history changed since the last.
+    /// come back on refresh. The PDF key is saved with the paper metadata. Then one milestone is
+    /// written if the history changed since the last.
     pub fn run(&self, paper: &PaperId, attachment_key: &str) -> Result<ImportReport, AppError> {
+        let metadata = PaperMetadataPayload {
+            doi: None,
+            pdf_key: Some(attachment_key.to_owned()),
+        };
+        self.run_with_metadata(paper, attachment_key, metadata)
+    }
+
+    /// Imports marks and writes the current paper metadata only when it changed on this device.
+    pub fn run_with_metadata(
+        &self,
+        paper: &PaperId,
+        attachment_key: &str,
+        metadata: PaperMetadataPayload,
+    ) -> Result<ImportReport, AppError> {
+        if !is_valid_zotero_key(attachment_key)
+            || metadata.pdf_key.as_deref() != Some(attachment_key)
+            || metadata
+                .doi
+                .as_deref()
+                .is_some_and(|doi| !is_valid_doi(doi))
+        {
+            return Err(SourceError::BadAnswer("invalid paper metadata".to_owned()).into());
+        }
+
         let fetched = self.zotero.fetch_marks(attachment_key)?;
         let mut known: HashSet<String> = self
             .store
@@ -76,11 +102,44 @@ where
             imported += 1;
         }
 
+        self.record_paper_metadata_if_changed(paper, metadata)?;
         let milestone = self.record_milestone_if_changed(paper)?;
         Ok(ImportReport {
             imported,
             milestone,
         })
+    }
+
+    /// Stores a snapshot only when it differs from this device's latest visible metadata.
+    /// A purge hides the prior snapshot, so the next import writes the current value again.
+    fn record_paper_metadata_if_changed(
+        &self,
+        paper: &PaperId,
+        metadata: PaperMetadataPayload,
+    ) -> Result<(), AppError> {
+        let visible = self.store.read(paper)?;
+        let previous = visible
+            .iter()
+            .filter(|event| event.device == self.device)
+            .filter_map(|event| match &event.body {
+                EventBody::PaperMetadata(payload) => Some((event.seq, payload)),
+                _ => None,
+            })
+            .max_by_key(|(seq, _)| *seq)
+            .map(|(_, payload)| payload.clone())
+            .unwrap_or(PaperMetadataPayload {
+                doi: None,
+                pdf_key: None,
+            });
+
+        if previous == metadata {
+            return Ok(());
+        }
+
+        let seq = self.store.next_seq(paper, &self.device)?;
+        let event = self.event(seq, EventBody::PaperMetadata(metadata));
+        self.store.append(paper, &event)?;
+        Ok(())
     }
 
     /// Writes one milestone when the visible history differs from the last milestone's cut.

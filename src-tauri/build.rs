@@ -6,6 +6,7 @@ fn main() {
         "list_zotero_papers",
         "import_marks",
         "read_history",
+        "open_external",
     ]);
     if let Err(err) = tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))
     {

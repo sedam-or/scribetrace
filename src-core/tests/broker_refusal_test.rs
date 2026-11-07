@@ -37,6 +37,22 @@ fn test_error_code_serialization_contract() {
         "\"bad_answer\""
     );
     assert_eq!(
+        serde_json::to_string(&SourceErrorCode::NoDoi).unwrap(),
+        "\"no_doi\""
+    );
+    assert_eq!(
+        serde_json::to_string(&SourceErrorCode::NoPdf).unwrap(),
+        "\"no_pdf\""
+    );
+    assert_eq!(
+        serde_json::to_string(&SourceErrorCode::NoZoteroKey).unwrap(),
+        "\"no_zotero_key\""
+    );
+    assert_eq!(
+        serde_json::to_string(&SourceErrorCode::AttachmentUnresolved).unwrap(),
+        "\"attachment_unresolved\""
+    );
+    assert_eq!(
         serde_json::to_string(&SourceErrorCode::Internal).unwrap(),
         "\"internal\""
     );
@@ -47,6 +63,13 @@ fn test_error_code_serialization_contract() {
     assert_eq!(SourceErrorCode::Version.as_str(), "version");
     assert_eq!(SourceErrorCode::TooLarge.as_str(), "too_large");
     assert_eq!(SourceErrorCode::BadAnswer.as_str(), "bad_answer");
+    assert_eq!(SourceErrorCode::NoDoi.as_str(), "no_doi");
+    assert_eq!(SourceErrorCode::NoPdf.as_str(), "no_pdf");
+    assert_eq!(SourceErrorCode::NoZoteroKey.as_str(), "no_zotero_key");
+    assert_eq!(
+        SourceErrorCode::AttachmentUnresolved.as_str(),
+        "attachment_unresolved"
+    );
     assert_eq!(SourceErrorCode::Internal.as_str(), "internal");
 }
 

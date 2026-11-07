@@ -3,8 +3,11 @@ use std::time::Duration;
 
 use serde_json::Value;
 
-use crate::application::{PaperItem, SourceError, ZoteroSource};
-use crate::domain::Mark;
+use crate::application::{
+    external_link_availability, is_valid_doi, is_valid_zotero_key, PaperItem, SourceError,
+    ZoteroSource,
+};
+use crate::domain::{Mark, PaperId, PaperMetadataPayload};
 
 const MAX_BODY: u64 = 15 * 1024 * 1024; // 15 MB body cap (SEC-33)
 const TIMEOUT: Duration = Duration::from_secs(5); // 5 s timeout budget (SEC-33)
@@ -281,7 +284,7 @@ fn text(data: &Value, field: &str) -> Option<String> {
 
 fn extract_attachment_key(href: &str) -> Option<&str> {
     let key = href.trim_end_matches('/').rsplit('/').next()?;
-    if !key.is_empty() && key.bytes().all(|b| b.is_ascii_alphanumeric()) {
+    if is_valid_zotero_key(key) {
         Some(key)
     } else {
         None
@@ -343,7 +346,7 @@ pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, Source
             }
         } else if item_type == "attachment" {
             if let Some(paper_key) = parent {
-                if !key.is_empty() {
+                if is_valid_zotero_key(&key) {
                     paper_to_attachment.entry(paper_key).or_insert(key);
                 }
             }
@@ -367,6 +370,9 @@ pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, Source
         if !seen_paper_keys.insert(key.clone()) {
             continue;
         }
+        let Ok(paper_id) = PaperId::from_zotero(&key) else {
+            continue;
+        };
         let title = text(data, "title").unwrap_or_else(|| key.clone());
 
         let attachment_key = item
@@ -375,8 +381,18 @@ pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, Source
             .and_then(|a| a.get("href"))
             .and_then(Value::as_str)
             .and_then(extract_attachment_key)
+            .filter(|key| is_valid_zotero_key(key))
             .map(str::to_owned)
             .or_else(|| paper_to_attachment.get(&key).cloned());
+
+        let doi_display = text(data, "DOI")
+            .map(|doi| doi.trim().to_owned())
+            .filter(|doi| is_valid_doi(doi));
+        let metadata = PaperMetadataPayload {
+            doi: doi_display.clone(),
+            pdf_key: attachment_key.clone(),
+        };
+        let link_availability = external_link_availability(&paper_id, &metadata);
 
         let authors = item
             .get("meta")
@@ -401,10 +417,12 @@ pub fn parse_papers_from_items(items: &[Value]) -> Result<Vec<PaperItem>, Source
             .unwrap_or(0);
 
         papers.push(PaperItem {
-            id: format!("z_{key}"),
+            id: paper_id.to_string(),
             title,
             authors,
             year,
+            doi_display,
+            link_availability,
             marks_count,
             attachment_key,
         });
@@ -492,10 +510,10 @@ mod tests {
     fn parse_papers_extracts_metadata_and_mark_counts() {
         let json = r#"[
             {
-                "key": "PAPER1",
+                "key": "PAPER001",
                 "links": {
                     "attachment": {
-                        "href": "http://localhost:23119/api/users/0/items/ATT1"
+                        "href": "http://localhost:23119/api/users/0/items/ATTACH01"
                     }
                 },
                 "meta": {
@@ -503,44 +521,50 @@ mod tests {
                     "parsedDate": "2024"
                 },
                 "data": {
-                    "key": "PAPER1",
+                    "key": "PAPER001",
                     "itemType": "journalArticle",
-                    "title": "Quantum Computing Advances"
+                    "title": "Quantum Computing Advances",
+                    "DOI": "10.12345/example"
                 }
             },
             {
-                "key": "ATT1",
+                "key": "ATTACH01",
                 "data": {
-                    "key": "ATT1",
+                    "key": "ATTACH01",
                     "itemType": "attachment",
-                    "parentItem": "PAPER1"
+                    "parentItem": "PAPER001"
                 }
             },
             {
-                "key": "ANN1",
+                "key": "ANN00001",
                 "data": {
-                    "key": "ANN1",
+                    "key": "ANN00001",
                     "itemType": "annotation",
-                    "parentItem": "ATT1"
+                    "parentItem": "ATTACH01"
                 }
             },
             {
-                "key": "ANN2",
+                "key": "ANN00002",
                 "data": {
-                    "key": "ANN2",
+                    "key": "ANN00002",
                     "itemType": "annotation",
-                    "parentItem": "ATT1"
+                    "parentItem": "ATTACH01"
                 }
             }
         ]"#;
 
         let papers = parse_papers(json).unwrap();
         assert_eq!(papers.len(), 1);
-        assert_eq!(papers[0].id, "z_PAPER1");
+        assert_eq!(papers[0].id, "z_PAPER001");
         assert_eq!(papers[0].title, "Quantum Computing Advances");
         assert_eq!(papers[0].authors.as_deref(), Some("Alice et al."));
         assert_eq!(papers[0].year.as_deref(), Some("2024"));
-        assert_eq!(papers[0].attachment_key.as_deref(), Some("ATT1"));
+        assert_eq!(papers[0].doi_display.as_deref(), Some("10.12345/example"));
+        assert_eq!(papers[0].attachment_key.as_deref(), Some("ATTACH01"));
+        assert_eq!(
+            papers[0].link_availability.pdf,
+            crate::application::LinkAvailabilityCode::Available
+        );
         assert_eq!(papers[0].marks_count, 2);
     }
 

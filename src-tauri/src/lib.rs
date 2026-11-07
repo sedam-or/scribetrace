@@ -23,13 +23,20 @@ pub fn register_with_session<R: tauri::Runtime>(
     session: Session,
 ) -> tauri::Builder<R> {
     builder
+        // All external opens go through open_external; no opener command is exposed to the webview.
+        .plugin(
+            tauri_plugin_opener::Builder::new()
+                .open_js_links_on_click(false)
+                .build(),
+        )
         .manage(session)
         .invoke_handler(tauri::generate_handler![
             commands::choose_folder,
             commands::get_workspace,
             commands::list_zotero_papers,
             commands::import_marks,
-            commands::read_history
+            commands::read_history,
+            commands::open_external
         ])
 }
 

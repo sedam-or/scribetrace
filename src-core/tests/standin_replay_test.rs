@@ -89,8 +89,12 @@ fn test_import_and_refresh_marks_through_slices_2_3_store() {
     let read_report = store.read_report(&paper).unwrap();
     assert_eq!(read_report.files_scanned, 1);
     assert_eq!(read_report.skipped_lines, 0);
-    // Two mark_import lines plus the first milestone (reason import).
-    assert_eq!(read_report.visible_events.len(), 3);
+    // Two mark_import lines, one paper metadata snapshot, and the first milestone.
+    assert_eq!(read_report.visible_events.len(), 4);
+    assert!(read_report
+        .visible_events
+        .iter()
+        .any(|event| matches!(event.body, EventBody::PaperMetadata(_))));
 
     let mut keys: Vec<String> = read_report
         .visible_events
@@ -158,11 +162,12 @@ fn test_import_and_refresh_marks_through_slices_2_3_store() {
     assert_eq!(refresh_report.milestone, None);
 
     let read_report_after = store.read_report(&paper).unwrap();
-    // 3 raw lines after the first import (2 marks + 1 milestone); the refresh adds none.
-    assert_eq!(read_report_after.raw_events.len(), 3);
+    // 4 raw lines after the first import (2 marks + metadata + milestone); refresh adds none.
+    assert_eq!(read_report_after.raw_events.len(), 4);
     assert_eq!(read_report_after.raw_events[0].seq, 1);
     assert_eq!(read_report_after.raw_events[1].seq, 2);
     assert_eq!(read_report_after.raw_events[2].seq, 3);
+    assert_eq!(read_report_after.raw_events[3].seq, 4);
 
     // SEC-19: Source documents in workspace remain byte-identical
     let after_pdf = fs::read(&pdf_path).unwrap();
