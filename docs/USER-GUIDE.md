@@ -1,6 +1,6 @@
 # ScribeTrace: User guide (Linux first)
 
-**Status:** draft v0.1, 2026-11-06 · **Author:** pm · **Applies to:** a future 0.1.0 release. **Nothing in this guide can be installed yet**: ScribeTrace is pre-alpha ([README](../README.md)). Each section is marked **built** or **planned** by slice number from [BUILD-PLAN](BUILD-PLAN.md); update the marks as slices land. On-screen wording comes from `src/strings/en.json`; if this guide and the app disagree, that file wins and this guide is wrong.
+**Status:** draft v0.1, 2026-11-06 · **Author:** pm · **Applies to:** the 1.0.0 release (not yet published). **Nothing in this guide can be installed yet**: ScribeTrace is pre-alpha ([README](../README.md)). Each section is marked **built** or **planned** by slice number from [BUILD-PLAN](BUILD-PLAN.md); update the marks as slices land. On-screen wording comes from `src/strings/en.json`; if this guide and the app disagree, that file wins and this guide is wrong.
 Screenshots are added later from qa's end-to-end run.
 
 *ScribeTrace is an independent project, not affiliated with or endorsed by Zotero or Obsidian.*
@@ -32,6 +32,12 @@ Target, not yet measured: first mark imported within 5 minutes of install.
 2. **Refresh.** After you mark more in Zotero, press **Refresh**. If something changed, a new milestone is saved; if not, you are told nothing changed. You can rename any milestone ("first skim", "rebuttal").
 3. **Look back.** Open the timeline, choose two milestones, and read what was added, removed or edited, plus any change in your notes. Imported marks are read-only copies: edit them in Zotero.
 4. **Copy a quote.** Press **Copy as quote** on a mark. You get the text with a citation key (or author, year and title if there is no key) and a link back to the page in Zotero. ScribeTrace asks before opening any link.
+5. **Open a paper (ticket #30; planned).** The paper page shows the title, authors, DOI and the number of marks in its history. It has three buttons:
+   - **Open DOI page** opens the paper's DOI address in your web browser.
+   - **Open PDF in Zotero** opens the PDF inside Zotero. Zotero must be running.
+   - **Show in Zotero** selects the paper in Zotero. Zotero must be running.
+
+   Before any link opens, ScribeTrace shows the full address (a web address or a `zotero://` address) and asks **Open** or **Cancel**. The link then opens in the program your computer uses for it: your web browser, or Zotero. ScribeTrace never opens a web page inside itself, and it never opens a link by itself. If a paper has no DOI, or did not come from Zotero, its button is disabled and the page says why.
 
 ## 5. Notes (slice 9; planned)
 Each paper's notes are a plain Markdown file (`note.md`) with every saved version kept. If you edit the file in another program, the next time you open the paper ScribeTrace keeps that text as a new version; both are in the history. Notes are limited to 512 KB. Markdown is shown as plain, safe text: scripts and unsafe links are not run.
