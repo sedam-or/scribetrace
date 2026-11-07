@@ -1,6 +1,6 @@
 # Security Review: Slice 6 Milestones (R-11)
 
-**Reviewed commit:** `3de5b33` · **Reviewer:** Backend · **Verdict:** Changes requested
+**Reviewed commit:** `3de5b33` · **Reviewer:** Backend · **Review verdict:** Changes requested; finding closed by `a2ebf2e`.
 
 This review is against commit `3de5b33` only. No source changes were made as part of the review.
 
@@ -10,7 +10,9 @@ This review is against commit `3de5b33` only. No source changes were made as par
 
 `spec/schema/line.schema.json` requires `label` in both the `milestone` and `milestone_rename` payloads (§3). The Rust payloads represent those fields as `Option<String>` in `src-core/src/domain/event.rs`; Serde interprets an omitted `Option` field as `None`. The typed parser in `src-core/src/domain/line.rs` deserializes directly into `Event` and validates the label's length and the target UUID, but never checks that the `label` key was present. Therefore a sidecar line omitting `label` is classified as valid, although the schema requires it.
 
-This is a validation and cross-reader consistency defect for untrusted, syncable sidecar data: this reader may accept a line another schema-conforming reader rejects. Keep explicit `null` valid, but reject an absent `label` for both event types. Add a `bad_payload` vector for each omitted field and ensure the vector conformance test exercises them.
+This is a validation and cross-reader consistency defect for untrusted, syncable sidecar data: this reader may accept a line another schema-conforming reader rejects.
+
+**Resolution:** `a2ebf2e` requires the key while keeping explicit `null` valid, adds `bad_payload` vectors for both omissions, and adds hidden-rename and purge-dedup regression tests. QA verification is tracked separately; this note does not claim a QA result.
 
 ## Checks that passed
 
