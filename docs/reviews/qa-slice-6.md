@@ -2,7 +2,7 @@
 
 **Verifier:** QA Lead (`agent-1793867530011-poqhdm`)
 **Target commit:** `a2ebf2e` (security fix on Slice 6 commit `3de5b33`)
-**Security review:** `6fbe7ca` (Backend; required finding addressed)
+**Security review:** `6fbe7ca` (Backend; required finding closed in `0aa2c6a`)
 **Verdict:** **APPROVED**
 **Date:** 2026-11-07
 
@@ -28,4 +28,4 @@ Slice 6 satisfies R-11 for milestone creation and append-only renames. The follo
 - `cargo clippy -p scribetrace-core --all-targets -- -D warnings`: **PASS**.
 - `cargo fmt --all --check`: **PASS**.
 
-The Linux E2E green run on `9456de7` predates the Slice 6 label-presence fix; this report's verdict is based on the Slice 6 core tests, vector conformance, source review, Clippy and formatting checks.
+Linux E2E run [42336067290](https://github.com/sedam-or/scribetrace/actions/runs/42336067290) on main `60dad28`, after the Slice 6 fix, passed at **192.44 MB** under the 200 MB gate. The real-window setup, native folder chooser visibility, and responsive WebView checks also passed.
