@@ -2,6 +2,11 @@ name: AppImage Artifact Check
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: App version to embed in the AppImage name and metadata
+        required: true
+        default: "0.1.0"
 
 permissions:
   contents: read
@@ -38,7 +43,14 @@ jobs:
       - name: Build AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
-        run: pnpm tauri build -b appimage
+          APP_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid semantic version: $APP_VERSION" >&2
+            exit 1
+          fi
+          pnpm tauri build -b appimage --config "{\"version\":\"${APP_VERSION}\"}"
 
       - name: Check AppImage output and report size
         run: |
@@ -48,13 +60,22 @@ jobs:
             echo "Expected one AppImage, found ${#images[@]}" >&2
             exit 1
           fi
-          ls -lh "${images[0]}"
-          stat -c 'AppImage size: %s bytes' "${images[0]}"
+          image_size=$(stat -c%s "${images[0]}")
+          appimage_budget=125829120
+          if [ "$image_size" -gt "$appimage_budget" ]; then
+            echo "AppImage exceeds the 120 MiB ceiling: $image_size bytes" >&2
+            exit 1
+          fi
+          mkdir -p release-artifacts
+          cp "${images[0]}" release-artifacts/
+          (cd release-artifacts && sha256sum *.AppImage > SHA256SUMS && sha256sum --check SHA256SUMS)
+          ls -lh release-artifacts/
+          echo "AppImage size: $image_size bytes (limit: $appimage_budget bytes)"
 
       - name: Upload AppImage build artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: scribetrace-appimage-${{ github.run_id }}
-          path: target/release/bundle/appimage/*.AppImage
+          name: scribetrace-appimage-${{ inputs.version }}-${{ github.run_id }}
+          path: release-artifacts/*
           if-no-files-found: error
           retention-days: 3

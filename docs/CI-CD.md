@@ -19,6 +19,20 @@ Contributors open pull requests from a fork; main requires a pull request for no
 
 The `main` branch protection was verified on 2026-11-07 with those four required checks, pull requests enabled, zero required approvals, force pushes and deletion disabled, and admin enforcement disabled. The default branch remains `main`.
 
+## Artifact-only AppImage build
+
+Run `.github/workflows/appimage-artifact.yml` with `workflow_dispatch` to build an AppImage artifact without creating a tag or GitHub release. The `version` input sets the version embedded in the AppImage and its filename. For the 1.0.0 release candidate, run:
+
+```sh
+gh workflow run appimage-artifact.yml --ref main -f version=1.0.0
+```
+
+The workflow uploads the AppImage and `SHA256SUMS` together and enforces the 120 MiB AppImage ceiling. After downloading and extracting the artifact, verify it from that directory with:
+
+```sh
+sha256sum --check SHA256SUMS
+```
+
 The continuous integration and continuous delivery (CI/CD) infrastructure serves as the automated enforcement mechanism for ScribeTrace's core architectural and security invariants:
 1. **Deterministic & Immutable Builds:** All compilation steps strictly consume cryptographic lockfiles (`Cargo.lock`, `pnpm-lock.yaml`) with `--locked` and `--frozen-lockfile` flags. Dependencies are pinned to exact versions; builds are reproducible bit-for-bit across clean runners.
 2. **Least-Privilege Execution (SEC-27):** All GitHub Actions workflows enforce a top-level `permissions: contents: read` baseline. Write permissions (asset publishing, provenance attestation) are isolated to dedicated, single-purpose release jobs protected by GitHub Environment approval gates.
