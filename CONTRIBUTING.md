@@ -103,7 +103,7 @@ cargo build --release -p scribetrace-shell --features custom-protocol
 ./e2e/run-linux.sh --release
 ```
 
-The runner uses Xvfb automatically when no display is available. It also sets the WebKitGTK environment required for the test. See [e2e/README.md](e2e/README.md) for details.
+The runner uses Xvfb automatically when no display is available. It also sets the WebKitGTK environment required for the test. The harness enforces a 2-second cold-start limit and a 200 MiB whole-process-tree idle-memory limit. Containerized or heavily shared hosts can add memory overhead; use a native Linux host for meaningful local memory measurements and compare with the GitHub Actions E2E result. See [e2e/README.md](e2e/README.md) and [docs/TECH-OPTIMIZATION.md](docs/TECH-OPTIMIZATION.md) for details.
 
 ### Your first PR
 
