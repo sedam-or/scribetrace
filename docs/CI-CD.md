@@ -15,7 +15,7 @@ ScribeTrace is an open-source, local-first research paper reader built with a Ta
 
 ## Main branch contribution policy
 
-Contributors open pull requests from a fork; main requires a pull request for non-admin contributors. Required checks are `Linux tests, lint, and gates`, `Cross-platform tests (windows-latest)`, `Cross-platform tests (macos-latest)`, and `DCO / DCO Sign-off`. The Linux job runs Rust and pnpm lint/tests/build. The Windows and macOS jobs run pnpm tests/build and Rust workspace tests. Force pushes and branch deletion are disabled. Maintainer administrators can bypass these rules for operational pushes. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor workflow.
+Contributors open pull requests from a fork; main requires a pull request for non-admin contributors. Required checks are `Linux tests, lint, and gates`, `Cross-platform tests (windows-latest)`, `Cross-platform tests (macos-latest)`, and `DCO Sign-off`. The Linux job runs Rust and pnpm lint/tests/build. The Windows and macOS jobs run pnpm tests/build and Rust workspace tests. Force pushes and branch deletion are disabled. Maintainer administrators can bypass these rules for operational pushes. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor workflow.
 
 The `main` branch protection was verified on 2026-11-07 with those four required checks, pull requests enabled, zero required approvals, force pushes and deletion disabled, and admin enforcement disabled. The default branch remains `main`.
 
