@@ -5,8 +5,8 @@ import { Button } from "./components/Button.tsx";
 import { EmptyState } from "./components/EmptyState.tsx";
 import { PaperListRow } from "./components/PaperListRow.tsx";
 import { SetupView } from "./components/SetupView.tsx";
-import { HistoryPanel } from "./HistoryPanel.tsx";
 import { PaperPage, type PaperPageError } from "./components/PaperPage.tsx";
+import { MilestoneTimeline } from "./components/MilestoneTimeline.tsx";
 import { importPaper, type ViewState } from "./model.ts";
 import type { Rpc } from "./rpc/rpc.ts";
 import { ZoteroError, type PaperLinkKind } from "./rpc/types.ts";
@@ -141,13 +141,6 @@ export function App({ rpc, initialSetupState }: AppProps) {
   const handleShowHistory = async (paperId: string) => {
     setSelectedPaperId(paperId);
     setShowHistory(true);
-    setHistoryState({ kind: "busy" });
-    try {
-      const events = await rpc.readHistory(paperId);
-      setHistoryState({ kind: "done", imported: 0, events });
-    } catch (e) {
-      setHistoryState({ kind: "error", message: e instanceof Error ? e.message : String(e) });
-    }
   };
 
   const isConnected = setupState.kind === "connected";
@@ -241,7 +234,7 @@ export function App({ rpc, initialSetupState }: AppProps) {
                   {activePaper.title}
                 </Button>
               </div>
-              <HistoryPanel state={historyState} />
+              <MilestoneTimeline rpc={rpc} paperId={activePaper.id} />
             </>
           ) : null}
         </div>

@@ -216,6 +216,7 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .st-timeline-item {
@@ -223,6 +224,7 @@ body {
   gap: var(--st-space-3);
   position: relative;
   padding-bottom: var(--st-space-4);
+  width: 100%;
 }
 
 .st-timeline-track {
@@ -803,11 +805,179 @@ body {
   margin-top: var(--st-space-5);
 }
 
+.st-milestone-timeline {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--st-space-6) var(--st-space-5) var(--st-space-8);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.st-milestone-timeline > h2 {
+  margin: 0 0 var(--st-space-5);
+  font-size: var(--st-font-size-lg);
+  color: var(--st-color-text-primary);
+}
+
+.st-timeline-item.active .st-timeline-node {
+  background: var(--st-color-primary-hover);
+  box-shadow: 0 0 0 3px var(--st-color-primary-subtle);
+}
+
+.st-milestone-picker {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: var(--st-space-3);
+  margin-top: var(--st-space-3);
+  padding: var(--st-space-3);
+  border: 1px solid var(--st-color-border-subtle);
+  border-radius: var(--st-radius-md);
+  background: var(--st-color-bg-subtle);
+}
+
+.st-milestone-picker > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--st-color-text-secondary);
+  font-size: var(--st-font-size-sm);
+}
+
+.st-milestone-picker label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--st-space-1);
+  min-width: 0;
+  color: var(--st-color-text-secondary);
+  font-size: var(--st-font-size-xs);
+  font-weight: var(--st-font-weight-medium);
+}
+
+.st-milestone-picker select {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--st-space-2);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--st-radius-sm);
+  background: var(--st-color-bg-surface);
+  color: var(--st-color-text-primary);
+  font: inherit;
+}
+
+.st-milestone-picker select:focus-visible {
+  border-color: var(--st-color-focus-ring);
+  outline: 2px solid var(--st-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.st-milestone-diff {
+  margin-top: var(--st-space-6);
+  padding-top: var(--st-space-5);
+  border-top: 1px solid var(--st-color-border);
+}
+
+.st-milestone-diff > h3 {
+  margin: 0 0 var(--st-space-4);
+  font-size: var(--st-font-size-md);
+}
+
+.st-milestone-diff-groups {
+  display: grid;
+  gap: var(--st-space-4);
+}
+
+.st-milestone-diff-groups section,
+.st-edited-mark > div {
+  min-width: 0;
+}
+
+.st-milestone-diff-groups h4 {
+  margin: 0 0 var(--st-space-2);
+  color: var(--st-color-text-secondary);
+  font-size: var(--st-font-size-sm);
+}
+
+.st-milestone-diff-groups > section > ul,
+.st-milestone-diff-groups section > ul {
+  list-style: none;
+  display: grid;
+  gap: var(--st-space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.st-mark-diff-text {
+  padding: var(--st-space-3);
+  border: 1px solid var(--st-color-border-subtle);
+  border-radius: var(--st-radius-sm);
+  background: var(--st-color-bg-surface);
+  overflow-wrap: anywhere;
+}
+
+.st-mark-diff-text blockquote {
+  margin: 0;
+  color: var(--st-color-text-primary);
+}
+
+.st-mark-diff-text p {
+  margin: var(--st-space-2) 0 0;
+  color: var(--st-color-text-secondary);
+}
+
+.st-edited-mark {
+  display: grid;
+  gap: var(--st-space-3);
+  padding: var(--st-space-3);
+  border: 1px solid var(--st-color-border-subtle);
+  border-radius: var(--st-radius-md);
+  background: var(--st-color-bg-surface);
+}
+
+.st-edited-mark > div > strong {
+  display: block;
+  margin-bottom: var(--st-space-1);
+  color: var(--st-color-text-secondary);
+  font-size: var(--st-font-size-xs);
+}
+
+.st-note-diff {
+  display: grid;
+  gap: var(--st-space-1);
+  margin-top: var(--st-space-2) !important;
+  padding: var(--st-space-2) !important;
+  border-radius: var(--st-radius-sm);
+  background: var(--st-color-bg-subtle);
+  font-family: var(--st-font-mono);
+  font-size: var(--st-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.st-note-diff-add {
+  color: var(--st-mark-added);
+}
+
+.st-note-diff-remove {
+  color: var(--st-mark-removed);
+}
+
+.st-note-diff-equal {
+  color: var(--st-color-text-secondary);
+}
+
 .st-btn:focus-visible,
 .st-list-row:focus-visible,
 .st-link-dialog:focus-visible {
   outline: 2px solid var(--st-color-focus-ring);
   outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .st-milestone-picker {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
@@ -818,4 +988,9 @@ body {
   .st-link-dialog {
     padding: var(--st-space-4);
   }
+
+  .st-milestone-timeline {
+    padding: var(--st-space-4);
+  }
+
 }

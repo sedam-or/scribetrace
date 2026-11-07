@@ -1,4 +1,13 @@
-import type { HistoryEvent, ImportReport, PaperItem, PaperLink, PaperLinkRequest, WorkspaceInfo } from "./types.ts";
+import type {
+  HistoryEvent,
+  ImportReport,
+  Milestone,
+  MilestoneDiff,
+  PaperItem,
+  PaperLink,
+  PaperLinkRequest,
+  WorkspaceInfo,
+} from "./types.ts";
 
 /**
  * The only way the UI reaches the core. Tauri `invoke` is one adapter (tauri-adapter.ts);
@@ -10,6 +19,8 @@ export interface Rpc {
   connectZotero(): Promise<PaperItem[]>;
   importMarks(paperId: string, attachmentKey: string): Promise<ImportReport>;
   readHistory(paperId: string): Promise<HistoryEvent[]>;
+  list_milestones?(paperId: string): Promise<Milestone[]>;
+  milestone_diff?(paperId: string, fromId: string, toId: string): Promise<MilestoneDiff>;
   paper_link?(request: PaperLinkRequest): Promise<PaperLink>;
   open_link?(request: PaperLinkRequest): Promise<void>;
 }

@@ -11,6 +11,7 @@ const KNOWN_CODES: ReadonlySet<string> = new Set([
   "no_doi",
   "no_zotero_key",
   "zotero_not_running",
+  "milestone_missing",
   "internal",
 ]);
 

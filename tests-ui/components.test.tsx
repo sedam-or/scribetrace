@@ -13,9 +13,12 @@ import {
   Input,
   PaperListRow,
   PaperPage,
+  DiffLines,
+  MilestoneTimelineList,
   TimelineItem,
   ToastNotice,
 } from "../src/components/index.ts";
+import { FIXTURE_MILESTONES } from "../src/rpc/mock.ts";
 
 test("Button renders variants, sizes and accessibility attributes", () => {
   const primaryHtml = renderToStaticMarkup(
@@ -102,7 +105,7 @@ test("PaperPage renders paper metadata and explains unavailable Zotero links", (
     />,
   );
 
-  assert.match(html, /<h1>A paper title<\/h1>/);
+  assert.match(html, /<h1 id="paper-page-title">A paper title<\/h1>/);
   assert.match(html, /A\. Author et al\./);
   assert.match(html, /No DOI in Zotero for this paper\./);
   assert.match(html, /1 mark in history/);
@@ -112,7 +115,46 @@ test("PaperPage renders paper metadata and explains unavailable Zotero links", (
   assert.match(html, /disabled=""/);
   assert.match(html, /This paper has no DOI in Zotero/);
   assert.match(html, /Zotero has no PDF attached to this paper/);
-  assert.match(html, /Open history/);
+  assert.match(html, /Open timeline/);
+});
+
+test("DiffLines renders untrusted note text as inert content and preserves context lines", () => {
+  const html = renderToStaticMarkup(
+    <DiffLines lines={[
+      { op: "remove", text: "<script>bad()</script>" },
+      { op: "equal", text: "unchanged context" },
+      { op: "add", text: "new text" },
+    ]} />,
+  );
+
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /&lt;script&gt;bad\(\)&lt;\/script&gt;/);
+  assert.match(html, /unchanged context/);
+  assert.match(html, /new text/);
+});
+
+test("MilestoneTimelineList renders the timeline and accessible compare picker", () => {
+  const html = renderToStaticMarkup(
+    <MilestoneTimelineList
+      milestones={FIXTURE_MILESTONES}
+      activeMilestoneId="milestone-refresh"
+      fromId="milestone-import"
+      toId="milestone-refresh"
+      onOpenCompare={() => {}}
+      onFromChange={() => {}}
+      onToChange={() => {}}
+      onCompare={() => {}}
+    />,
+  );
+
+  assert.equal((html.match(/class="st-timeline-item/g) ?? []).length, 5);
+  assert.match(html, /Imported from Zotero/);
+  assert.match(html, /Second reading/);
+  assert.match(html, /Saved by you/);
+  assert.match(html, /role="group" aria-label="Compare"/);
+  assert.match(html, /<span>From<\/span>/);
+  assert.match(html, /<span>To<\/span>/);
+  assert.match(html, /aria-expanded="true"/);
 });
 
 test("TimelineItem renders milestones, author origin, and diff badges", () => {

@@ -63,8 +63,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
   return (
     <article className="st-paper-page" data-testid="paper-page">
       <header className="st-paper-header">
-        <p className="st-paper-eyebrow">{t("paper.title")}</p>
-        <h1>{paper.title}</h1>
+        <h1 id="paper-page-title">{paper.title}</h1>
         <dl className="st-paper-meta">
           {paper.authors && (
             <div>
@@ -86,7 +85,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
 
       {error && <ErrorBanner title={error.title} body={error.body} />}
 
-      <section className="st-paper-actions" aria-label={t("paper.title")}>
+      <section className="st-paper-actions" aria-labelledby="paper-page-title">
         <div className="st-paper-action">
           <Button
             variant="primary"
@@ -123,7 +122,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
       </section>
 
       <Button variant="ghost" onClick={() => onShowHistory(paper.id)}>
-        {t("paper.history.action")}
+        {t("history.timeline.open")}
       </Button>
 
       <dialog
@@ -136,7 +135,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
         }}
       >
         <h2 id="link-confirm-title">{t("link.confirm.title")}</h2>
-        <p>{t("link.confirm.body", { uri: pendingLink?.uri ?? "" })}</p>
+        <p>{t("link.confirm.body")}</p>
         <output className="st-link-uri">{pendingLink?.uri}</output>
         <div className="st-link-dialog-actions">
           <Button variant="secondary" disabled={opening} onClick={() => setPendingLink(null)}>

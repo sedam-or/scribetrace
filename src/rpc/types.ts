@@ -31,6 +31,37 @@ export interface ImportReport {
   milestone: string | null;
 }
 
+export type MilestoneReason = "import" | "refresh" | "session" | "manual" | "before_restore";
+
+export interface Milestone {
+  id: string;
+  ts: string;
+  reason: MilestoneReason;
+  label: string | null;
+  upto: Record<string, number>;
+}
+
+export interface DiffLine {
+  op: "equal" | "add" | "remove";
+  text: string;
+}
+
+export interface EditedMark {
+  key: string;
+  before: Mark;
+  after: Mark;
+  noteDiff: DiffLine[];
+}
+
+export interface MilestoneDiff {
+  from: string;
+  to: string;
+  added: Mark[];
+  removed: Mark[];
+  edited: EditedMark[];
+  noteDiff: DiffLine[];
+}
+
 export interface PaperItem {
   id: string;
   title: string;
@@ -64,6 +95,7 @@ export type ZoteroErrorCode =
   | "no_doi"
   | "no_zotero_key"
   | "zotero_not_running"
+  | "milestone_missing"
   | "internal";
 
 export class ZoteroError extends Error {

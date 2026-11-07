@@ -3,6 +3,7 @@ export * from "./Input.tsx";
 export * from "./FolderPicker.tsx";
 export * from "./PaperListRow.tsx";
 export * from "./PaperPage.tsx";
+export * from "./MilestoneTimeline.tsx";
 export * from "./TimelineItem.tsx";
 export * from "./DiffBadge.tsx";
 export * from "./EmptyState.tsx";
