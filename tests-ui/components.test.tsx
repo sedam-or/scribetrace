@@ -151,7 +151,8 @@ test("MilestoneTimelineList renders the timeline and accessible compare picker",
   assert.match(html, /Imported from Zotero/);
   assert.match(html, /Second reading/);
   assert.match(html, /Saved by you/);
-  assert.match(html, /role="group" aria-label="Compare"/);
+  assert.match(html, /role="group" aria-labelledby="milestone-picker-instructions-milestone-refresh"/);
+  assert.match(html, /id="milestone-picker-instructions-milestone-refresh">Choose two milestones to compare\.<\/p>/);
   assert.match(html, /<span>From<\/span>/);
   assert.match(html, /<span>To<\/span>/);
   assert.match(html, /aria-expanded="true"/);

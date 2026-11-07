@@ -10,7 +10,7 @@ import { ErrorBanner } from "./ErrorBanner.tsx";
 type TimelineState =
   | { kind: "loading" }
   | { kind: "error"; code: string }
-  | { kind: "ready"; milestones: Milestone[]; loadMs: number };
+  | { kind: "ready"; milestones: Milestone[] };
 
 type DiffState =
   | { kind: "idle" }
@@ -106,8 +106,8 @@ export function MilestoneTimelineList({
             </div>
 
             {activeMilestoneId === milestone.id && (
-              <div className="st-milestone-picker" role="group" aria-label={t("history.timeline.compare")}>
-                <p>{t("history.changes.pick")}</p>
+              <div className="st-milestone-picker" role="group" aria-labelledby={`milestone-picker-instructions-${milestone.id}`}>
+                <p id={`milestone-picker-instructions-${milestone.id}`}>{t("history.changes.pick")}</p>
                 <label>
                   <span>{t("history.timeline.from")}</span>
                   <select value={fromId} onChange={(event) => onFromChange(event.currentTarget.value)}>
@@ -152,7 +152,6 @@ export function MilestoneTimeline({ rpc, paperId }: MilestoneTimelineProps) {
 
   useEffect(() => {
     let cancelled = false;
-    const startedAt = performance.now();
     setTimelineState({ kind: "loading" });
     if (!rpc.list_milestones) {
       setTimelineState({ kind: "error", code: "internal" });
@@ -161,7 +160,7 @@ export function MilestoneTimeline({ rpc, paperId }: MilestoneTimelineProps) {
 
     void rpc.list_milestones(paperId).then(
       (milestones) => {
-        if (!cancelled) setTimelineState({ kind: "ready", milestones, loadMs: performance.now() - startedAt });
+        if (!cancelled) setTimelineState({ kind: "ready", milestones });
       },
       (error: unknown) => {
         const code = error instanceof ZoteroError ? error.code : "internal";
@@ -237,7 +236,6 @@ export function MilestoneTimeline({ rpc, paperId }: MilestoneTimelineProps) {
       className="st-milestone-timeline"
       aria-labelledby="milestone-timeline-title"
       data-testid="milestone-timeline"
-      data-load-ms={Math.round(timelineState.loadMs)}
     >
       <h2 id="milestone-timeline-title">{t("history.timeline.title")}</h2>
       <MilestoneTimelineList

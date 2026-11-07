@@ -16,6 +16,16 @@ test("mock milestone fixture lists five milestones in display order", async () =
     "manual",
     "refresh",
   ]);
+  assert.deepEqual(milestones?.map((milestone) => milestone.id), [
+    "milestone-import",
+    "milestone-refresh",
+    "milestone-session",
+    "milestone-manual",
+    "milestone-latest",
+  ]);
+  for (let index = 1; index < (milestones?.length ?? 0); index++) {
+    assert.ok(Date.parse(milestones![index - 1]!.ts) <= Date.parse(milestones![index]!.ts));
+  }
 });
 
 test("mock milestone diff reports added, removed, edited marks and note lines", async () => {
