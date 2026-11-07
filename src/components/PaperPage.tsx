@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import type { ExternalOpenOutcome, PaperItem, PaperLinkKind } from "../rpc/types.ts";
 import { t } from "../strings.ts";
@@ -10,61 +10,22 @@ export interface PaperPageError {
   body: string;
 }
 
-interface PendingLink {
-  kind: PaperLinkKind;
-  uri: string;
-}
-
 export interface PaperPageProps {
   paper: PaperItem;
-  onPaperLink?: (paperId: string, kind: PaperLinkKind) => Promise<string>;
   onOpenExternal: (paperId: string, kind: PaperLinkKind) => Promise<ExternalOpenOutcome>;
   onShowHistory: (paperId: string) => void;
   error?: PaperPageError | null;
 }
 
-export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, error }: PaperPageProps) {
-  const [pendingLink, setPendingLink] = useState<PendingLink | null>(null);
+export function PaperPage({ paper, onOpenExternal, onShowHistory, error }: PaperPageProps) {
   const [opening, setOpening] = useState(false);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (pendingLink && dialog && !dialog.open) dialog.showModal();
-    if (!pendingLink && dialog?.open) dialog.close();
-
-    if (!pendingLink) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setPendingLink(null);
-      }
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [pendingLink]);
 
   const requestLink = async (kind: PaperLinkKind) => {
-    try {
-      if (onPaperLink) {
-        const uri = await onPaperLink(paper.id, kind);
-        setPendingLink({ kind, uri });
-      } else {
-        await onOpenExternal(paper.id, kind);
-      }
-    } catch {
-      // The parent maps typed core/Tauri codes into the ErrorBanner copy.
-    }
-  };
-
-  const confirmLink = async () => {
-    if (!pendingLink) return;
     setOpening(true);
     try {
-      await onOpenExternal(paper.id, pendingLink.kind);
-      setPendingLink(null);
+      await onOpenExternal(paper.id, kind);
     } catch {
-      setPendingLink(null);
+      // The parent maps typed core/Tauri codes into the ErrorBanner copy.
     } finally {
       setOpening(false);
     }
@@ -107,7 +68,7 @@ export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, e
         <div className="st-paper-action">
           <Button
             variant="primary"
-            disabled={paper.linkAvailability.doi !== "available"}
+            disabled={opening || paper.linkAvailability.doi !== "available"}
             aria-describedby={doiReason ? `${paper.id}-doi-unavailable` : undefined}
             onClick={() => void requestLink("doi")}
           >
@@ -118,7 +79,7 @@ export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, e
         <div className="st-paper-action">
           <Button
             variant="secondary"
-            disabled={paper.linkAvailability.pdf !== "available"}
+            disabled={opening || paper.linkAvailability.pdf !== "available"}
             aria-describedby={pdfReason ? `${paper.id}-pdf-unavailable` : undefined}
             onClick={() => void requestLink("zotero_pdf")}
           >
@@ -129,7 +90,7 @@ export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, e
         <div className="st-paper-action">
           <Button
             variant="secondary"
-            disabled={paper.linkAvailability.item !== "available"}
+            disabled={opening || paper.linkAvailability.item !== "available"}
             aria-describedby={zoteroReason ? `${paper.id}-zotero-unavailable` : undefined}
             onClick={() => void requestLink("zotero_select")}
           >
@@ -143,27 +104,6 @@ export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, e
         {t("history.timeline.open")}
       </Button>
 
-      <dialog
-        ref={dialogRef}
-        className="st-link-dialog"
-        aria-labelledby="link-confirm-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          setPendingLink(null);
-        }}
-      >
-        <h2 id="link-confirm-title">{t("link.confirm.title")}</h2>
-        <p>{t("link.confirm.body")}</p>
-        <output className="st-link-uri">{pendingLink?.uri}</output>
-        <div className="st-link-dialog-actions">
-          <Button variant="secondary" disabled={opening} onClick={() => setPendingLink(null)}>
-            {t("link.confirm.cancel")}
-          </Button>
-          <Button variant="primary" disabled={opening} onClick={() => void confirmLink()}>
-            {t("link.confirm.open")}
-          </Button>
-        </div>
-      </dialog>
     </article>
   );
 }

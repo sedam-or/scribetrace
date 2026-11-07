@@ -5,7 +5,6 @@ import type {
   Milestone,
   MilestoneDiff,
   PaperItem,
-  PaperLink,
   PaperLinkRequest,
   WorkspaceInfo,
 } from "./types.ts";
@@ -22,6 +21,5 @@ export interface Rpc {
   readHistory(paperId: string): Promise<HistoryEvent[]>;
   list_milestones?(paperId: string): Promise<Milestone[]>;
   milestone_diff?(paperId: string, fromId: string, toId: string): Promise<MilestoneDiff>;
-  paper_link?(request: PaperLinkRequest): Promise<PaperLink>;
   open_external(request: PaperLinkRequest): Promise<ExternalOpenOutcome>;
 }

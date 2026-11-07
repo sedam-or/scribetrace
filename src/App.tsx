@@ -121,18 +121,6 @@ export function App({ rpc, initialSetupState }: AppProps) {
     void importPaper(rpc, folder, paperId).then(setHistoryState);
   };
 
-  const handlePaperLink = async (paperId: string, kind: PaperLinkKind) => {
-    setPaperError(null);
-    try {
-      if (!paperLinks.getUri) throw new ZoteroError("internal");
-      const link = await paperLinks.getUri(paperId, kind);
-      return link.uri;
-    } catch (e) {
-      setPaperError(getPaperLinkError(e));
-      throw e;
-    }
-  };
-
   const handleOpenExternal = async (paperId: string, kind: PaperLinkKind) => {
     setPaperError(null);
     try {
@@ -250,7 +238,6 @@ export function App({ rpc, initialSetupState }: AppProps) {
               </div>
               <PaperPage
                 paper={activePaper}
-                onPaperLink={paperLinks.getUri ? handlePaperLink : undefined}
                 onOpenExternal={handleOpenExternal}
                 onShowHistory={handleShowHistory}
                 error={paperError}

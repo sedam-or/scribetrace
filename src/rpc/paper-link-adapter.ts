@@ -15,9 +15,6 @@ export function createPaperLinkAdapter(rpc: Rpc) {
   });
 
   return {
-    getUri: rpc.paper_link
-      ? (paperId: string, action: PaperLinkKind) => rpc.paper_link!(request(paperId, action))
-      : undefined,
     openExternal: (paperId: string, action: PaperLinkKind) => {
       return rpc.open_external(request(paperId, action));
     },

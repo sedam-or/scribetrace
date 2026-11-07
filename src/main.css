@@ -756,55 +756,6 @@ body {
   font-size: var(--st-font-size-sm);
 }
 
-.st-link-dialog {
-  position: fixed;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
-  width: min(520px, calc(100vw - 32px));
-  max-width: none;
-  margin: 0;
-  border: 1px solid var(--st-color-border);
-  border-radius: var(--st-radius-lg);
-  padding: var(--st-space-6);
-  background: var(--st-color-bg-surface);
-  color: var(--st-color-text-primary);
-  box-shadow: 0 18px 50px rgb(0 0 0 / 22%);
-}
-
-.st-link-dialog::backdrop {
-  background: rgb(20 24 32 / 48%);
-}
-
-.st-link-dialog h2 {
-  margin: 0 0 var(--st-space-2);
-  font-size: var(--st-font-size-lg);
-}
-
-.st-link-dialog p {
-  color: var(--st-color-text-secondary);
-}
-
-.st-link-uri {
-  display: block;
-  max-height: 8rem;
-  overflow: auto;
-  padding: var(--st-space-3);
-  border: 1px solid var(--st-color-border-subtle);
-  border-radius: var(--st-radius-sm);
-  background: var(--st-color-bg-subtle);
-  font-family: var(--st-font-mono);
-  font-size: var(--st-font-size-sm);
-  overflow-wrap: anywhere;
-  user-select: text;
-}
-
-.st-link-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--st-space-2);
-  margin-top: var(--st-space-5);
-}
-
 .st-milestone-timeline {
   max-width: 820px;
   margin: 0 auto;
@@ -991,8 +942,7 @@ body {
 }
 
 .st-btn:focus-visible,
-.st-list-row:focus-visible,
-.st-link-dialog:focus-visible {
+.st-list-row:focus-visible {
   outline: 2px solid var(--st-color-focus-ring);
   outline-offset: 2px;
 }
@@ -1005,10 +955,6 @@ body {
 
 @media (max-width: 600px) {
   .st-paper-page {
-    padding: var(--st-space-4);
-  }
-
-  .st-link-dialog {
     padding: var(--st-space-4);
   }
 

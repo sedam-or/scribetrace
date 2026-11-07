@@ -4,6 +4,7 @@ import {
   type Mark,
   type Milestone,
   type MilestoneDiff,
+  type ExternalOpenOutcome,
   type PaperItem,
   type PaperLinkRequest,
   type WorkspaceInfo,
@@ -18,6 +19,7 @@ export interface MockRpcOptions {
   failZoteroCode?: ZoteroErrorCode | string | null;
   zoteroDetail?: string;
   zoteroSeconds?: number;
+  externalOutcome?: ExternalOpenOutcome;
 }
 
 /** Standard fixture papers drawn from tests/fixtures/zotero/ */
@@ -307,27 +309,12 @@ export function createMockRpc(
       if (!before || !after) return Promise.reject(new ZoteroError("milestone_missing"));
       return Promise.resolve(diffMilestoneMarks(fromId, toId, before, after));
     },
-    paper_link: ({ paperId, target }: PaperLinkRequest) => {
+    open_external: ({ paperId, target }: PaperLinkRequest) => {
       const paper = papers.find((item) => item.id === paperId);
-      if (!paper) return Promise.reject(new ZoteroError("internal"));
+      if (!paper) return Promise.reject(new ZoteroError("attachment_unresolved"));
       const availabilityCode = paper.linkAvailability[target === "doi" ? "doi" : target === "pdf" ? "pdf" : "item"];
       if (availabilityCode !== "available") return Promise.reject(new ZoteroError(availabilityCode));
-      if (target === "doi" && paper.doiDisplay) {
-        return Promise.resolve({ uri: `https://doi.org/${paper.doiDisplay}` });
-      }
-      if (target === "doi") return Promise.reject(new ZoteroError("no_doi"));
-      if (target === "item") {
-        const itemKey = paperId.startsWith("z_") ? paperId.slice(2) : null;
-        return itemKey
-          ? Promise.resolve({ uri: `zotero://select/library/items/${itemKey}` })
-          : Promise.reject(new ZoteroError("no_zotero_key"));
-      }
-      const pdfKey = MOCK_PDF_KEYS[paperId];
-      if (!pdfKey) return Promise.reject(new ZoteroError("no_pdf"));
-      return Promise.resolve({
-        uri: `zotero://open-pdf/library/items/${pdfKey}`,
-      });
+      return Promise.resolve(options.externalOutcome ?? "opened");
     },
-    open_external: () => Promise.resolve("opened"),
   };
 }

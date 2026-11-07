@@ -92,8 +92,6 @@ const PENDING_UNUSED_KEYS: ReadonlySet<string> = new Set([
   "papers.refresh.unchanged",
   "history.milestone.created",
   "history.milestone.rename.action",
-  "paper.history.action",
-  "paper.title",
   "history.origin.zotero",
   "history.skipped_lines",
   "history.restore.done",
@@ -105,6 +103,11 @@ const PENDING_UNUSED_KEYS: ReadonlySet<string> = new Set([
   "paper.title",
   // The history link now uses `history.timeline.open` for the milestone timeline.
   "paper.history.action",
+  // Removed with the in-webview dialog; Tauri alone confirms native links.
+  "link.confirm.title",
+  "link.confirm.body",
+  "link.confirm.cancel",
+  "link.confirm.open",
   "notes.outside_edit",
   "notes.too_large",
   "notes.saved",

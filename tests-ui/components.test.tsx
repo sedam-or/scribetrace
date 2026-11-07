@@ -99,7 +99,6 @@ test("PaperPage renders paper metadata and explains unavailable Zotero links", (
         doiDisplay: null,
         linkAvailability: { doi: "no_doi", pdf: "no_pdf", item: "no_zotero_key" },
       }}
-      onPaperLink={async () => "https://doi.org/10.1234/example"}
       onOpenExternal={async () => "opened"}
       onShowHistory={() => {}}
     />,
@@ -116,6 +115,8 @@ test("PaperPage renders paper metadata and explains unavailable Zotero links", (
   assert.match(html, /This paper has no DOI in Zotero/);
   assert.match(html, /Zotero has no PDF attached to this paper/);
   assert.match(html, /Open timeline/);
+  assert.doesNotMatch(html, /<dialog/);
+  assert.doesNotMatch(html, /https:\/\//);
 });
 
 test("DiffLines renders untrusted note text as inert content and preserves context lines", () => {

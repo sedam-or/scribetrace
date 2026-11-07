@@ -102,10 +102,6 @@ export interface PaperLinkRequest {
   paperId: string;
 }
 
-export interface PaperLink {
-  uri: string;
-}
-
 export type ExternalOpenOutcome = "opened" | "cancelled";
 
 export type ZoteroErrorCode =
