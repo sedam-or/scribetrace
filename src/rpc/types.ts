@@ -82,9 +82,16 @@ export interface PaperItem {
   authors?: string;
   year?: string | number;
   marksCount: number;
-  attachmentKey?: string;
-  doi: string | null;
-  zotero_key: string | null;
+  doiDisplay: string | null;
+  linkAvailability: LinkAvailability;
+}
+
+export type LinkAvailabilityCode = "available" | "no_doi" | "no_pdf" | "no_zotero_key";
+
+export interface LinkAvailability {
+  doi: LinkAvailabilityCode;
+  pdf: LinkAvailabilityCode;
+  item: LinkAvailabilityCode;
 }
 
 export type PaperLinkKind = "doi" | "zotero_pdf" | "zotero_select";
@@ -99,6 +106,8 @@ export interface PaperLink {
   uri: string;
 }
 
+export type ExternalOpenOutcome = "opened" | "cancelled";
+
 export type ZoteroErrorCode =
   | "refused"
   | "forbidden"
@@ -109,6 +118,7 @@ export type ZoteroErrorCode =
   | "no_doi"
   | "no_zotero_key"
   | "zotero_not_running"
+  | "attachment_unresolved"
   | "milestone_missing"
   | "internal";
 

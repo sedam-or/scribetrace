@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { PaperItem, PaperLinkKind } from "../rpc/types.ts";
+import type { ExternalOpenOutcome, PaperItem, PaperLinkKind } from "../rpc/types.ts";
 import { t } from "../strings.ts";
 import { Button } from "./Button.tsx";
 import { ErrorBanner } from "./ErrorBanner.tsx";
@@ -17,13 +17,13 @@ interface PendingLink {
 
 export interface PaperPageProps {
   paper: PaperItem;
-  onPaperLink: (paperId: string, kind: PaperLinkKind) => Promise<string>;
-  onOpenLink: (paperId: string, kind: PaperLinkKind) => Promise<void>;
+  onPaperLink?: (paperId: string, kind: PaperLinkKind) => Promise<string>;
+  onOpenExternal: (paperId: string, kind: PaperLinkKind) => Promise<ExternalOpenOutcome>;
   onShowHistory: (paperId: string) => void;
   error?: PaperPageError | null;
 }
 
-export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error }: PaperPageProps) {
+export function PaperPage({ paper, onPaperLink, onOpenExternal, onShowHistory, error }: PaperPageProps) {
   const [pendingLink, setPendingLink] = useState<PendingLink | null>(null);
   const [opening, setOpening] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -36,8 +36,12 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
 
   const requestLink = async (kind: PaperLinkKind) => {
     try {
-      const uri = await onPaperLink(paper.id, kind);
-      setPendingLink({ kind, uri });
+      if (onPaperLink) {
+        const uri = await onPaperLink(paper.id, kind);
+        setPendingLink({ kind, uri });
+      } else {
+        await onOpenExternal(paper.id, kind);
+      }
     } catch {
       // The parent maps typed core/Tauri codes into the ErrorBanner copy.
     }
@@ -47,7 +51,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
     if (!pendingLink) return;
     setOpening(true);
     try {
-      await onOpenLink(paper.id, pendingLink.kind);
+      await onOpenExternal(paper.id, pendingLink.kind);
       setPendingLink(null);
     } catch {
       setPendingLink(null);
@@ -56,9 +60,13 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
     }
   };
 
-  const doiReason = !paper.doi ? t("paper.missing.no_doi") : null;
-  const pdfReason = !paper.attachmentKey ? t("paper.missing.no_pdf") : null;
-  const zoteroReason = !paper.zotero_key ? t("paper.missing.no_zotero_key") : null;
+  const doiReason = paper.linkAvailability.doi === "no_doi" ? t("paper.missing.no_doi") : null;
+  const pdfReason = paper.linkAvailability.pdf === "no_pdf"
+    ? t("paper.missing.no_pdf")
+    : paper.linkAvailability.pdf === "no_zotero_key"
+      ? t("paper.missing.no_zotero_key")
+      : null;
+  const zoteroReason = paper.linkAvailability.item === "no_zotero_key" ? t("paper.missing.no_zotero_key") : null;
 
   return (
     <article className="st-paper-page" data-testid="paper-page">
@@ -73,7 +81,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
           )}
           <div>
             <dt>{t("paper.doi")}</dt>
-            <dd>{paper.doi ?? t("paper.no_doi")}</dd>
+            <dd>{paper.doiDisplay ?? t("paper.no_doi")}</dd>
           </div>
         </dl>
         <p className="st-paper-marks-count">
@@ -89,7 +97,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
         <div className="st-paper-action">
           <Button
             variant="primary"
-            disabled={!paper.doi}
+            disabled={paper.linkAvailability.doi !== "available"}
             aria-describedby={doiReason ? `${paper.id}-doi-unavailable` : undefined}
             onClick={() => void requestLink("doi")}
           >
@@ -100,7 +108,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
         <div className="st-paper-action">
           <Button
             variant="secondary"
-            disabled={!paper.attachmentKey}
+            disabled={paper.linkAvailability.pdf !== "available"}
             aria-describedby={pdfReason ? `${paper.id}-pdf-unavailable` : undefined}
             onClick={() => void requestLink("zotero_pdf")}
           >
@@ -111,7 +119,7 @@ export function PaperPage({ paper, onPaperLink, onOpenLink, onShowHistory, error
         <div className="st-paper-action">
           <Button
             variant="secondary"
-            disabled={!paper.zotero_key}
+            disabled={paper.linkAvailability.item !== "available"}
             aria-describedby={zoteroReason ? `${paper.id}-zotero-unavailable` : undefined}
             onClick={() => void requestLink("zotero_select")}
           >

@@ -23,35 +23,41 @@ export interface MockRpcOptions {
 /** Standard fixture papers drawn from tests/fixtures/zotero/ */
 export const FIXTURE_PAPERS: PaperItem[] = [
   {
-    id: "6WG6QNHB",
+    id: "z_6WG6QNHB",
     title: "Attention is all you need",
     authors: "Vaswani et al.",
     year: "2017",
     marksCount: 3,
-    attachmentKey: "EFGH6789",
-    doi: "10.48550/arXiv.1706.03762",
-    zotero_key: "6WG6QNHB",
+    doiDisplay: "10.48550/arXiv.1706.03762",
+    linkAvailability: { doi: "available", pdf: "available", item: "available" },
   },
   {
-    id: "KBPLWQT5",
+    id: "z_KBPLWQT5",
     title: "Deep residual learning for image recognition",
     authors: "He et al.",
     year: "2016",
     marksCount: 2,
-    attachmentKey: "H3E7BPJW",
-    doi: "10.1109/CVPR.2016.90",
-    zotero_key: "KBPLWQT5",
+    doiDisplay: "10.1109/CVPR.2016.90",
+    linkAvailability: { doi: "available", pdf: "available", item: "available" },
   },
   {
-    id: "HMIBIMH7",
+    id: "h_HMIBIMH7",
     title: "Language models are few-shot learners",
     authors: "Brown et al.",
     year: "2020",
     marksCount: 0,
-    doi: null,
-    zotero_key: null,
+    doiDisplay: null,
+    linkAvailability: { doi: "no_doi", pdf: "no_zotero_key", item: "no_zotero_key" },
   },
 ];
+
+/** Backend-only source data used by the mock RPC; never exposed in PaperItem. */
+const MOCK_PDF_KEYS: Readonly<Record<string, string>> = {
+  "z_6WG6QNHB": "EFGH6789",
+  "z_KBPLWQT5": "H3E7BPJW",
+  "z_EFGH6789": "EFGH6789",
+  "z_H3E7BPJW": "H3E7BPJW",
+};
 
 const makeFixtureMark = (index: number): Mark => ({
   key: `mark-${String(index).padStart(3, "0")}`,
@@ -268,9 +274,12 @@ export function createMockRpc(
       }
       return Promise.resolve([...papers]);
     },
-    importMarks: (_paperId, _attachmentKey) => {
+    importMarks: (paperId) => {
       if (!currentWorkspace) {
         return Promise.reject(new Error("No project folder is open."));
+      }
+      if (!MOCK_PDF_KEYS[paperId]) {
+        return Promise.reject(new ZoteroError("attachment_unresolved"));
       }
       for (const mark of marks) {
         history.push({
@@ -301,20 +310,24 @@ export function createMockRpc(
     paper_link: ({ paperId, target }: PaperLinkRequest) => {
       const paper = papers.find((item) => item.id === paperId);
       if (!paper) return Promise.reject(new ZoteroError("internal"));
-      if (target === "doi") {
-        if (!paper.doi) return Promise.reject(new ZoteroError("no_doi"));
-        return Promise.resolve({ uri: `https://doi.org/${paper.doi}` });
+      const availabilityCode = paper.linkAvailability[target === "doi" ? "doi" : target === "pdf" ? "pdf" : "item"];
+      if (availabilityCode !== "available") return Promise.reject(new ZoteroError(availabilityCode));
+      if (target === "doi" && paper.doiDisplay) {
+        return Promise.resolve({ uri: `https://doi.org/${paper.doiDisplay}` });
       }
-      if (!paper.zotero_key) return Promise.reject(new ZoteroError("no_zotero_key"));
-      if (target === "pdf" && !paper.attachmentKey) {
-        return Promise.reject(new ZoteroError("no_zotero_key"));
+      if (target === "doi") return Promise.reject(new ZoteroError("no_doi"));
+      if (target === "item") {
+        const itemKey = paperId.startsWith("z_") ? paperId.slice(2) : null;
+        return itemKey
+          ? Promise.resolve({ uri: `zotero://select/library/items/${itemKey}` })
+          : Promise.reject(new ZoteroError("no_zotero_key"));
       }
+      const pdfKey = MOCK_PDF_KEYS[paperId];
+      if (!pdfKey) return Promise.reject(new ZoteroError("no_pdf"));
       return Promise.resolve({
-        uri: target === "pdf"
-          ? `zotero://open-pdf/library/items/${paper.attachmentKey}`
-          : `zotero://select/library/items/${paper.zotero_key}`,
+        uri: `zotero://open-pdf/library/items/${pdfKey}`,
       });
     },
-    open_link: () => Promise.resolve(),
+    open_external: () => Promise.resolve("opened"),
   };
 }

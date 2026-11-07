@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { HistoryPanel } from "../src/HistoryPanel.tsx";
 import { importPaper } from "../src/model.ts";
-import { createMockRpc } from "../src/rpc/mock.ts";
+import { createMockRpc, FIXTURE_PAPERS } from "../src/rpc/mock.ts";
 import type { Mark } from "../src/rpc/types.ts";
 
 const mark: Mark = {
@@ -32,7 +32,7 @@ test("imported mark and its history line are shown", async () => {
 
 test("raw history view lists only visible events, including milestones and renames", async () => {
   const rpc = createMockRpc();
-  const events = await rpc.readHistory("6WG6QNHB");
+  const events = await rpc.readHistory(FIXTURE_PAPERS[0]!.id);
   const html = renderToStaticMarkup(
     <HistoryPanel state={{ kind: "done", imported: 0, events }} />,
   );

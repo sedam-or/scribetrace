@@ -21,6 +21,8 @@ function getPaperLinkError(error: unknown): PaperPageError {
     ? "paper.error.no_doi"
     : code === "no_zotero_key"
       ? "paper.error.no_zotero_key"
+      : code === "no_pdf"
+        ? "paper.missing.no_pdf"
       : code === "refused" || code === "zotero_not_running"
         ? "paper.error.zotero_not_running"
         : null;
@@ -113,15 +115,16 @@ export function App({ rpc, initialSetupState }: AppProps) {
     setSetupState((prev) => setupReducer(prev, { type: "BACK_TO_SETUP" }));
   };
 
-  const handleImport = (paperId: string, attachmentKey: string) => {
+  const handleImport = (paperId: string) => {
     setHistoryState({ kind: "busy" });
     const folder = setupState.kind !== "unconfigured" ? setupState.workspacePath : undefined;
-    void importPaper(rpc, folder, paperId, attachmentKey).then(setHistoryState);
+    void importPaper(rpc, folder, paperId).then(setHistoryState);
   };
 
   const handlePaperLink = async (paperId: string, kind: PaperLinkKind) => {
     setPaperError(null);
     try {
+      if (!paperLinks.getUri) throw new ZoteroError("internal");
       const link = await paperLinks.getUri(paperId, kind);
       return link.uri;
     } catch (e) {
@@ -130,10 +133,10 @@ export function App({ rpc, initialSetupState }: AppProps) {
     }
   };
 
-  const handleOpenLink = async (paperId: string, kind: PaperLinkKind) => {
+  const handleOpenExternal = async (paperId: string, kind: PaperLinkKind) => {
     setPaperError(null);
     try {
-      await paperLinks.open(paperId, kind);
+      return await paperLinks.openExternal(paperId, kind);
     } catch (e) {
       setPaperError(getPaperLinkError(e));
       throw e;
@@ -166,6 +169,11 @@ export function App({ rpc, initialSetupState }: AppProps) {
   const papers = isConnected ? setupState.papers : [];
   const activePaperId = selectedPaperId ?? papers[0]?.id ?? null;
   const activePaper = papers.find((paper) => paper.id === activePaperId) ?? null;
+  const importUnavailableReason = activePaper?.linkAvailability.pdf === "no_pdf"
+    ? t("paper.missing.no_pdf")
+    : activePaper?.linkAvailability.pdf === "no_zotero_key"
+      ? t("paper.missing.no_zotero_key")
+      : null;
 
   const navContent = isConnected ? (
     <>
@@ -204,7 +212,7 @@ export function App({ rpc, initialSetupState }: AppProps) {
                 }}
                 onRefresh={
                   hasMarks
-                    ? () => handleImport(paper.id, paper.attachmentKey ?? "")
+                    ? () => handleImport(paper.id)
                     : undefined
                 }
               />
@@ -232,17 +240,18 @@ export function App({ rpc, initialSetupState }: AppProps) {
                 <Button
                   variant="primary"
                   size="small"
-                  onClick={() => handleImport(activePaper.id, activePaper.attachmentKey ?? "")}
-                  disabled={historyState.kind === "busy" || !activePaper.attachmentKey}
+                  onClick={() => handleImport(activePaper.id)}
+                  disabled={historyState.kind === "busy" || activePaper.linkAvailability.pdf !== "available"}
                   data-testid="import-marks-btn"
                 >
                   {t("papers.import.action")}
                 </Button>
+                {importUnavailableReason && <p className="st-paper-disabled-reason">{importUnavailableReason}</p>}
               </div>
               <PaperPage
                 paper={activePaper}
-                onPaperLink={handlePaperLink}
-                onOpenLink={handleOpenLink}
+                onPaperLink={paperLinks.getUri ? handlePaperLink : undefined}
+                onOpenExternal={handleOpenExternal}
                 onShowHistory={handleShowHistory}
                 error={paperError}
               />

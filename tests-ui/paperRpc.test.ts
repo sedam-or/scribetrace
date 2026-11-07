@@ -27,11 +27,29 @@ test("mock paper_link returns core error codes when link data is missing", async
   );
 });
 
+test("mock open_external returns the typed approval outcome", async () => {
+  const rpc = createMockRpc();
+  assert.equal(await rpc.open_external({ paperId: FIXTURE_PAPERS[0]!.id, target: "doi" }), "opened");
+});
+
 test("paper-link adapter maps UI actions to backend targets", async () => {
   const adapter = createPaperLinkAdapter(createMockRpc());
   const paperId = FIXTURE_PAPERS[0]!.id;
 
-  assert.equal((await adapter.getUri(paperId, "doi")).uri, "https://doi.org/10.48550/arXiv.1706.03762");
-  assert.equal((await adapter.getUri(paperId, "zotero_pdf")).uri, "zotero://open-pdf/library/items/EFGH6789");
-  assert.equal((await adapter.getUri(paperId, "zotero_select")).uri, "zotero://select/library/items/6WG6QNHB");
+  assert.equal((await adapter.getUri!(paperId, "doi")).uri, "https://doi.org/10.48550/arXiv.1706.03762");
+  assert.equal((await adapter.getUri!(paperId, "zotero_pdf")).uri, "zotero://open-pdf/library/items/EFGH6789");
+  assert.equal((await adapter.getUri!(paperId, "zotero_select")).uri, "zotero://select/library/items/6WG6QNHB");
+});
+
+test("paper-link adapter confirms with only the typed target and paperId", async () => {
+  const rpc = createMockRpc();
+  let received: { target: string; paperId: string } | null = null;
+  rpc.open_external = async (request) => {
+    received = request;
+    return "cancelled";
+  };
+  const adapter = createPaperLinkAdapter(rpc);
+
+  assert.equal(await adapter.openExternal(FIXTURE_PAPERS[0]!.id, "zotero_pdf"), "cancelled");
+  assert.deepEqual(received, { target: "pdf", paperId: FIXTURE_PAPERS[0]!.id });
 });

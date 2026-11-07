@@ -2,7 +2,7 @@ import type { Rpc } from "./rpc/rpc.ts";
 import type { HistoryEvent } from "./rpc/types.ts";
 
 /** The one hard-wired paper of the walking skeleton (replaced by the paper list in slice 4). */
-export const SLICE1_PAPER = { paperId: "z_EFGH6789", attachmentKey: "EFGH6789" } as const;
+export const SLICE1_PAPER = { paperId: "z_EFGH6789" } as const;
 
 export type ViewState =
   | { kind: "idle" }
@@ -15,7 +15,6 @@ export async function importPaper(
   rpc: Rpc,
   _folder?: string,
   paperId: string = SLICE1_PAPER.paperId,
-  attachmentKey: string = SLICE1_PAPER.attachmentKey,
 ): Promise<ViewState> {
   try {
     const ws = await rpc.getWorkspace();
@@ -25,7 +24,7 @@ export async function importPaper(
         return { kind: "error", message: "No project folder is open." };
       }
     }
-    const report = await rpc.importMarks(paperId, attachmentKey);
+    const report = await rpc.importMarks(paperId);
     const events = await rpc.readHistory(paperId);
     return { kind: "done", imported: report.imported, events };
   } catch (e) {

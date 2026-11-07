@@ -1,4 +1,5 @@
 import type {
+  ExternalOpenOutcome,
   HistoryEvent,
   ImportReport,
   Milestone,
@@ -17,10 +18,10 @@ export interface Rpc {
   chooseFolder(): Promise<WorkspaceInfo | null>;
   getWorkspace(): Promise<WorkspaceInfo | null>;
   connectZotero(): Promise<PaperItem[]>;
-  importMarks(paperId: string, attachmentKey: string): Promise<ImportReport>;
+  importMarks(paperId: string): Promise<ImportReport>;
   readHistory(paperId: string): Promise<HistoryEvent[]>;
   list_milestones?(paperId: string): Promise<Milestone[]>;
   milestone_diff?(paperId: string, fromId: string, toId: string): Promise<MilestoneDiff>;
   paper_link?(request: PaperLinkRequest): Promise<PaperLink>;
-  open_link?(request: PaperLinkRequest): Promise<void>;
+  open_external(request: PaperLinkRequest): Promise<ExternalOpenOutcome>;
 }

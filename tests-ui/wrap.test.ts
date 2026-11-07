@@ -21,6 +21,7 @@ test("wrap passes known { code } rejections through (SEC-39)", async () => {
   assert.equal(await codeOf({ code: "no_doi" }), "no_doi");
   assert.equal(await codeOf({ code: "no_zotero_key" }), "no_zotero_key");
   assert.equal(await codeOf({ code: "zotero_not_running" }), "zotero_not_running");
+  assert.equal(await codeOf({ code: "attachment_unresolved" }), "attachment_unresolved");
 });
 
 test("wrap turns raw string, Tauri and unknown rejections into internal (SEC-39)", async () => {

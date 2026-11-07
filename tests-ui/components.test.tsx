@@ -96,11 +96,11 @@ test("PaperPage renders paper metadata and explains unavailable Zotero links", (
         title: "A paper title",
         authors: "A. Author et al.",
         marksCount: 1,
-        doi: null,
-        zotero_key: null,
+        doiDisplay: null,
+        linkAvailability: { doi: "no_doi", pdf: "no_pdf", item: "no_zotero_key" },
       }}
       onPaperLink={async () => "https://doi.org/10.1234/example"}
-      onOpenLink={async () => {}}
+      onOpenExternal={async () => "opened"}
       onShowHistory={() => {}}
     />,
   );

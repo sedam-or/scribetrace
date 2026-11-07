@@ -1,4 +1,4 @@
-import { ZoteroError, type PaperLinkKind, type PaperLinkRequest } from "./types.ts";
+import type { PaperLinkKind, PaperLinkRequest } from "./types.ts";
 import type { Rpc } from "./rpc.ts";
 
 const TARGET_BY_ACTION: Record<PaperLinkKind, PaperLinkRequest["target"]> = {
@@ -15,13 +15,11 @@ export function createPaperLinkAdapter(rpc: Rpc) {
   });
 
   return {
-    getUri: (paperId: string, action: PaperLinkKind) => {
-      if (!rpc.paper_link) return Promise.reject(new ZoteroError("internal"));
-      return rpc.paper_link(request(paperId, action));
-    },
-    open: (paperId: string, action: PaperLinkKind) => {
-      if (!rpc.open_link) return Promise.reject(new ZoteroError("internal"));
-      return rpc.open_link(request(paperId, action));
+    getUri: rpc.paper_link
+      ? (paperId: string, action: PaperLinkKind) => rpc.paper_link!(request(paperId, action))
+      : undefined,
+    openExternal: (paperId: string, action: PaperLinkKind) => {
+      return rpc.open_external(request(paperId, action));
     },
   };
 }

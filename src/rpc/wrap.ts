@@ -9,8 +9,10 @@ const KNOWN_CODES: ReadonlySet<string> = new Set([
   "too_large",
   "bad_answer",
   "no_doi",
+  "no_pdf",
   "no_zotero_key",
   "zotero_not_running",
+  "attachment_unresolved",
   "milestone_missing",
   "internal",
 ]);
