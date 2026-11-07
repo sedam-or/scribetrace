@@ -123,6 +123,11 @@ fn typed(obj: Map<String, Value>, event_type: String) -> LineClass {
     ) {
         return LineClass::Other { event_type };
     }
+    // `label` is required on milestone and milestone_rename (FORMAT §3); serde would read an
+    // omitted key as `None`, so presence is checked here. An explicit `null` is still allowed.
+    if matches!(event_type.as_str(), "milestone" | "milestone_rename") && !has_label(&obj) {
+        return LineClass::Bad(BadLine::BadPayload);
+    }
     match serde_json::from_value::<Event>(Value::Object(obj)) {
         Ok(event) => match &event.body {
             EventBody::MarkImport(mark) if mark.validate().is_err() => {
@@ -149,6 +154,13 @@ fn milestone_payload_ok(p: &MilestonePayload) -> bool {
 /// `spec/FORMAT.md` §3: the renamed milestone is named by its UUID `id`.
 fn rename_payload_ok(r: &MilestoneRenamePayload) -> bool {
     is_uuid(&r.milestone) && label_ok(r.label.as_deref())
+}
+
+/// True when the payload has a `label` key (its value may be `null`).
+fn has_label(obj: &Map<String, Value>) -> bool {
+    obj.get("payload")
+        .and_then(Value::as_object)
+        .is_some_and(|p| p.contains_key("label"))
 }
 
 fn label_ok(label: Option<&str>) -> bool {

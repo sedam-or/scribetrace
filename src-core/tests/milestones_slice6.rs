@@ -235,3 +235,66 @@ fn rename_longer_than_the_limit_is_refused() {
     assert!(result.is_err());
     assert_eq!(fs::read(history_file(workspace.path())).unwrap(), before);
 }
+
+/// Appends a `purge` line that covers `device` up to `seq` (the purge is written by hand:
+/// the application layer has no forget command yet).
+fn append_purge(workspace: &std::path::Path, covers_seq: u64) {
+    use std::io::Write;
+    let line = serde_json::json!({
+        "v": 1,
+        "id": "6f1f2c1e-0a4b-4c55-9d3e-2b7a9a0c1e01",
+        "device": "dev-test",
+        "seq": covers_seq + 1,
+        "ts": "2026-11-06T09:30:00Z",
+        "author": "Me",
+        "type": "purge",
+        "payload": { "covers": { "dev-test": covers_seq } }
+    });
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(history_file(workspace))
+        .unwrap();
+    writeln!(file, "{line}").unwrap();
+}
+
+#[test]
+fn rename_of_a_hidden_milestone_writes_nothing() {
+    let workspace = tempfile::tempdir().unwrap();
+    let store = FsHistoryStore::new(workspace.path());
+    let zotero = FakeZotero {
+        marks: RefCell::new(vec![mark("AAAA0001")]),
+    };
+    let ids = SeqIds(Cell::new(0));
+    import(&zotero, &store, &ids);
+    let milestone_id = list_milestones(&store, &paper()).unwrap()[0].id.clone();
+    // The import wrote seq 1 (mark) and seq 2 (milestone); purge hides both.
+    append_purge(workspace.path(), 2);
+    let before = fs::read(history_file(workspace.path())).unwrap();
+
+    let renamed = RenameMilestone::new(&store, &FixedClock, &ids, device())
+        .run(&paper(), &milestone_id, Some("Too late".to_owned()))
+        .unwrap();
+
+    assert!(!renamed, "a hidden milestone must not be renamed");
+    assert_eq!(fs::read(history_file(workspace.path())).unwrap(), before);
+}
+
+#[test]
+fn purged_mark_is_not_imported_again_on_refresh() {
+    let workspace = tempfile::tempdir().unwrap();
+    let store = FsHistoryStore::new(workspace.path());
+    let zotero = FakeZotero {
+        marks: RefCell::new(vec![mark("AAAA0001")]),
+    };
+    let ids = SeqIds(Cell::new(0));
+    import(&zotero, &store, &ids);
+    // Purge hides the mark (seq 1) and the milestone (seq 2) from every view.
+    append_purge(workspace.path(), 2);
+    let before = fs::read(history_file(workspace.path())).unwrap();
+
+    let report = import(&zotero, &store, &ids);
+
+    assert_eq!(report.imported, 0, "dedup must see purged lines on disk");
+    assert!(report.milestone.is_none());
+    assert_eq!(fs::read(history_file(workspace.path())).unwrap(), before);
+}

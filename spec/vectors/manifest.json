@@ -62,6 +62,14 @@
       "expect": "bad_payload"
     },
     {
+      "file": "bad/bad_payload_milestone_no_label.jsonl",
+      "expect": "bad_payload"
+    },
+    {
+      "file": "bad/bad_payload_rename_no_label.jsonl",
+      "expect": "bad_payload"
+    },
+    {
       "file": "bad/bad_value_device_path.jsonl",
       "expect": "bad_value"
     },
