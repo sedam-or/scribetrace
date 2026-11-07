@@ -46,9 +46,8 @@ export const FIXTURE_PAPERS: PaperItem[] = [
     authors: "Brown et al.",
     year: "2020",
     marksCount: 0,
-    attachmentKey: "BROWN01",
     doi: null,
-    zotero_key: "HMIBIMH7",
+    zotero_key: null,
   },
 ];
 
