@@ -4,8 +4,8 @@
 use serde_json::{Map, Value};
 
 use super::{
-    DeviceId, Event, EventBody, MilestonePayload, MilestoneRenamePayload, FORMAT_VERSION,
-    MAX_LABEL_CHARS, MAX_LINE_BYTES,
+    DeviceId, Event, EventBody, MilestonePayload, MilestoneRenamePayload, PaperMetadataPayload,
+    FORMAT_VERSION, MAX_LABEL_CHARS, MAX_LINE_BYTES,
 };
 
 /// Why a line was refused. [`BadLine::code`] is the stable word the spec and the vectors use.
@@ -119,13 +119,19 @@ fn typed(obj: Map<String, Value>, event_type: String) -> LineClass {
     // Only the types with a typed payload are checked here; the others join as their slices land.
     if !matches!(
         event_type.as_str(),
-        "mark_import" | "purge" | "milestone" | "milestone_rename"
+        "mark_import" | "purge" | "milestone" | "milestone_rename" | "paper_metadata"
     ) {
         return LineClass::Other { event_type };
     }
     // `label` is required on milestone and milestone_rename (FORMAT §3); serde would read an
     // omitted key as `None`, so presence is checked here. An explicit `null` is still allowed.
-    if matches!(event_type.as_str(), "milestone" | "milestone_rename") && !has_label(&obj) {
+    // The same holds for both keys of paper_metadata.
+    let required_keys: &[&str] = match event_type.as_str() {
+        "milestone" | "milestone_rename" => &["label"],
+        "paper_metadata" => &["doi", "pdf_key"],
+        _ => &[],
+    };
+    if !required_keys.iter().all(|key| has_key(&obj, key)) {
         return LineClass::Bad(BadLine::BadPayload);
     }
     match serde_json::from_value::<Event>(Value::Object(obj)) {
@@ -139,10 +145,45 @@ fn typed(obj: Map<String, Value>, event_type: String) -> LineClass {
             EventBody::MilestoneRename(r) if !rename_payload_ok(r) => {
                 LineClass::Bad(BadLine::BadPayload)
             }
+            EventBody::PaperMetadata(p) if !paper_metadata_ok(p) => {
+                LineClass::Bad(BadLine::BadPayload)
+            }
             _ => LineClass::Valid(Box::new(event)),
         },
         Err(_) => LineClass::Bad(BadLine::BadPayload),
     }
+}
+
+/// `spec/FORMAT.md` §3: a DOI matches `^10\.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+$`; a PDF attachment
+/// key matches `^[A-Z0-9]{8}$`. `None` is always allowed.
+fn paper_metadata_ok(p: &PaperMetadataPayload) -> bool {
+    doi_ok(p.doi.as_deref()) && pdf_key_ok(p.pdf_key.as_deref())
+}
+
+fn doi_ok(doi: Option<&str>) -> bool {
+    let Some(doi) = doi else { return true };
+    let Some(rest) = doi.strip_prefix("10.") else {
+        return false;
+    };
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    if !(4..=9).contains(&digits) {
+        return false;
+    }
+    let Some(suffix) = rest[digits..].strip_prefix('/') else {
+        return false;
+    };
+    !suffix.is_empty()
+        && suffix
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._;()/:".contains(&b))
+}
+
+fn pdf_key_ok(key: Option<&str>) -> bool {
+    key.is_none_or(|k| {
+        k.len() == 8
+            && k.bytes()
+                .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+    })
 }
 
 /// `spec/FORMAT.md` §3 and §7: every `upto` entry is at least 1; a label is at most
@@ -156,11 +197,11 @@ fn rename_payload_ok(r: &MilestoneRenamePayload) -> bool {
     is_uuid(&r.milestone) && label_ok(r.label.as_deref())
 }
 
-/// True when the payload has a `label` key (its value may be `null`).
-fn has_label(obj: &Map<String, Value>) -> bool {
+/// True when the payload has the key (its value may be `null`).
+fn has_key(obj: &Map<String, Value>, key: &str) -> bool {
     obj.get("payload")
         .and_then(Value::as_object)
-        .is_some_and(|p| p.contains_key("label"))
+        .is_some_and(|p| p.contains_key(key))
 }
 
 fn label_ok(label: Option<&str>) -> bool {

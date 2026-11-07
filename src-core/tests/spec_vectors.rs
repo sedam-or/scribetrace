@@ -159,6 +159,7 @@ fn schema_defined_types_are_the_ones_the_spec_text_lists() {
         "milestone",
         "milestone_rename",
         "milestone_restore",
+        "paper_metadata",
     ] {
         assert!(defs.contains_key(ty), "schema lacks {ty}");
     }
@@ -168,6 +169,7 @@ fn schema_defined_types_are_the_ones_the_spec_text_lists() {
         "milestone",
         "milestone_rename",
         "milestone_restore",
+        "paper_metadata",
     ] {
         assert!(spec.contains(&format!("`{ty}`")), "FORMAT.md lacks {ty}");
     }

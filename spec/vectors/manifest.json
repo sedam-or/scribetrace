@@ -22,6 +22,14 @@
       "expect": "other"
     },
     {
+      "file": "good/paper_metadata.jsonl",
+      "expect": "valid"
+    },
+    {
+      "file": "good/paper_metadata_cleared.jsonl",
+      "expect": "valid"
+    },
+    {
       "file": "good/purge.jsonl",
       "expect": "valid"
     },
@@ -67,6 +75,18 @@
     },
     {
       "file": "bad/bad_payload_rename_no_label.jsonl",
+      "expect": "bad_payload"
+    },
+    {
+      "file": "bad/bad_payload_paper_doi.jsonl",
+      "expect": "bad_payload"
+    },
+    {
+      "file": "bad/bad_payload_paper_pdf_key.jsonl",
+      "expect": "bad_payload"
+    },
+    {
+      "file": "bad/bad_payload_paper_no_pdf_key.jsonl",
       "expect": "bad_payload"
     },
     {

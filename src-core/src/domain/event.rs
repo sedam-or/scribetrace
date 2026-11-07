@@ -63,6 +63,16 @@ pub struct PurgePayload {
     pub covers: HashMap<DeviceId, u64>,
 }
 
+/// Payload for a `paper_metadata` event: the paper's DOI and the key of its Zotero PDF attachment
+/// (`spec/FORMAT.md` §3). `None` is a real value and clears the field.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PaperMetadataPayload {
+    /// The DOI without a URL prefix, or `None`.
+    pub doi: Option<String>,
+    /// The Zotero PDF attachment item key (`^[A-Z0-9]{8}$`), or `None`. Backend-only.
+    pub pdf_key: Option<String>,
+}
+
 /// The typed part of a line: `type` and `payload`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "payload", rename_all = "snake_case")]
@@ -75,6 +85,8 @@ pub enum EventBody {
     Milestone(MilestonePayload),
     /// Gives or changes a milestone's name; adds a line, edits none (slice 6, R-11).
     MilestoneRename(MilestoneRenamePayload),
+    /// The paper's DOI and PDF attachment key; latest per device wins (`spec/FORMAT.md` §3, #30).
+    PaperMetadata(PaperMetadataPayload),
 }
 
 /// One line of a per-device history file (ADR 0007).

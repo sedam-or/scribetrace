@@ -19,7 +19,8 @@
     { "if": { "properties": { "type": { "const": "purge" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/purge" } } } },
     { "if": { "properties": { "type": { "const": "milestone" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone" } } } },
     { "if": { "properties": { "type": { "const": "milestone_rename" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone_rename" } } } },
-    { "if": { "properties": { "type": { "const": "milestone_restore" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone_restore" } } } }
+    { "if": { "properties": { "type": { "const": "milestone_restore" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/milestone_restore" } } } },
+    { "if": { "properties": { "type": { "const": "paper_metadata" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/paper_metadata" } } } }
   ],
   "$defs": {
     "identifier": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
@@ -70,6 +71,14 @@
       "properties": {
         "milestone": { "type": "string" },
         "seen": { "$ref": "#/$defs/cut" }
+      }
+    },
+    "paper_metadata": {
+      "type": "object",
+      "required": ["doi", "pdf_key"],
+      "properties": {
+        "doi": { "type": ["string", "null"], "pattern": "^10\\.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+$" },
+        "pdf_key": { "type": ["string", "null"], "pattern": "^[A-Z0-9]{8}$" }
       }
     }
   }
