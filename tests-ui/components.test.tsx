@@ -12,6 +12,7 @@ import {
   FolderPicker,
   Input,
   PaperListRow,
+  PaperPage,
   TimelineItem,
   ToastNotice,
 } from "../src/components/index.ts";
@@ -82,6 +83,36 @@ test("PaperListRow renders metadata, marks count, and keyboard attributes", () =
   assert.match(rowHtml, /Vaswani et al\. · 2017/);
   assert.match(rowHtml, /8 marks/);
   assert.match(rowHtml, /aria-label="Refresh marks for Attention Is All You Need"/);
+});
+
+test("PaperPage renders paper metadata and explains unavailable Zotero links", () => {
+  const html = renderToStaticMarkup(
+    <PaperPage
+      paper={{
+        id: "paper-1",
+        title: "A paper title",
+        authors: "A. Author et al.",
+        marksCount: 1,
+        doi: null,
+        zotero_key: null,
+      }}
+      onPaperLink={async () => "https://doi.org/10.1234/example"}
+      onOpenLink={async () => {}}
+      onShowHistory={() => {}}
+    />,
+  );
+
+  assert.match(html, /<h1>A paper title<\/h1>/);
+  assert.match(html, /A\. Author et al\./);
+  assert.match(html, /No DOI in Zotero for this paper\./);
+  assert.match(html, /1 mark in history/);
+  assert.match(html, /Open DOI page/);
+  assert.match(html, /Open PDF in Zotero/);
+  assert.match(html, /Show in Zotero/);
+  assert.match(html, /disabled=""/);
+  assert.match(html, /This paper has no DOI in Zotero/);
+  assert.match(html, /Zotero has no PDF attached to this paper/);
+  assert.match(html, /Open history/);
 });
 
 test("TimelineItem renders milestones, author origin, and diff badges", () => {

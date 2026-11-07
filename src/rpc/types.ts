@@ -28,6 +28,7 @@ export interface WorkspaceInfo {
 
 export interface ImportReport {
   imported: number;
+  milestone: string | null;
 }
 
 export interface PaperItem {
@@ -37,6 +38,20 @@ export interface PaperItem {
   year?: string | number;
   marksCount: number;
   attachmentKey?: string;
+  doi: string | null;
+  zotero_key: string | null;
+}
+
+export type PaperLinkKind = "doi" | "zotero_pdf" | "zotero_select";
+export type PaperLinkTarget = "doi" | "pdf" | "item";
+
+export interface PaperLinkRequest {
+  target: PaperLinkTarget;
+  paperId: string;
+}
+
+export interface PaperLink {
+  uri: string;
 }
 
 export type ZoteroErrorCode =
@@ -46,6 +61,9 @@ export type ZoteroErrorCode =
   | "version"
   | "too_large"
   | "bad_answer"
+  | "no_doi"
+  | "no_zotero_key"
+  | "zotero_not_running"
   | "internal";
 
 export class ZoteroError extends Error {

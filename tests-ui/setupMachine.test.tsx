@@ -216,6 +216,9 @@ test("App renders connected papers and marks zero-mark paper with papers.no_mark
   // Assert papers list rendered
   assert.match(html, /data-testid="paper-list"/);
   assert.match(html, /Attention is all you need/);
+  assert.match(html, /data-testid="paper-page"/);
+  assert.match(html, /10\.48550\/arXiv\.1706\.03762/);
+  assert.match(html, /3 marks in history/);
   assert.match(html, /Deep residual learning for image recognition/);
   assert.match(html, /Language models are few-shot learners/);
 

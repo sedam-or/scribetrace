@@ -18,6 +18,9 @@ async function codeOf(rejection: unknown): Promise<string> {
 test("wrap passes known { code } rejections through (SEC-39)", async () => {
   assert.equal(await codeOf({ code: "forbidden" }), "forbidden");
   assert.equal(await codeOf({ code: "too_large" }), "too_large");
+  assert.equal(await codeOf({ code: "no_doi" }), "no_doi");
+  assert.equal(await codeOf({ code: "no_zotero_key" }), "no_zotero_key");
+  assert.equal(await codeOf({ code: "zotero_not_running" }), "zotero_not_running");
 });
 
 test("wrap turns raw string, Tauri and unknown rejections into internal (SEC-39)", async () => {

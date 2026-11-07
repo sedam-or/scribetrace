@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { createMockRpc, FIXTURE_PAPERS } from "../src/rpc/mock.ts";
+import { createPaperLinkAdapter } from "../src/rpc/paper-link-adapter.ts";
+
+test("mock paper_link returns full DOI and Zotero URIs without UI assembly", async () => {
+  const rpc = createMockRpc();
+  const paperId = FIXTURE_PAPERS[0]!.id;
+
+  assert.deepEqual(await rpc.paper_link?.({ paperId, target: "doi" }), {
+    uri: "https://doi.org/10.48550/arXiv.1706.03762",
+  });
+  assert.deepEqual(await rpc.paper_link?.({ paperId, target: "pdf" }), {
+    uri: "zotero://open-pdf/library/items/EFGH6789",
+  });
+  assert.deepEqual(await rpc.paper_link?.({ paperId, target: "item" }), {
+    uri: "zotero://select/library/items/6WG6QNHB",
+  });
+});
+
+test("mock paper_link returns core error codes when link data is missing", async () => {
+  const rpc = createMockRpc();
+  await assert.rejects(
+    rpc.paper_link!({ paperId: FIXTURE_PAPERS[2]!.id, target: "doi" }),
+    { code: "no_doi" },
+  );
+});
+
+test("paper-link adapter maps UI actions to backend targets", async () => {
+  const adapter = createPaperLinkAdapter(createMockRpc());
+  const paperId = FIXTURE_PAPERS[0]!.id;
+
+  assert.equal((await adapter.getUri(paperId, "doi")).uri, "https://doi.org/10.48550/arXiv.1706.03762");
+  assert.equal((await adapter.getUri(paperId, "zotero_pdf")).uri, "zotero://open-pdf/library/items/EFGH6789");
+  assert.equal((await adapter.getUri(paperId, "zotero_select")).uri, "zotero://select/library/items/6WG6QNHB");
+});

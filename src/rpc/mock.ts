@@ -3,6 +3,7 @@ import {
   type HistoryEvent,
   type Mark,
   type PaperItem,
+  type PaperLinkRequest,
   type WorkspaceInfo,
   type ZoteroErrorCode,
   ZoteroError,
@@ -26,6 +27,8 @@ export const FIXTURE_PAPERS: PaperItem[] = [
     year: "2017",
     marksCount: 3,
     attachmentKey: "EFGH6789",
+    doi: "10.48550/arXiv.1706.03762",
+    zotero_key: "6WG6QNHB",
   },
   {
     id: "KBPLWQT5",
@@ -34,6 +37,8 @@ export const FIXTURE_PAPERS: PaperItem[] = [
     year: "2016",
     marksCount: 2,
     attachmentKey: "H3E7BPJW",
+    doi: "10.1109/CVPR.2016.90",
+    zotero_key: "KBPLWQT5",
   },
   {
     id: "HMIBIMH7",
@@ -42,6 +47,8 @@ export const FIXTURE_PAPERS: PaperItem[] = [
     year: "2020",
     marksCount: 0,
     attachmentKey: "BROWN01",
+    doi: null,
+    zotero_key: "HMIBIMH7",
   },
 ];
 
@@ -91,8 +98,26 @@ export function createMockRpc(
           payload: mark,
         });
       }
-      return Promise.resolve({ imported: marks.length });
+      return Promise.resolve({ imported: marks.length, milestone: marks.length ? "mock-milestone" : null });
     },
     readHistory: () => Promise.resolve([...history]),
+    paper_link: ({ paperId, target }: PaperLinkRequest) => {
+      const paper = papers.find((item) => item.id === paperId);
+      if (!paper) return Promise.reject(new ZoteroError("internal"));
+      if (target === "doi") {
+        if (!paper.doi) return Promise.reject(new ZoteroError("no_doi"));
+        return Promise.resolve({ uri: `https://doi.org/${paper.doi}` });
+      }
+      if (!paper.zotero_key) return Promise.reject(new ZoteroError("no_zotero_key"));
+      if (target === "pdf" && !paper.attachmentKey) {
+        return Promise.reject(new ZoteroError("no_zotero_key"));
+      }
+      return Promise.resolve({
+        uri: target === "pdf"
+          ? `zotero://open-pdf/library/items/${paper.attachmentKey}`
+          : `zotero://select/library/items/${paper.zotero_key}`,
+      });
+    },
+    open_link: () => Promise.resolve(),
   };
 }

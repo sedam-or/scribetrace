@@ -6,11 +6,29 @@ import { EmptyState } from "./components/EmptyState.tsx";
 import { PaperListRow } from "./components/PaperListRow.tsx";
 import { SetupView } from "./components/SetupView.tsx";
 import { HistoryPanel } from "./HistoryPanel.tsx";
+import { PaperPage, type PaperPageError } from "./components/PaperPage.tsx";
 import { importPaper, type ViewState } from "./model.ts";
 import type { Rpc } from "./rpc/rpc.ts";
-import { ZoteroError } from "./rpc/types.ts";
+import { ZoteroError, type PaperLinkKind } from "./rpc/types.ts";
+import { createPaperLinkAdapter } from "./rpc/paper-link-adapter.ts";
 import { setupReducer, type SetupState } from "./setupMachine.ts";
 import { t } from "./strings.ts";
+
+function getPaperLinkError(error: unknown): PaperPageError {
+  const code = error instanceof ZoteroError ? error.code : "internal";
+  const bodyKey = code === "no_doi"
+    ? "paper.error.no_doi"
+    : code === "no_zotero_key"
+      ? "paper.error.no_zotero_key"
+      : code === "refused" || code === "zotero_not_running"
+        ? "paper.error.zotero_not_running"
+        : null;
+
+  return {
+    title: t("paper.error.title"),
+    body: bodyKey ? t(bodyKey) : t("error.generic", { detail: code }),
+  };
+}
 
 export interface AppProps {
   rpc: Rpc;
@@ -18,11 +36,14 @@ export interface AppProps {
 }
 
 export function App({ rpc, initialSetupState }: AppProps) {
+  const paperLinks = createPaperLinkAdapter(rpc);
   const [setupState, setSetupState] = useState<SetupState>(
     initialSetupState ?? { kind: "unconfigured" },
   );
   const [selectedPaperId, setSelectedPaperId] = useState<string | null>(null);
   const [historyState, setHistoryState] = useState<ViewState>({ kind: "idle" });
+  const [showHistory, setShowHistory] = useState(false);
+  const [paperError, setPaperError] = useState<PaperPageError | null>(null);
 
   useEffect(() => {
     if (initialSetupState) return;
@@ -96,8 +117,43 @@ export function App({ rpc, initialSetupState }: AppProps) {
     void importPaper(rpc, folder, paperId, attachmentKey).then(setHistoryState);
   };
 
+  const handlePaperLink = async (paperId: string, kind: PaperLinkKind) => {
+    setPaperError(null);
+    try {
+      const link = await paperLinks.getUri(paperId, kind);
+      return link.uri;
+    } catch (e) {
+      setPaperError(getPaperLinkError(e));
+      throw e;
+    }
+  };
+
+  const handleOpenLink = async (paperId: string, kind: PaperLinkKind) => {
+    setPaperError(null);
+    try {
+      await paperLinks.open(paperId, kind);
+    } catch (e) {
+      setPaperError(getPaperLinkError(e));
+      throw e;
+    }
+  };
+
+  const handleShowHistory = async (paperId: string) => {
+    setSelectedPaperId(paperId);
+    setShowHistory(true);
+    setHistoryState({ kind: "busy" });
+    try {
+      const events = await rpc.readHistory(paperId);
+      setHistoryState({ kind: "done", imported: 0, events });
+    } catch (e) {
+      setHistoryState({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
   const isConnected = setupState.kind === "connected";
   const papers = isConnected ? setupState.papers : [];
+  const activePaperId = selectedPaperId ?? papers[0]?.id ?? null;
+  const activePaper = papers.find((paper) => paper.id === activePaperId) ?? null;
 
   const navContent = isConnected ? (
     <>
@@ -127,8 +183,12 @@ export function App({ rpc, initialSetupState }: AppProps) {
                 year={paper.year}
                 marksCount={paper.marksCount}
                 statusText={!hasMarks ? t("papers.no_marks") : undefined}
-                active={selectedPaperId === paper.id}
-                onSelect={(id) => setSelectedPaperId(id)}
+                active={selectedPaperId === paper.id || (selectedPaperId === null && paper.id === papers[0]?.id)}
+                onSelect={(id) => {
+                  setSelectedPaperId(id);
+                  setShowHistory(false);
+                  setPaperError(null);
+                }}
                 onRefresh={
                   hasMarks
                     ? () => handleImport(paper.id, paper.attachmentKey ?? "")
@@ -153,23 +213,37 @@ export function App({ rpc, initialSetupState }: AppProps) {
     <AppShell navContent={navContent}>
       {isConnected ? (
         <div className="st-history-view">
-          {selectedPaperId && (
-            <div className="st-detail-toolbar">
-              <Button
-                variant="primary"
-                size="small"
-                onClick={() => {
-                  const p = papers.find((x) => x.id === selectedPaperId);
-                  if (p) handleImport(p.id, p.attachmentKey ?? "");
-                }}
-                disabled={historyState.kind === "busy"}
-                data-testid="import-marks-btn"
-              >
-                {t("papers.import.action")}
-              </Button>
-            </div>
-          )}
-          <HistoryPanel state={historyState} />
+          {activePaper && !showHistory ? (
+            <>
+              <div className="st-detail-toolbar">
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={() => handleImport(activePaper.id, activePaper.attachmentKey ?? "")}
+                  disabled={historyState.kind === "busy" || !activePaper.attachmentKey}
+                  data-testid="import-marks-btn"
+                >
+                  {t("papers.import.action")}
+                </Button>
+              </div>
+              <PaperPage
+                paper={activePaper}
+                onPaperLink={handlePaperLink}
+                onOpenLink={handleOpenLink}
+                onShowHistory={handleShowHistory}
+                error={paperError}
+              />
+            </>
+          ) : showHistory && activePaper ? (
+            <>
+              <div className="st-detail-toolbar">
+                <Button variant="ghost" size="small" onClick={() => setShowHistory(false)}>
+                  {activePaper.title}
+                </Button>
+              </div>
+              <HistoryPanel state={historyState} />
+            </>
+          ) : null}
         </div>
       ) : (
         <SetupView
